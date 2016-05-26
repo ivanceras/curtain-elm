@@ -1,0 +1,19 @@
+
+.indent {
+ margin-left: 222px!important
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+}
+
+.toolbar-footer {
+  padding-top: 10px;
+  padding-bottom: 5px;
+}
+
+.uuid {
+  font-size: 12px!important
+}
+
