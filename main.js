@@ -7785,7 +7785,7 @@ var _user$project$Field$Date = function (a) {
 var _user$project$Field$String = function (a) {
 	return {ctor: 'String', _0: a};
 };
-var _user$project$Field$init = function (mode) {
+var _user$project$Field$birthday = function (mode) {
 	return {
 		field: {name: 'birthday', reference: 'Date', data_type: 'Timestamp with time zone'},
 		value: _user$project$Field$String('2016-05-01'),
@@ -7793,7 +7793,7 @@ var _user$project$Field$init = function (mode) {
 		presentation: _user$project$Field$Form
 	};
 };
-var _user$project$Field$another = function (mode) {
+var _user$project$Field$name = function (mode) {
 	return {
 		field: {name: 'name', reference: 'String', data_type: 'character varying'},
 		value: _user$project$Field$String('Jon Snow'),
@@ -7940,7 +7940,7 @@ var _user$project$Field$view = function (model) {
 					_elm_lang$html$Html$div,
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_elm_lang$html$Html_Events$onDoubleClick(
+							_elm_lang$html$Html_Events$onClick(
 							_user$project$Field$ChangeMode(_user$project$Field$Edit))
 						]),
 					_elm_lang$core$Native_List.fromArray(
@@ -7961,7 +7961,7 @@ var _user$project$Field$view = function (model) {
 					_elm_lang$html$Html$td,
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_elm_lang$html$Html_Events$onDoubleClick(
+							_elm_lang$html$Html_Events$onClick(
 							_user$project$Field$ChangeMode(_user$project$Field$Edit))
 						]),
 					_elm_lang$core$Native_List.fromArray(
@@ -7973,7 +7973,7 @@ var _user$project$Field$view = function (model) {
 					_elm_lang$html$Html$div,
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_elm_lang$html$Html_Events$onDoubleClick(
+							_elm_lang$html$Html_Events$onClick(
 							_user$project$Field$ChangeMode(_user$project$Field$Edit))
 						]),
 					_elm_lang$core$Native_List.fromArray(
@@ -8045,12 +8045,18 @@ var _user$project$Row$update = F2(
 				};
 		}
 	});
+var _user$project$Row$selection = {
+	field: {name: 'selected', reference: 'Bool', data_type: 'boolean'},
+	value: _user$project$Field$Bool(true),
+	mode: _user$project$Field$Edit,
+	presentation: _user$project$Field$Table
+};
 var _user$project$Row$row2 = {
 	rowId: 'd5eeef812012',
 	fields: _elm_lang$core$Native_List.fromArray(
 		[
-			_user$project$Field$another(_user$project$Field$Read),
-			_user$project$Field$init(_user$project$Field$Read),
+			_user$project$Field$name(_user$project$Field$Read),
+			_user$project$Field$birthday(_user$project$Field$Read),
 			_user$project$Field$active(_user$project$Field$Read)
 		]),
 	mode: _user$project$Field$Edit,
@@ -8060,8 +8066,8 @@ var _user$project$Row$row1 = {
 	rowId: 'f6a7b9290012',
 	fields: _elm_lang$core$Native_List.fromArray(
 		[
-			_user$project$Field$another(_user$project$Field$Read),
-			_user$project$Field$init(_user$project$Field$Read),
+			_user$project$Field$name(_user$project$Field$Read),
+			_user$project$Field$birthday(_user$project$Field$Read),
 			_user$project$Field$active(_user$project$Field$Read)
 		]),
 	mode: _user$project$Field$Edit,
@@ -8101,6 +8107,7 @@ var _user$project$Row$view = function (model) {
 						},
 						model.fields));
 			case 'Table':
+				var extended_fields = A2(_elm_lang$core$List_ops['::'], _user$project$Row$selection, model.fields);
 				return A2(
 					_elm_lang$html$Html$tr,
 					_elm_lang$core$Native_List.fromArray(
@@ -8113,7 +8120,7 @@ var _user$project$Row$view = function (model) {
 								_user$project$Row$FieldChangeMode(f.field.name),
 								_user$project$Field$view(f));
 						},
-						model.fields));
+						extended_fields));
 			default:
 				return A2(
 					_elm_lang$html$Html$div,

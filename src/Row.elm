@@ -20,8 +20,8 @@ type Msg
 
 
 row1 = { rowId= "f6a7b9290012"
-     , fields = [Field.another Field.Read
-                ,Field.init Field.Read
+     , fields = [Field.name Field.Read
+                ,Field.birthday Field.Read
                 ,Field.active Field.Read
                 ]
      , mode = Field.Edit
@@ -29,12 +29,26 @@ row1 = { rowId= "f6a7b9290012"
     }
 
 row2 = { rowId= "d5eeef812012"
-     , fields = [Field.another Field.Read
-                ,Field.init Field.Read
+     , fields = [Field.name Field.Read
+                ,Field.birthday Field.Read
                 ,Field.active Field.Read
                 ]
      , mode = Field.Edit
      , presentation = Field.Form
+    }
+
+{-| selection columns appended to the rows when viewed in table 
+-}
+
+selection: Field.Model
+selection = 
+    {field = { name = "selected"
+              ,reference = "Bool"
+              ,data_type = "boolean"
+              }
+     ,value = Field.Bool True
+     ,mode = Field.Edit
+     ,presentation = Field.Table
     }
 
 init = 
@@ -50,8 +64,10 @@ view model =
                |> List.map (\f -> Field.view f |> App.map (FieldChangeMode f.field.name))
                )
         Field.Table ->
+            let extended_fields = selection :: model.fields
+            in
             tr [] 
-               (model.fields
+               (extended_fields
                |> List.map (\f -> Field.view f |> App.map (FieldChangeMode f.field.name))
                )
         Field.Grid ->

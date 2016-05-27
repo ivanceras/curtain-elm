@@ -61,7 +61,7 @@ type Msg
     | ChangePresentation Presentation
 
 
-init mode =
+birthday mode =
     {field = {name = "birthday"
              ,reference = "Date"
              ,data_type = "Timestamp with time zone"
@@ -71,7 +71,7 @@ init mode =
     , presentation = Form
     }
 
-another mode =
+name mode =
     {field = {name = "name"
              ,reference = "String"
              ,data_type = "character varying"
@@ -115,16 +115,16 @@ view model =
         Read ->
             case model.presentation of
                 Form ->
-                    div [onDoubleClick (ChangeMode Edit)]
+                    div [onClick (ChangeMode Edit)]
                         [label [label_style] [text (model.field.name ++ ":")]
                         ,(field_read model.value model.field)
                         ]
                 Table ->
-                    td [onDoubleClick (ChangeMode Edit)]
+                    td [onClick (ChangeMode Edit)]
                        [(field_read model.value model.field)
                        ]
                 Grid ->
-                    div [onDoubleClick (ChangeMode Edit)] 
+                    div [onClick (ChangeMode Edit)] 
                         [(field_read model.value model.field)
                         ]
  
