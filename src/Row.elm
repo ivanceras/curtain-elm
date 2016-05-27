@@ -8,7 +8,7 @@ import Html.Attributes exposing (..)
 
 type alias Model =
     { rowId: String
-    , fields: List Field.Model
+    , field_models: List Field.Model
     , mode: Field.Mode
     , presentation: Field.Presentation
     }
@@ -19,20 +19,24 @@ type Msg
     | FieldChangeMode String Field.Msg
 
 
+fields = [Field.name_field
+        ,Field.bday_field
+        ,Field.active_field
+        ]
+
+field_values = [Field.name
+        ,Field.birthday
+        ,Field.active
+        ]
+
 row1 = { rowId= "f6a7b9290012"
-     , fields = [Field.name Field.Read
-                ,Field.birthday Field.Read
-                ,Field.active Field.Read
-                ]
+     , field_models = field_values 
      , mode = Field.Edit
      , presentation = Field.Form
     }
 
 row2 = { rowId= "d5eeef812012"
-     , fields = [Field.name Field.Read
-                ,Field.birthday Field.Read
-                ,Field.active Field.Read
-                ]
+     , field_models =  field_values
      , mode = Field.Edit
      , presentation = Field.Form
     }
@@ -40,15 +44,19 @@ row2 = { rowId= "d5eeef812012"
 {-| selection columns appended to the rows when viewed in table 
 -}
 
-selection: Field.Model
-selection = 
-    {field = { name = "selected"
-              ,reference = "Bool"
-              ,data_type = "boolean"
-              }
+selected_field =
+    { name = "selected"
+     ,reference = "Bool"
+     ,data_type = "boolean"
+    }
+
+selected: Field.Model
+selected = 
+    {field = selected_field 
      ,value = Field.Bool True
      ,mode = Field.Edit
      ,presentation = Field.Table
+     ,focused = False
     }
 
 init = 
@@ -56,72 +64,69 @@ init =
 
 view: Model -> Html Msg
 view model = 
-    let fields = 
     case model.presentation of
         Field.Form ->
-            Html.form [] 
-               (model.fields
-               |> List.map (\f -> Field.view f |> App.map (FieldChangeMode f.field.name))
-               )
+            div []
+                [ row_controls model
+                , Html.form [] 
+                  (List.map (\f -> App.map (FieldChangeMode f.field.name) <| Field.view f ) <| model.field_models)
+               ]
         Field.Table ->
-            let extended_fields = selection :: model.fields
+            let extended_fields = selected :: model.field_models
             in
-            tr [] 
-               (extended_fields
-               |> List.map (\f -> Field.view f |> App.map (FieldChangeMode f.field.name))
-               )
+            tr [onDoubleClick (ChangeMode Field.Edit)] 
+               (List.map (\f -> App.map (FieldChangeMode f.field.name) <| Field.view f ) <| extended_fields)
         Field.Grid ->
-            div [style [("border", "1px solid green"), ("width", "200px")]] 
-               (model.fields
-               |> List.map (\f -> Field.view f |> App.map (FieldChangeMode f.field.name))
-               )
-    in
-    div[] [div [] [button [onClick (ChangeMode Field.Edit)] [text "Edit"]
-                  ,button [onClick (ChangeMode Field.Read)] [text "Read"]
-                  ,button [onClick (ChangePresentation Field.Table)] [text "Table"]
-                  ,button [onClick (ChangePresentation Field.Form)] [text "Form"]
-                  ,button [onClick (ChangePresentation Field.Grid)] [text "Grid"]
-                   ]
-           ,text model.rowId
-           ,fields
-           ]
+            div []
+                [ row_controls model
+                , div [style [("border", "1px solid green"), ("width", "200px")]] 
+                  (List.map (\f -> App.map (FieldChangeMode f.field.name) <| Field.view f ) <| model.field_models)
+               ]
+
+row_controls model =  
+    div [] 
+      [text model.rowId
+      ,button [onClick (ChangeMode Field.Edit)] [text "Edit"]
+      ,button [onClick (ChangeMode Field.Read)] [text "Read"]
+      ,button [onClick (ChangePresentation Field.Table)] [text "Table"]
+      ,button [onClick (ChangePresentation Field.Form)] [text "Form"]
+      ,button [onClick (ChangePresentation Field.Grid)] [text "Grid"]
+       ]
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         ChangeMode mode ->
-            ({ model | fields = model.fields
-                |> List.map (\f -> 
-                    Field.update (Field.ChangeMode mode) f
-                  ) }, Cmd.none)
+            ({ model | field_models = 
+                 List.map (\f -> 
+                    let (mr,cmd) = Field.update (Field.ChangeMode mode) f
+                    in mr
+                  ) <| model.field_models
+              }, Cmd.none)
  
 
         ChangePresentation presentation ->
-            ( {model | presentation = presentation
-                      ,fields = (model.fields |>
-                                   List.map (\f ->
-                                         Field.update (Field.ChangePresentation presentation) f
-                                    )
-                                 )
-                        }, Cmd.none )
+            ({ model | presentation = presentation
+                     , field_models = 
+                           List.map (\f ->
+                                     let (mr,cmd) = Field.update (Field.ChangePresentation presentation) f
+                                     in mr
+                                    ) <| model.field_models
+                                 
+             }
+             , Cmd.none
+             )
 
         FieldChangeMode name field_msg ->
             let _ = Debug.log "Edit only this field" name 
             in
-               ({model | fields = model.fields
+               ({model | field_models = model.field_models
                 |> List.map (\f -> 
                     if f.field.name == name then
-                        Field.update field_msg f
+                        let (mr,cmd) = Field.update field_msg f
+                        in mr
                     else
                         f
                   ) }, Cmd.none)
 
 
-
-main =
-    App.program
-        { init = init
-        , update = update
-        , view = view
-        , subscriptions = (\_ -> Sub.none )
-        }

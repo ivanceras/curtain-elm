@@ -6404,11 +6404,24 @@ function render(vNode, eventNode)
 			return render(vNode.node, eventNode);
 
 		case 'tagger':
+			var subNode = vNode.node;
+			var tagger = vNode.tagger;
+		
+			while (subNode.type === 'tagger')
+			{
+				typeof tagger !== 'object'
+					? tagger = [tagger, subNode.tagger]
+					: tagger.push(subNode.tagger);
+
+				subNode = subNode.node;
+			}
+            
 			var subEventRoot = {
-				tagger: vNode.tagger,
+				tagger: tagger,
 				parent: eventNode
 			};
-			var domNode = render(vNode.node, subEventRoot);
+			
+			var domNode = render(subNode, subEventRoot);
 			domNode.elm_event_node_ref = subEventRoot;
 			return domNode;
 
@@ -6503,6 +6516,7 @@ function applyEvents(domNode, eventNode, events)
 		if (typeof value === 'undefined')
 		{
 			domNode.removeEventListener(key, handler);
+			allHandlers[key] = undefined;
 		}
 		else if (typeof handler === 'undefined')
 		{
@@ -6818,10 +6832,7 @@ function diffFacts(a, b, category)
 				(category === STYLE_KEY)
 					? ''
 					:
-				(category === EVENT_KEY)
-					? null
-					:
-				(category === ATTR_KEY)
+				(category === EVENT_KEY || category === ATTR_KEY)
 					? undefined
 					:
 				{ namespace: a[aKey].namespace, value: undefined };
@@ -6936,7 +6947,14 @@ function addDomNodesHelp(domNode, vNode, patches, i, low, high, eventNode)
 	switch (vNode.type)
 	{
 		case 'tagger':
-			return addDomNodesHelp(domNode, vNode.node, patches, i, low + 1, high, domNode.elm_event_node_ref);
+			var subNode = vNode.node;
+            
+			while (subNode.type === "tagger")
+			{
+				subNode = subNode.node;
+			}
+            
+			return addDomNodesHelp(domNode, subNode, patches, i, low + 1, high, domNode.elm_event_node_ref);
 
 		case 'node':
 			var vChildren = vNode.children;
@@ -7048,10 +7066,9 @@ function redraw(domNode, vNode, eventNode)
 	var parentNode = domNode.parentNode;
 	var newNode = render(vNode, eventNode);
 
-	var ref = domNode.elm_event_node_ref
-	if (typeof ref !== 'undefined')
+	if (typeof newNode.elm_event_node_ref === 'undefined')
 	{
-		newNode.elm_event_node_ref = ref;
+		newNode.elm_event_node_ref = domNode.elm_event_node_ref;
 	}
 
 	if (parentNode && newNode !== domNode)
@@ -7759,9 +7776,17 @@ var _user$project$Field$field_read = F2(
 					_elm_lang$core$Basics$toString(_p0._0));
 		}
 	});
-var _user$project$Field$Model = F4(
-	function (a, b, c, d) {
-		return {field: a, value: b, mode: c, presentation: d};
+var _user$project$Field$active_field = {name: 'active', reference: 'Bool', data_type: 'boolean'};
+var _user$project$Field$name_field = {name: 'name', reference: 'String', data_type: 'character varying'};
+var _user$project$Field$bday_field = {name: 'birthday', reference: 'Date', data_type: 'Timestamp with time zone'};
+var _user$project$Field$focus_field = _elm_lang$core$Native_Platform.outgoingPort(
+	'focus_field',
+	function (v) {
+		return v;
+	});
+var _user$project$Field$Model = F5(
+	function (a, b, c, d, e) {
+		return {field: a, value: b, mode: c, presentation: d, focused: e};
 	});
 var _user$project$Field$Field = F3(
 	function (a, b, c) {
@@ -7785,57 +7810,82 @@ var _user$project$Field$Date = function (a) {
 var _user$project$Field$String = function (a) {
 	return {ctor: 'String', _0: a};
 };
-var _user$project$Field$birthday = function (mode) {
-	return {
-		field: {name: 'birthday', reference: 'Date', data_type: 'Timestamp with time zone'},
-		value: _user$project$Field$String('2016-05-01'),
-		mode: mode,
-		presentation: _user$project$Field$Form
-	};
+var _user$project$Field$birthday = {
+	field: _user$project$Field$bday_field,
+	value: _user$project$Field$String('2016-05-01'),
+	mode: _user$project$Field$Read,
+	presentation: _user$project$Field$Form,
+	focused: false
 };
-var _user$project$Field$name = function (mode) {
-	return {
-		field: {name: 'name', reference: 'String', data_type: 'character varying'},
-		value: _user$project$Field$String('Jon Snow'),
-		mode: mode,
-		presentation: _user$project$Field$Form
-	};
+var _user$project$Field$name = {
+	field: _user$project$Field$name_field,
+	value: _user$project$Field$String('Jon Snow'),
+	mode: _user$project$Field$Read,
+	presentation: _user$project$Field$Form,
+	focused: false
 };
 var _user$project$Field$Bool = function (a) {
 	return {ctor: 'Bool', _0: a};
 };
-var _user$project$Field$active = function (mode) {
-	return {
-		field: {name: 'active', reference: 'Bool', data_type: 'boolean'},
-		value: _user$project$Field$Bool(true),
-		mode: mode,
-		presentation: _user$project$Field$Form
-	};
+var _user$project$Field$active = {
+	field: _user$project$Field$active_field,
+	value: _user$project$Field$Bool(true),
+	mode: _user$project$Field$Read,
+	presentation: _user$project$Field$Form,
+	focused: false
 };
 var _user$project$Field$update = F2(
 	function (msg, model) {
 		var _p2 = msg;
 		switch (_p2.ctor) {
 			case 'ChangeValue':
-				return _elm_lang$core$Native_Utils.update(
-					model,
-					{
-						value: _user$project$Field$String(_p2._0)
-					});
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							value: _user$project$Field$String(_p2._0)
+						}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
 			case 'ChangeValueBool':
-				return _elm_lang$core$Native_Utils.update(
-					model,
-					{
-						value: _user$project$Field$Bool(_p2._0)
-					});
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							value: _user$project$Field$Bool(_p2._0)
+						}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
 			case 'ChangeMode':
-				return _elm_lang$core$Native_Utils.update(
-					model,
-					{mode: _p2._0});
+				var _p4 = _p2._0;
+				var _p3 = _p4;
+				if (_p3.ctor === 'Edit') {
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{mode: _p4, focused: true}),
+						_1: _user$project$Field$focus_field('focusing field')
+					};
+				} else {
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{mode: _p4}),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				}
 			default:
-				return _elm_lang$core$Native_Utils.update(
-					model,
-					{presentation: _p2._0});
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{presentation: _p2._0}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
 		}
 	});
 var _user$project$Field$ChangePresentation = function (a) {
@@ -7850,49 +7900,59 @@ var _user$project$Field$ChangeValueBool = function (a) {
 var _user$project$Field$ChangeValue = function (a) {
 	return {ctor: 'ChangeValue', _0: a};
 };
-var _user$project$Field$field_entry = F2(
-	function (v, field) {
-		var _p3 = v;
-		switch (_p3.ctor) {
-			case 'String':
-				return A2(
-					_elm_lang$html$Html$input,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$type$('text'),
-							_elm_lang$html$Html_Attributes$value(_p3._0),
-							_elm_lang$html$Html_Events$onInput(_user$project$Field$ChangeValue),
-							_elm_lang$html$Html_Attributes$placeholder(field.name)
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-			case 'Bool':
-				return A2(
-					_elm_lang$html$Html$input,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$type$('checkbox'),
-							_elm_lang$html$Html_Attributes$checked(_p3._0),
-							_elm_lang$html$Html_Events$onCheck(_user$project$Field$ChangeValueBool)
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-			default:
-				return A2(
-					_elm_lang$html$Html$input,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$type$('text'),
-							_elm_lang$html$Html_Attributes$value(
-							_elm_lang$core$Basics$toString(_p3._0)),
-							_elm_lang$html$Html_Events$onInput(_user$project$Field$ChangeValue)
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[]));
+var _user$project$Field$field_entry = function (model) {
+	var focused_field = function () {
+		var _p5 = model.focused;
+		if (_p5 === true) {
+			return _elm_lang$html$Html_Attributes$class('focused_field');
+		} else {
+			return _elm_lang$html$Html_Attributes$class('');
 		}
-	});
+	}();
+	var _p6 = model.value;
+	switch (_p6.ctor) {
+		case 'String':
+			return A2(
+				_elm_lang$html$Html$input,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$type$('text'),
+						focused_field,
+						_elm_lang$html$Html_Attributes$value(_p6._0),
+						_elm_lang$html$Html_Events$onInput(_user$project$Field$ChangeValue),
+						_elm_lang$html$Html_Events$onBlur(
+						_user$project$Field$ChangeMode(_user$project$Field$Read)),
+						_elm_lang$html$Html_Attributes$placeholder(model.field.name)
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[]));
+		case 'Bool':
+			return A2(
+				_elm_lang$html$Html$input,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$type$('checkbox'),
+						_elm_lang$html$Html_Attributes$checked(_p6._0),
+						_elm_lang$html$Html_Events$onCheck(_user$project$Field$ChangeValueBool)
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[]));
+		default:
+			return A2(
+				_elm_lang$html$Html$input,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$type$('text'),
+						_elm_lang$html$Html_Attributes$value(
+						_elm_lang$core$Basics$toString(_p6._0)),
+						_elm_lang$html$Html_Events$onInput(_user$project$Field$ChangeValue)
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[]));
+	}
+};
 var _user$project$Field$view = function (model) {
-	var field = A2(_user$project$Field$field_entry, model.value, model.field);
+	var field = _user$project$Field$field_entry(model);
 	var label_style = _elm_lang$html$Html_Attributes$style(
 		_elm_lang$core$Native_List.fromArray(
 			[
@@ -7900,10 +7960,10 @@ var _user$project$Field$view = function (model) {
 				{ctor: '_Tuple2', _0: 'text-align', _1: 'right'},
 				{ctor: '_Tuple2', _0: 'padding', _1: '5px'}
 			]));
-	var _p4 = model.mode;
-	if (_p4.ctor === 'Edit') {
-		var _p5 = model.presentation;
-		switch (_p5.ctor) {
+	var _p7 = model.mode;
+	if (_p7.ctor === 'Edit') {
+		var _p8 = model.presentation;
+		switch (_p8.ctor) {
 			case 'Form':
 				return A2(
 					_elm_lang$html$Html$div,
@@ -7933,8 +7993,8 @@ var _user$project$Field$view = function (model) {
 				return field;
 		}
 	} else {
-		var _p6 = model.presentation;
-		switch (_p6.ctor) {
+		var _p9 = model.presentation;
+		switch (_p9.ctor) {
 			case 'Form':
 				return A2(
 					_elm_lang$html$Html$div,
@@ -7994,89 +8054,88 @@ var _user$project$Row$update = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							fields: A2(
+							field_models: A2(
 								_elm_lang$core$List$map,
 								function (f) {
-									return A2(
+									var _p1 = A2(
 										_user$project$Field$update,
 										_user$project$Field$ChangeMode(_p0._0),
 										f);
+									var mr = _p1._0;
+									var cmd = _p1._1;
+									return mr;
 								},
-								model.fields)
+								model.field_models)
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'ChangePresentation':
-				var _p1 = _p0._0;
+				var _p3 = _p0._0;
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							presentation: _p1,
-							fields: A2(
+							presentation: _p3,
+							field_models: A2(
 								_elm_lang$core$List$map,
 								function (f) {
-									return A2(
+									var _p2 = A2(
 										_user$project$Field$update,
-										_user$project$Field$ChangePresentation(_p1),
+										_user$project$Field$ChangePresentation(_p3),
 										f);
+									var mr = _p2._0;
+									var cmd = _p2._1;
+									return mr;
 								},
-								model.fields)
+								model.field_models)
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			default:
-				var _p3 = _p0._0;
-				var _p2 = A2(_elm_lang$core$Debug$log, 'Edit only this field', _p3);
+				var _p6 = _p0._0;
+				var _p4 = A2(_elm_lang$core$Debug$log, 'Edit only this field', _p6);
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							fields: A2(
+							field_models: A2(
 								_elm_lang$core$List$map,
 								function (f) {
-									return _elm_lang$core$Native_Utils.eq(f.field.name, _p3) ? A2(_user$project$Field$update, _p0._1, f) : f;
+									if (_elm_lang$core$Native_Utils.eq(f.field.name, _p6)) {
+										var _p5 = A2(_user$project$Field$update, _p0._1, f);
+										var mr = _p5._0;
+										var cmd = _p5._1;
+										return mr;
+									} else {
+										return f;
+									}
 								},
-								model.fields)
+								model.field_models)
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 		}
 	});
-var _user$project$Row$selection = {
-	field: {name: 'selected', reference: 'Bool', data_type: 'boolean'},
+var _user$project$Row$selected_field = {name: 'selected', reference: 'Bool', data_type: 'boolean'};
+var _user$project$Row$selected = {
+	field: _user$project$Row$selected_field,
 	value: _user$project$Field$Bool(true),
 	mode: _user$project$Field$Edit,
-	presentation: _user$project$Field$Table
+	presentation: _user$project$Field$Table,
+	focused: false
 };
-var _user$project$Row$row2 = {
-	rowId: 'd5eeef812012',
-	fields: _elm_lang$core$Native_List.fromArray(
-		[
-			_user$project$Field$name(_user$project$Field$Read),
-			_user$project$Field$birthday(_user$project$Field$Read),
-			_user$project$Field$active(_user$project$Field$Read)
-		]),
-	mode: _user$project$Field$Edit,
-	presentation: _user$project$Field$Form
-};
-var _user$project$Row$row1 = {
-	rowId: 'f6a7b9290012',
-	fields: _elm_lang$core$Native_List.fromArray(
-		[
-			_user$project$Field$name(_user$project$Field$Read),
-			_user$project$Field$birthday(_user$project$Field$Read),
-			_user$project$Field$active(_user$project$Field$Read)
-		]),
-	mode: _user$project$Field$Edit,
-	presentation: _user$project$Field$Form
-};
+var _user$project$Row$field_values = _elm_lang$core$Native_List.fromArray(
+	[_user$project$Field$name, _user$project$Field$birthday, _user$project$Field$active]);
+var _user$project$Row$row1 = {rowId: 'f6a7b9290012', field_models: _user$project$Row$field_values, mode: _user$project$Field$Edit, presentation: _user$project$Field$Form};
 var _user$project$Row$init = {ctor: '_Tuple2', _0: _user$project$Row$row1, _1: _elm_lang$core$Platform_Cmd$none};
+var _user$project$Row$row2 = {rowId: 'd5eeef812012', field_models: _user$project$Row$field_values, mode: _user$project$Field$Edit, presentation: _user$project$Field$Form};
+var _user$project$Row$fields = _elm_lang$core$Native_List.fromArray(
+	[_user$project$Field$name_field, _user$project$Field$bday_field, _user$project$Field$active_field]);
 var _user$project$Row$Model = F4(
 	function (a, b, c, d) {
-		return {rowId: a, fields: b, mode: c, presentation: d};
+		return {rowId: a, field_models: b, mode: c, presentation: d};
 	});
 var _user$project$Row$FieldChangeMode = F2(
 	function (a, b) {
@@ -8088,151 +8147,196 @@ var _user$project$Row$ChangePresentation = function (a) {
 var _user$project$Row$ChangeMode = function (a) {
 	return {ctor: 'ChangeMode', _0: a};
 };
-var _user$project$Row$view = function (model) {
-	var fields = function () {
-		var _p4 = model.presentation;
-		switch (_p4.ctor) {
-			case 'Form':
-				return A2(
-					_elm_lang$html$Html$form,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					A2(
-						_elm_lang$core$List$map,
-						function (f) {
-							return A2(
-								_elm_lang$html$Html_App$map,
-								_user$project$Row$FieldChangeMode(f.field.name),
-								_user$project$Field$view(f));
-						},
-						model.fields));
-			case 'Table':
-				var extended_fields = A2(_elm_lang$core$List_ops['::'], _user$project$Row$selection, model.fields);
-				return A2(
-					_elm_lang$html$Html$tr,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					A2(
-						_elm_lang$core$List$map,
-						function (f) {
-							return A2(
-								_elm_lang$html$Html_App$map,
-								_user$project$Row$FieldChangeMode(f.field.name),
-								_user$project$Field$view(f));
-						},
-						extended_fields));
-			default:
-				return A2(
-					_elm_lang$html$Html$div,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$style(
-							_elm_lang$core$Native_List.fromArray(
-								[
-									{ctor: '_Tuple2', _0: 'border', _1: '1px solid green'},
-									{ctor: '_Tuple2', _0: 'width', _1: '200px'}
-								]))
-						]),
-					A2(
-						_elm_lang$core$List$map,
-						function (f) {
-							return A2(
-								_elm_lang$html$Html_App$map,
-								_user$project$Row$FieldChangeMode(f.field.name),
-								_user$project$Field$view(f));
-						},
-						model.fields));
-		}
-	}();
+var _user$project$Row$row_controls = function (model) {
 	return A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
 			[]),
 		_elm_lang$core$Native_List.fromArray(
 			[
+				_elm_lang$html$Html$text(model.rowId),
 				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$Row$ChangeMode(_user$project$Field$Edit))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('Edit')
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$Row$ChangeMode(_user$project$Field$Read))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('Read')
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$Row$ChangePresentation(_user$project$Field$Table))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('Table')
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$Row$ChangePresentation(_user$project$Field$Form))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('Form')
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$Row$ChangePresentation(_user$project$Field$Grid))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('Grid')
+					]))
+			]));
+};
+var _user$project$Row$view = function (model) {
+	var _p7 = model.presentation;
+	switch (_p7.ctor) {
+		case 'Form':
+			return A2(
 				_elm_lang$html$Html$div,
 				_elm_lang$core$Native_List.fromArray(
 					[]),
 				_elm_lang$core$Native_List.fromArray(
 					[
+						_user$project$Row$row_controls(model),
 						A2(
-						_elm_lang$html$Html$button,
+						_elm_lang$html$Html$form,
 						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Events$onClick(
-								_user$project$Row$ChangeMode(_user$project$Field$Edit))
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('Edit')
-							])),
+							[]),
 						A2(
-						_elm_lang$html$Html$button,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Events$onClick(
-								_user$project$Row$ChangeMode(_user$project$Field$Read))
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('Read')
-							])),
+							_elm_lang$core$List$map,
+							function (f) {
+								return A2(
+									_elm_lang$html$Html_App$map,
+									_user$project$Row$FieldChangeMode(f.field.name),
+									_user$project$Field$view(f));
+							},
+							model.field_models))
+					]));
+		case 'Table':
+			var extended_fields = A2(_elm_lang$core$List_ops['::'], _user$project$Row$selected, model.field_models);
+			return A2(
+				_elm_lang$html$Html$tr,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Events$onDoubleClick(
+						_user$project$Row$ChangeMode(_user$project$Field$Edit))
+					]),
+				A2(
+					_elm_lang$core$List$map,
+					function (f) {
+						return A2(
+							_elm_lang$html$Html_App$map,
+							_user$project$Row$FieldChangeMode(f.field.name),
+							_user$project$Field$view(f));
+					},
+					extended_fields));
+		default:
+			return A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_user$project$Row$row_controls(model),
 						A2(
-						_elm_lang$html$Html$button,
+						_elm_lang$html$Html$div,
 						_elm_lang$core$Native_List.fromArray(
 							[
-								_elm_lang$html$Html_Events$onClick(
-								_user$project$Row$ChangePresentation(_user$project$Field$Table))
+								_elm_lang$html$Html_Attributes$style(
+								_elm_lang$core$Native_List.fromArray(
+									[
+										{ctor: '_Tuple2', _0: 'border', _1: '1px solid green'},
+										{ctor: '_Tuple2', _0: 'width', _1: '200px'}
+									]))
 							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('Table')
-							])),
 						A2(
-						_elm_lang$html$Html$button,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Events$onClick(
-								_user$project$Row$ChangePresentation(_user$project$Field$Form))
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('Form')
-							])),
-						A2(
-						_elm_lang$html$Html$button,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Events$onClick(
-								_user$project$Row$ChangePresentation(_user$project$Field$Grid))
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('Grid')
-							]))
-					])),
-				_elm_lang$html$Html$text(model.rowId),
-				fields
-			]));
-};
-var _user$project$Row$main = {
-	main: _elm_lang$html$Html_App$program(
-		{
-			init: _user$project$Row$init,
-			update: _user$project$Row$update,
-			view: _user$project$Row$view,
-			subscriptions: function (_p5) {
-				return _elm_lang$core$Platform_Sub$none;
-			}
-		})
+							_elm_lang$core$List$map,
+							function (f) {
+								return A2(
+									_elm_lang$html$Html_App$map,
+									_user$project$Row$FieldChangeMode(f.field.name),
+									_user$project$Field$view(f));
+							},
+							model.field_models))
+					]));
+	}
 };
 
+var _user$project$Tab$thead_view = function (fields) {
+	return A2(
+		_elm_lang$html$Html$thead,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$tr,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				A2(
+					_elm_lang$core$List$map,
+					function (f) {
+						return A2(
+							_elm_lang$html$Html$th,
+							_elm_lang$core$Native_List.fromArray(
+								[]),
+							_elm_lang$core$Native_List.fromArray(
+								[
+									_elm_lang$html$Html$text(f.name)
+								]));
+					},
+					fields))
+			]));
+};
+var _user$project$Tab$init = {
+	ctor: '_Tuple2',
+	_0: {
+		name: 'Person',
+		rows: _elm_lang$core$Native_List.fromArray(
+			[_user$project$Row$row1, _user$project$Row$row2]),
+		mode: _user$project$Field$Read,
+		fields: A2(_elm_lang$core$List_ops['::'], _user$project$Row$selected_field, _user$project$Row$fields),
+		presentation: _user$project$Field$Form
+	},
+	_1: _elm_lang$core$Platform_Cmd$none
+};
+var _user$project$Tab$suggestions = _elm_lang$core$Native_Platform.incomingPort('suggestions', _elm_lang$core$Json_Decode$string);
+var _user$project$Tab$focus_row = _elm_lang$core$Native_Platform.outgoingPort(
+	'focus_row',
+	function (v) {
+		return v;
+	});
 var _user$project$Tab$update = F2(
 	function (msg, model) {
 		var _p0 = msg;
 		switch (_p0.ctor) {
 			case 'RowChangeMode':
+				var _p2 = _p0._0;
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
@@ -8241,7 +8345,7 @@ var _user$project$Tab$update = F2(
 							rows: A2(
 								_elm_lang$core$List$map,
 								function (r) {
-									if (_elm_lang$core$Native_Utils.eq(r.rowId, _p0._0)) {
+									if (_elm_lang$core$Native_Utils.eq(r.rowId, _p2)) {
 										var _p1 = A2(_user$project$Row$update, _p0._1, r);
 										var mr = _p1._0;
 										var cmd = _p1._1;
@@ -8252,25 +8356,48 @@ var _user$project$Tab$update = F2(
 								},
 								model.rows)
 						}),
-					_1: _elm_lang$core$Platform_Cmd$none
+					_1: _user$project$Tab$focus_row(_p2)
 				};
 			case 'ChangeMode':
-				var _p3 = _p0._0;
+				var _p4 = _p0._0;
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							mode: _p3,
+							mode: _p4,
 							rows: A2(
 								_elm_lang$core$List$map,
 								function (r) {
-									var _p2 = A2(
+									var _p3 = A2(
 										_user$project$Row$update,
-										_user$project$Row$ChangeMode(_p3),
+										_user$project$Row$ChangeMode(_p4),
 										r);
-									var mr = _p2._0;
-									var cmd = _p2._1;
+									var mr = _p3._0;
+									var cmd = _p3._1;
+									return mr;
+								},
+								model.rows)
+						}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			case 'ChangePresentation':
+				var _p6 = _p0._0;
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							presentation: _p6,
+							rows: A2(
+								_elm_lang$core$List$map,
+								function (r) {
+									var _p5 = A2(
+										_user$project$Row$update,
+										_user$project$Row$ChangePresentation(_p6),
+										r);
+									var mr = _p5._0;
+									var cmd = _p5._1;
 									return mr;
 								},
 								model.rows)
@@ -8278,47 +8405,24 @@ var _user$project$Tab$update = F2(
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			default:
-				var _p5 = _p0._0;
+				var _p7 = A2(_elm_lang$core$Debug$log, 'received', _p0._0);
 				return {
 					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							presentation: _p5,
-							rows: A2(
-								_elm_lang$core$List$map,
-								function (r) {
-									var _p4 = A2(
-										_user$project$Row$update,
-										_user$project$Row$ChangePresentation(_p5),
-										r);
-									var mr = _p4._0;
-									var cmd = _p4._1;
-									return mr;
-								},
-								model.rows)
-						}),
-					_1: _elm_lang$core$Platform_Cmd$none
+					_0: model,
+					_1: _user$project$Tab$focus_row('focusing row')
 				};
 		}
 	});
-var _user$project$Tab$init = {
-	ctor: '_Tuple2',
-	_0: {
-		name: 'Person',
-		rows: _elm_lang$core$Native_List.fromArray(
-			[_user$project$Row$row1, _user$project$Row$row2]),
-		mode: _user$project$Field$Read,
-		fields: _elm_lang$core$Native_List.fromArray(
-			[]),
-		presentation: _user$project$Field$Table
-	},
-	_1: _elm_lang$core$Platform_Cmd$none
-};
 var _user$project$Tab$Model = F5(
 	function (a, b, c, d, e) {
 		return {name: a, rows: b, mode: c, fields: d, presentation: e};
 	});
+var _user$project$Tab$ReceivedMsg = function (a) {
+	return {ctor: 'ReceivedMsg', _0: a};
+};
+var _user$project$Tab$subscriptions = function (model) {
+	return _user$project$Tab$suggestions(_user$project$Tab$ReceivedMsg);
+};
 var _user$project$Tab$RowChangeMode = F2(
 	function (a, b) {
 		return {ctor: 'RowChangeMode', _0: a, _1: b};
@@ -8329,58 +8433,7 @@ var _user$project$Tab$ChangePresentation = function (a) {
 var _user$project$Tab$ChangeMode = function (a) {
 	return {ctor: 'ChangeMode', _0: a};
 };
-var _user$project$Tab$view = function (model) {
-	var rows = function () {
-		var _p6 = model.presentation;
-		switch (_p6.ctor) {
-			case 'Form':
-				return A2(
-					_elm_lang$html$Html$div,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('form')
-						]),
-					A2(
-						_elm_lang$core$List$map,
-						function (r) {
-							return A2(
-								_elm_lang$html$Html_App$map,
-								_user$project$Tab$RowChangeMode(r.rowId),
-								_user$project$Row$view(r));
-						},
-						model.rows));
-			case 'Table':
-				return A2(
-					_elm_lang$html$Html$table,
-					_elm_lang$core$Native_List.fromArray(
-						[]),
-					A2(
-						_elm_lang$core$List$map,
-						function (r) {
-							return A2(
-								_elm_lang$html$Html_App$map,
-								_user$project$Tab$RowChangeMode(r.rowId),
-								_user$project$Row$view(r));
-						},
-						model.rows));
-			default:
-				return A2(
-					_elm_lang$html$Html$div,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('grid')
-						]),
-					A2(
-						_elm_lang$core$List$map,
-						function (r) {
-							return A2(
-								_elm_lang$html$Html_App$map,
-								_user$project$Tab$RowChangeMode(r.rowId),
-								_user$project$Row$view(r));
-						},
-						model.rows));
-		}
-	}();
+var _user$project$Tab$tab_controls = function (model) {
 	return A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
@@ -8441,25 +8494,84 @@ var _user$project$Tab$view = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html$text('Grid All rows')
-					])),
-				A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_elm_lang$core$Native_List.fromArray(
-					[rows]))
+					]))
+			]));
+};
+var _user$project$Tab$view = function (model) {
+	var rows = function () {
+		var _p8 = model.presentation;
+		switch (_p8.ctor) {
+			case 'Form':
+				return A2(
+					_elm_lang$html$Html$div,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('form')
+						]),
+					A2(
+						_elm_lang$core$List$map,
+						function (r) {
+							return A2(
+								_elm_lang$html$Html_App$map,
+								_user$project$Tab$RowChangeMode(r.rowId),
+								_user$project$Row$view(r));
+						},
+						model.rows));
+			case 'Table':
+				return A2(
+					_elm_lang$html$Html$table,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('table-striped')
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_user$project$Tab$thead_view(model.fields),
+							A2(
+							_elm_lang$html$Html$tbody,
+							_elm_lang$core$Native_List.fromArray(
+								[]),
+							A2(
+								_elm_lang$core$List$map,
+								function (r) {
+									return A2(
+										_elm_lang$html$Html_App$map,
+										_user$project$Tab$RowChangeMode(r.rowId),
+										_user$project$Row$view(r));
+								},
+								model.rows))
+						]));
+			default:
+				return A2(
+					_elm_lang$html$Html$div,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('grid')
+						]),
+					A2(
+						_elm_lang$core$List$map,
+						function (r) {
+							return A2(
+								_elm_lang$html$Html_App$map,
+								_user$project$Tab$RowChangeMode(r.rowId),
+								_user$project$Row$view(r));
+						},
+						model.rows));
+		}
+	}();
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_user$project$Tab$tab_controls(model),
+				rows
 			]));
 };
 var _user$project$Tab$main = {
 	main: _elm_lang$html$Html_App$program(
-		{
-			init: _user$project$Tab$init,
-			update: _user$project$Tab$update,
-			view: _user$project$Tab$view,
-			subscriptions: function (_p7) {
-				return _elm_lang$core$Platform_Sub$none;
-			}
-		})
+		{init: _user$project$Tab$init, update: _user$project$Tab$update, view: _user$project$Tab$view, subscriptions: _user$project$Tab$subscriptions})
 };
 
 var Elm = {};
