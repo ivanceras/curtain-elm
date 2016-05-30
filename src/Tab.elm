@@ -1,4 +1,4 @@
-port module Tab exposing (..)
+module Tab exposing (..)
 
 import Field
 import Row
@@ -6,7 +6,6 @@ import Html exposing (..)
 import Html.Events exposing (..)
 import Html.Attributes exposing (..)
 import Html.App as App
-import Row
 
 
 type alias Model =
@@ -15,14 +14,15 @@ type alias Model =
     , mode: Field.Mode
     , fields: List Field.Field
     , presentation: Field.Presentation
+    , density: Field.Density
     }
 
 
 type Msg
     = ChangeMode Field.Mode
     | ChangePresentation Field.Presentation
-    | RowChangeMode String Row.Msg
-    | ReceivedMsg String
+    | ChangeDensity Field.Density
+    | UpdateRow String Row.Msg
 
 
 init =
@@ -31,6 +31,7 @@ init =
      ,mode= Field.Read
      ,fields=  Row.selected_field :: Row.fields
      ,presentation= Field.Form
+     ,density = Field.Medium
     },Cmd.none)
 
 view: Model -> Html Msg
@@ -39,7 +40,7 @@ view model =
         Field.Form ->
              div [class "form"]
                 (model.rows
-                    |> List.map (\r -> Row.view r |> App.map (RowChangeMode r.rowId))
+                    |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
 
                 )
 
@@ -48,7 +49,7 @@ view model =
                 [thead_view model.fields
                 ,tbody []
                 (model.rows
-                    |> List.map (\r -> Row.view r |> App.map (RowChangeMode r.rowId))
+                    |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
 
                 )
                 ]
@@ -56,7 +57,7 @@ view model =
         Field.Grid ->
              div [class "grid"]
                 (model.rows
-                    |> List.map (\r -> Row.view r |> App.map (RowChangeMode r.rowId))
+                    |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
 
                 )
     in 
@@ -65,12 +66,15 @@ view model =
                ]
 
 tab_controls model =
-    div [] [button [onClick (ChangeMode Field.Edit)] [text "Edit All rows"]
-           ,button [onClick (ChangeMode Field.Read)] [text "Read All rows"]
-           ,button [onClick (ChangePresentation Field.Table)] [text "Table All rows"]
-           ,button [onClick (ChangePresentation Field.Form)] [text "Form All rows"]
-           ,button [onClick (ChangePresentation Field.Grid)] [text "Grid All rows"]
-            ]
+    div [] [ button [onClick (ChangeMode Field.Edit)] [text "Edit All rows"]
+           , button [onClick (ChangeMode Field.Read)] [text "Read All rows"]
+           , button [onClick (ChangePresentation Field.Table)] [text "Table All rows"]
+           , button [onClick (ChangePresentation Field.Form)] [text "Form All rows"]
+           , button [onClick (ChangePresentation Field.Grid)] [text "Grid All rows"]
+           , button [onClick (ChangeDensity Field.Compact)] [text "Compact All"]
+           , button [onClick (ChangeDensity Field.Medium)] [text "Medium All"]
+           , button [onClick (ChangeDensity Field.Expanded)] [text "Expanded All"]
+           ]
 
 thead_view fields =
     thead []
@@ -82,7 +86,7 @@ thead_view fields =
 update: Msg -> Model -> (Model, Cmd msg)
 update msg model =
     case msg of
-        RowChangeMode rowId row_msg ->
+        UpdateRow rowId row_msg ->
             ( {model | rows = 
                     (List.map (\r -> 
                         if r.rowId == rowId then
@@ -90,7 +94,7 @@ update msg model =
                             in mr
                          else
                             r
-                        ) model.rows) }, focus_row rowId)
+                        ) model.rows) }, Cmd.none)
 
         ChangeMode mode ->
             ( {model | mode = mode
@@ -105,14 +109,17 @@ update msg model =
                      , rows = 
                         (List.map (\r ->
                             let (mr, cmd) = Row.update (Row.ChangePresentation presentation ) r
-                            in
-                            mr
+                            in mr
                         )model.rows)}, Cmd.none)
 
-        ReceivedMsg msg ->
-         let _ = Debug.log "received" msg
-         in
-         (model, focus_row "focusing row")
+        ChangeDensity density ->
+            ( {model | density = density
+                     , rows =
+                        (List.map (\r ->
+                            let (mr, cmd) = Row.update (Row.ChangeDensity density) r
+                            in mr
+                        ) model.rows)}, Cmd.none)
+
 
  
 main = 
@@ -120,13 +127,7 @@ main =
         { init = init
         , update = update
         , view = view
-        , subscriptions = subscriptions
+        , subscriptions = (\_ -> Sub.none)
         }
 
 
-subscriptions model =
-  suggestions ReceivedMsg
-
-port suggestions : (String -> msg) -> Sub msg
-
-port focus_row : String -> Cmd msg

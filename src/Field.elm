@@ -1,12 +1,14 @@
-port module Field exposing (..)
+module Field exposing (..)
 
-import Json.Decode as Decode
+import Json.Decode as Decode exposing ((:=)) 
+import Json.Decode.Extra as Extra exposing ((|:))
 import Html exposing (..)
 import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Date
 import Task
+import String
 
 type alias Model = 
     { field: Field
@@ -14,6 +16,7 @@ type alias Model =
     , mode: Mode
     , presentation: Presentation
     , focused: Bool
+    , density: Density
     }
 
 type Mode = Edit | Read 
@@ -45,44 +48,113 @@ type Density = Compact | Medium | Expanded
 
 type alias Field =
     { name: String
-    , reference: String
+    , column: String
+    , complete_name: String
+    , is_keyfield: Bool
     , data_type: String
+    , reference: String
+    , reference_value: Maybe String
+    , description: Maybe String
+    , info: Maybe String
+    , is_significant: Bool
+    , significance_priority: Maybe Int
+    , include_in_search: Bool
+    , is_mandatory: Bool
+    , seq_no: Int
+    , is_same_line: Bool
+    , is_displayed: Bool
+    , is_readonly: Bool
+    , is_autocomplete: Bool
+    , display_logic: Maybe String
+    , display_length: Maybe Int
+    , display_value: Maybe String
     }
  
-type alias FieldVariant =
-    { variant: String
-    , value: String 
-    }
 
 type Value
     = Bool Bool
     | String String
     | Date Date.Date
 
- 
+
 type Msg
     = ChangeValue String
     | ChangeValueBool Bool
     | ChangeMode Mode 
     | ChangePresentation Presentation
+    | ChangeDensity Density
 
 
 bday_field = 
-    {name = "birthday"
-    ,reference = "Date"
-    ,data_type = "Timestamp with time zone"
+    { name = "Birthday"
+    , column = "birthday"
+    , complete_name = "person.birthday"
+    , is_keyfield = False
+    , data_type = "Timestamp with time zone"
+    , reference = "Date"
+    , reference_value = Nothing
+    , description = Nothing
+    , info = Nothing
+    , is_significant = False
+    , significance_priority = Nothing
+    , include_in_search = False
+    , is_mandatory = False
+    , seq_no = 0
+    , is_same_line = False
+    , is_displayed = True
+    , is_readonly = False
+    , is_autocomplete = False
+    , display_logic = Nothing
+    , display_length = Just 1
+    , display_value = Nothing
     }
 
 name_field = 
-    {name = "name"
-     ,reference = "String"
-     ,data_type = "character varying"
+    { name = "Name"
+    , column= "name"
+    , complete_name = "person.name"
+    , is_keyfield = False
+    , data_type = "character varying"
+    , reference = "String"
+    , reference_value = Nothing
+    , description = Nothing
+    , info = Nothing
+    , is_significant = True
+    , significance_priority = Just 10
+    , include_in_search = False
+    , is_mandatory = True 
+    , seq_no = 0
+    , is_same_line = False
+    , is_displayed = True
+    , is_readonly = False
+    , is_autocomplete = False
+    , display_logic = Nothing
+    , display_length = Just 20
+    , display_value = Nothing
      }
 
 active_field = 
-    {name = "active"
-     ,reference = "Bool"
+    {name = "Active"
+     ,column = "active"
+     ,complete_name = "person.active"
+     ,is_keyfield = False
      ,data_type = "boolean"
+     ,reference = "Bool"
+     ,reference_value = Nothing
+     ,description = Nothing
+     ,info = Nothing
+     ,is_significant = True
+     ,significance_priority = Just 20
+     ,include_in_search = False
+     ,is_mandatory = False
+     ,seq_no = 0
+     ,is_same_line = False
+     ,is_displayed = True
+     ,is_readonly = False
+     ,is_autocomplete = False
+     ,display_logic = Nothing
+     ,display_length = Just 1
+     ,display_value = Nothing
      }
 
 birthday =
@@ -91,6 +163,7 @@ birthday =
     , mode = Read 
     , presentation = Form
     , focused = False
+    , density = Medium 
     }
 
 name =
@@ -99,16 +172,116 @@ name =
     , mode = Read 
     , presentation = Form 
     , focused = False
+    , density = Medium
     }
 
     
 active =
     {field = active_field
-    , value = Bool True 
+    , value = Result.withDefault (Bool False) (Decode.decodeString value_decoder json_active)
     , mode = Read 
     , presentation = Form 
     , focused = False
+    , density = Medium
     }
+
+
+json_desc = """
+        {
+            "variant": "String",
+            "fields": [
+              "Second hand Iphone4s"
+            ]
+          }
+
+"""
+
+json_active = """
+        {
+            "variant": "Bool",
+            "fields": [
+              true
+            ]
+          }
+"""
+
+
+value_decoder: Decode.Decoder Value
+value_decoder = 
+    ("variant" := Decode.string) `Decode.andThen` value_variant
+
+value_variant: String -> Decode.Decoder Value
+value_variant tag =
+    case tag of 
+        "String" ->
+            Decode.map String 
+                (("fields" := Decode.list Decode.string)
+                    `Decode.andThen` first_value "")
+        "Bool" ->
+            Decode.map Bool
+                (("fields" := Decode.list Decode.bool)
+                    `Decode.andThen` first_value False)
+        _ ->
+            Decode.map String 
+                ("fields" := Decode.string)
+
+first_value: a -> List a -> Decode.Decoder a
+first_value default args =
+    Decode.succeed (Maybe.withDefault default (List.head args))
+
+
+name_json_field = """
+
+{
+        "name": "name",
+        "column": "name",
+        "complete_name": "bazaar.product.name",
+        "is_keyfield": false,
+        "data_type": "String",
+        "reference": "character varying",
+        "reference_value": null,
+        "description": "This is @Required it has @DisplayLength(50) - 50 character in display length a @MinLength(1) and @MaxLength(100) - Do not go over 100 characters or else the system will throw a ValueTooLong exception\ncan also be express with @Length(1-100)",
+        "info": null,
+        "is_significant": true,
+        "significance_priority": 10,
+        "include_in_search": false,
+        "is_mandatory": false,
+        "seq_no": 0,
+        "is_same_line": false,
+        "is_displayed": true,
+        "is_readonly": false,
+        "is_autocomplete": false,
+        "display_logic": null,
+        "display_length": null,
+        "default_value": null
+      },
+
+"""
+
+field_decoder: Decode.Decoder Field
+field_decoder = 
+   Decode.succeed Field
+         |: ("name" := Decode.string)
+         |: ("column" :=  Decode.string)
+         |: ("complete_name" := Decode.string)
+         |: ("is_keyfield" := Decode.bool)
+         |: ("data_type" := Decode.string)
+         |: ("reference" := Decode.string)
+         |: (Decode.maybe ("reference_value" := Decode.string))
+         |: (Decode.maybe ("description" := Decode.string))
+         |: (Decode.maybe ("info" := Decode.string))
+         |: ("is_significant" := Decode.bool)
+         |: (Decode.maybe ("significance_priority" := Decode.int))
+         |: ("include_in_search" := Decode.bool)
+         |: ("is_mandatory" := Decode.bool)
+         |: ("seq_no" := Decode.int)
+         |: ("is_same_line" := Decode.bool)
+         |: ("is_displayed" := Decode.bool)
+         |: ("is_readonly" := Decode.bool)
+         |: ("is_autocomplete" := Decode.bool)
+         |: (Decode.maybe ("display_logic" := Decode.string))
+         |: (Decode.maybe ("display_length" := Decode.int))
+         |: (Decode.maybe ("default_value" := Decode.string))
 
 view : Model -> Html Msg
 view model = 
@@ -117,36 +290,71 @@ view model =
                              , ("padding", "5px")
                              ]
          field = field_entry model
+         label_check = if is_mandatory_ok model then
+                style []
+             else
+                style [("color", "red")]
+         container_style = if is_mandatory_ok model then
+                style []
+             else
+                style [("border", "1px solid red")]
+
      in
      case model.mode of
         Edit ->
             case model.presentation of
                 Form ->
                     div []
-                        [label [label_style] [text (model.field.name ++ ": ")]
+                        [label [label_check, label_style] [text (model.field.name ++ ": ")]
                         ,field
                         ]
                 Table ->
-                    td [] [field
-                          ]
+                    td [] [field]
                 Grid ->
                     field
         Read ->
             case model.presentation of
                 Form ->
                     div [onClick (ChangeMode Edit)]
-                        [label [label_style] [text (model.field.name ++ ":")]
+                        [label [label_check, label_style] [text (model.field.name ++ ":")]
                         ,(field_read model.value model.field)
                         ]
                 Table ->
-                    td [onClick (ChangeMode Edit)]
+                    td [container_style 
+                       , onClick (ChangeMode Edit)]
                        [(field_read model.value model.field)
                        ]
                 Grid ->
-                    div [onClick (ChangeMode Edit)] 
-                        [(field_read model.value model.field)
-                        ]
- 
+                    case model.density of
+                        Compact -> -- the most significant field without bold
+                            if model.field.is_significant then
+                                div [onClick (ChangeMode Edit)] 
+                                    [(field_read model.value model.field)
+                                    ]
+                            else
+                                div[] []
+                        Medium -> --only significant fields
+                            if model.field.is_significant then
+                                let text_style = style [("font-weight", "bold")]
+                                in
+                                div [ text_style
+                                    , onClick (ChangeMode Edit)] 
+                                    [(field_read model.value model.field)
+                                    ]
+                            else
+                                div[] []
+
+                        Expanded -> --all fields are displayed
+                            let text_style = if model.field.is_significant then
+                                    style [("font-weight", "bold")]
+                                else
+                                    style []
+                            in
+                            div [ text_style
+                                , onClick (ChangeMode Edit)] 
+                                [(field_read model.value model.field)
+                                ]
+
 update: Msg -> Model -> (Model, Cmd msg)
 update msg model =
     case msg of
@@ -157,29 +365,60 @@ update msg model =
         ChangeMode mode ->
             case mode of
                 Edit ->
-                    ({model | mode = mode, focused = True }, focus_field "focusing field")
+                    ({model | mode = mode, focused = True }, Cmd.none)
                 Read ->
                     ({model | mode = mode }, Cmd.none)
 
         ChangePresentation presentation ->
             ({model | presentation = presentation}, Cmd.none )
+        ChangeDensity density ->
+            ({model | density = density}, Cmd.none)
 
 
+is_empty_value: Value -> Bool
+is_empty_value value =
+    case value of
+        String v ->
+            String.isEmpty v
+        Bool b ->
+            False
+        _ ->
+            False 
 
+is_mandatory_ok model =
+     if is_empty_value model.value && model.field.is_mandatory then
+        False
+     else
+        True
 
 field_entry: Model -> Html Msg
 field_entry model =
     let focused_field = case model.focused of
-        True -> class "focused_field"
-        False -> class ""
+            True -> class "focused_field"
+            False -> class ""
+        
+        field_check = if is_mandatory_ok model then
+            style []
+        else
+            style [("border", "1px solid red")]
     in
     case model.value of
         String s ->
-            input [type' "text", focused_field, value s, onInput ChangeValue, onBlur (ChangeMode Read), placeholder model.field.name] []
+            input [ type' "text"
+                  , field_check
+                  , focused_field
+                  , value s
+                  , onInput ChangeValue
+                  , placeholder model.field.name] []
         Bool b -> 
-            input [type' "checkbox", checked b, onCheck ChangeValueBool] []
+            input [ type' "checkbox"
+                  , field_check
+                  , checked b
+                  , onCheck ChangeValueBool] []
         Date d -> 
-            input [type' "text", value (toString d), onInput ChangeValue] []
+            input [ type' "text"
+                  , value (toString d)
+                  , onInput ChangeValue] []
 
 
 field_read: Value -> Field -> Html Msg 
@@ -196,4 +435,3 @@ field_read v field =
         Date d ->
             text (toString d)
             
-port focus_field: String -> Cmd msg 
