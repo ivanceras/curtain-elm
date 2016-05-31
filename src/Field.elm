@@ -30,8 +30,10 @@ type Mode = Edit | Read
     Grid - displays the large dataset in a grid like manner
             like icons for apps. This is useful when the screen area is very tight
          - Each record is crumpled into a uniform small box
+    List - displays the record in a listbox
+         - used when refered by some other fields as a dropdown
 -}
-type Presentation = Table | Form | Grid
+type Presentation = Table | Form | Grid | List
 
 
 {- | Density - a layman's term to describe how compact the data set to be presented
@@ -289,7 +291,7 @@ view model =
                              , ("text-align", "right")
                              , ("padding", "5px")
                              ]
-         field = field_entry model
+         edit_field = field_entry model
          label_check = if is_mandatory_ok model then
                 style []
              else
@@ -306,30 +308,32 @@ view model =
                 Form ->
                     div []
                         [label [label_check, label_style] [text (model.field.name ++ ": ")]
-                        ,field
+                        ,edit_field
                         ]
                 Table ->
-                    td [] [field]
+                    td [] [edit_field]
                 Grid ->
-                    field
+                    edit_field
+                List -> 
+                    field_read_list model
         Read ->
             case model.presentation of
                 Form ->
                     div [onClick (ChangeMode Edit)]
                         [label [label_check, label_style] [text (model.field.name ++ ":")]
-                        ,(field_read model.value model.field)
+                        ,(field_read model)
                         ]
                 Table ->
                     td [container_style 
                        , onClick (ChangeMode Edit)]
-                       [(field_read model.value model.field)
+                       [(field_read model)
                        ]
                 Grid ->
                     case model.density of
                         Compact -> -- the most significant field without bold
                             if model.field.is_significant then
                                 div [onClick (ChangeMode Edit)] 
-                                    [(field_read model.value model.field)
+                                    [(field_read model)
                                     ]
                             else
                                 div[] []
@@ -339,7 +343,7 @@ view model =
                                 in
                                 div [ text_style
                                     , onClick (ChangeMode Edit)] 
-                                    [(field_read model.value model.field)
+                                    [(field_read model)
                                     ]
                             else
                                 div[] []
@@ -352,8 +356,10 @@ view model =
                             in
                             div [ text_style
                                 , onClick (ChangeMode Edit)] 
-                                [(field_read model.value model.field)
+                                [(field_read model)
                                 ]
+                List ->
+                        field_read_list model
 
 update: Msg -> Model -> (Model, Cmd msg)
 update msg model =
@@ -421,9 +427,9 @@ field_entry model =
                   , onInput ChangeValue] []
 
 
-field_read: Value -> Field -> Html Msg 
-field_read v field =
-    case v of
+field_read: Model -> Html Msg 
+field_read model =
+    case model.value of
         String s -> 
             text s
         Bool b ->
@@ -435,3 +441,16 @@ field_read v field =
         Date d ->
             text (toString d)
             
+
+field_read_list: Model -> Html Msg
+field_read_list model = 
+    case model.value of
+        String s ->
+            text (" "++s)
+
+        Bool b ->
+            case b of
+                True -> text " true"
+                False -> text " false"
+        Date d ->
+            text (" "++(toString d))

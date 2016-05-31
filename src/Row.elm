@@ -87,42 +87,36 @@ init =
 
 view: Model -> Html Msg
 view model = 
+    let field_models = filter_field_models_with_density model
+    in
     case model.presentation of
         Field.Form ->
             div []
                 [ row_controls model
                 , Html.form [] 
-                  (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| model.field_models)
+                  (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| field_models)
                ]
         Field.Table ->
-            let extended_fields = selected :: model.field_models
+            let extended_fields = selected :: field_models
             in
             tr [onDoubleClick (ChangeMode Field.Edit)] 
                (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| extended_fields)
         Field.Grid ->
-            let most_sig = most_significant model.field_models
-                _ = Debug.log "most significant" most_sig
-            in
             div []
                 [ row_controls model
                 , div [style [("border", "1px solid green"), ("width", "200px")]] 
                   (List.map (\f -> 
-                        case model.density of
-                            Field.Compact ->
-                                case most_sig of
-                                    Just most_sig ->
-                                        if most_sig  == f then
-                                            App.map (UpdateField f.field.name) <| Field.view f 
-                                        else
-                                            div [] []
-
-                                    Nothing ->
-                                        div [] []
-                            _ ->
-                                App.map (UpdateField f.field.name) <| Field.view f 
-                     ) <| model.field_models
+                        App.map (UpdateField f.field.name) <| Field.view f 
+                     ) <| field_models
                   )
                ]
+
+        Field.List ->
+            option []
+              (List.map (\f -> 
+                    App.map (UpdateField f.field.name) <| Field.view f 
+               ) <| field_models
+              )
 
 row_controls model =  
     div [] 
@@ -132,6 +126,7 @@ row_controls model =
       ,button [onClick (ChangePresentation Field.Table)] [text "Table"]
       ,button [onClick (ChangePresentation Field.Form)] [text "Form"]
       ,button [onClick (ChangePresentation Field.Grid)] [text "Grid"]
+      ,button [onClick (ChangePresentation Field.List)] [text "List"]
       ,button [onClick (ChangeDensity Field.Compact)] [text "Compact"]
       ,button [onClick (ChangeDensity Field.Medium)] [text "Medium"]
       ,button [onClick (ChangeDensity Field.Expanded)] [text "Expanded"]
@@ -185,9 +180,14 @@ update msg model =
                   ) }, Cmd.none)
 
 
+significant_fields: List Field.Model -> List Field.Model
+significant_fields field_models =
+    List.filter (\f -> f.field.is_significant ) field_models 
+    
+
 most_significant: List Field.Model -> Maybe Field.Model
 most_significant field_models =
-    let significants = List.filter (\f -> f.field.is_significant ) field_models 
+    let significants = significant_fields field_models
         sorted = List.sortWith (\a b -> case a.field.significance_priority of
                                 Just a ->
                                     case b.field.significance_priority of
@@ -202,3 +202,40 @@ most_significant field_models =
                      ) significants
     in List.head sorted
     
+
+to_list: Maybe a -> List a
+to_list arg =
+    case arg of
+        Just a -> [a]
+        Nothing -> []
+
+
+filter_field_models_with_density: Model -> List Field.Model
+filter_field_models_with_density model =
+    case model.density of
+        Field.Compact -> --only the most significant
+            to_list (most_significant model.field_models)
+        Field.Medium -> -- all significant fields
+            significant_fields model.field_models
+        Field.Expanded -> model.field_models -- all fields
+ 
+
+filter_fields_with_density: List Field.Field -> Field.Density -> List Field.Field
+filter_fields_with_density fields density =
+    let significant_fields = List.filter (\f -> f.is_significant) fields
+        sorted = List.sortWith( \a b -> case a.significance_priority of 
+            Just a ->
+                case b.significance_priority of
+                    Just b -> compare a b
+                    Nothing -> EQ
+            Nothing -> EQ
+        ) significant_fields
+        most_sig = to_list (List.head sorted)
+    in                    
+    case density of
+        Field.Compact -> most_sig
+        Field.Medium -> significant_fields
+        Field.Expanded -> fields
+            
+            
+            

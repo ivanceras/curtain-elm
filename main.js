@@ -7945,53 +7945,73 @@ var _elm_lang$html$Html_Events$Options = F2(
 		return {stopPropagation: a, preventDefault: b};
 	});
 
-var _user$project$Field$field_read = F2(
-	function (v, field) {
-		var _p0 = v;
-		switch (_p0.ctor) {
-			case 'String':
-				return _elm_lang$html$Html$text(_p0._0);
-			case 'Bool':
-				var _p1 = _p0._0;
-				if (_p1 === true) {
-					return A2(
-						_elm_lang$html$Html$span,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$class('icon icon-check text-center'),
-								_elm_lang$html$Html_Attributes$style(
-								_elm_lang$core$Native_List.fromArray(
-									[
-										{ctor: '_Tuple2', _0: 'color', _1: 'green'}
-									]))
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[]));
-				} else {
-					return A2(
-						_elm_lang$html$Html$span,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$class('icon icon-cancel text-center'),
-								_elm_lang$html$Html_Attributes$style(
-								_elm_lang$core$Native_List.fromArray(
-									[
-										{ctor: '_Tuple2', _0: 'color', _1: 'red'}
-									]))
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[]));
-				}
-			default:
-				return _elm_lang$html$Html$text(
-					_elm_lang$core$Basics$toString(_p0._0));
-		}
-	});
-var _user$project$Field$is_empty_value = function (value) {
-	var _p2 = value;
+var _user$project$Field$field_read_list = function (model) {
+	var _p0 = model.value;
+	switch (_p0.ctor) {
+		case 'String':
+			return _elm_lang$html$Html$text(
+				A2(_elm_lang$core$Basics_ops['++'], ' ', _p0._0));
+		case 'Bool':
+			var _p1 = _p0._0;
+			if (_p1 === true) {
+				return _elm_lang$html$Html$text(' true');
+			} else {
+				return _elm_lang$html$Html$text(' false');
+			}
+		default:
+			return _elm_lang$html$Html$text(
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					' ',
+					_elm_lang$core$Basics$toString(_p0._0)));
+	}
+};
+var _user$project$Field$field_read = function (model) {
+	var _p2 = model.value;
 	switch (_p2.ctor) {
 		case 'String':
-			return _elm_lang$core$String$isEmpty(_p2._0);
+			return _elm_lang$html$Html$text(_p2._0);
+		case 'Bool':
+			var _p3 = _p2._0;
+			if (_p3 === true) {
+				return A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('icon icon-check text-center'),
+							_elm_lang$html$Html_Attributes$style(
+							_elm_lang$core$Native_List.fromArray(
+								[
+									{ctor: '_Tuple2', _0: 'color', _1: 'green'}
+								]))
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			} else {
+				return A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('icon icon-cancel text-center'),
+							_elm_lang$html$Html_Attributes$style(
+							_elm_lang$core$Native_List.fromArray(
+								[
+									{ctor: '_Tuple2', _0: 'color', _1: 'red'}
+								]))
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			}
+		default:
+			return _elm_lang$html$Html$text(
+				_elm_lang$core$Basics$toString(_p2._0));
+	}
+};
+var _user$project$Field$is_empty_value = function (value) {
+	var _p4 = value;
+	switch (_p4.ctor) {
+		case 'String':
+			return _elm_lang$core$String$isEmpty(_p4._0);
 		case 'Bool':
 			return false;
 		default:
@@ -8201,6 +8221,7 @@ var _user$project$Field$field_decoder = A2(
 		A2(_elm_lang$core$Json_Decode_ops[':='], 'default_value', _elm_lang$core$Json_Decode$string)));
 var _user$project$Field$Read = {ctor: 'Read'};
 var _user$project$Field$Edit = {ctor: 'Edit'};
+var _user$project$Field$List = {ctor: 'List'};
 var _user$project$Field$Grid = {ctor: 'Grid'};
 var _user$project$Field$Form = {ctor: 'Form'};
 var _user$project$Field$Table = {ctor: 'Table'};
@@ -8233,8 +8254,8 @@ var _user$project$Field$Bool = function (a) {
 	return {ctor: 'Bool', _0: a};
 };
 var _user$project$Field$value_variant = function (tag) {
-	var _p3 = tag;
-	switch (_p3) {
+	var _p5 = tag;
+	switch (_p5) {
 		case 'String':
 			return A2(
 				_elm_lang$core$Json_Decode$map,
@@ -8281,15 +8302,15 @@ var _user$project$Field$active = {
 };
 var _user$project$Field$update = F2(
 	function (msg, model) {
-		var _p4 = msg;
-		switch (_p4.ctor) {
+		var _p6 = msg;
+		switch (_p6.ctor) {
 			case 'ChangeValue':
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							value: _user$project$Field$String(_p4._0)
+							value: _user$project$Field$String(_p6._0)
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
@@ -8299,19 +8320,19 @@ var _user$project$Field$update = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							value: _user$project$Field$Bool(_p4._0)
+							value: _user$project$Field$Bool(_p6._0)
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'ChangeMode':
-				var _p6 = _p4._0;
-				var _p5 = _p6;
-				if (_p5.ctor === 'Edit') {
+				var _p8 = _p6._0;
+				var _p7 = _p8;
+				if (_p7.ctor === 'Edit') {
 					return {
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
-							{mode: _p6, focused: true}),
+							{mode: _p8, focused: true}),
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
 				} else {
@@ -8319,7 +8340,7 @@ var _user$project$Field$update = F2(
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
-							{mode: _p6}),
+							{mode: _p8}),
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
 				}
@@ -8328,7 +8349,7 @@ var _user$project$Field$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{presentation: _p4._0}),
+						{presentation: _p6._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			default:
@@ -8336,7 +8357,7 @@ var _user$project$Field$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{density: _p4._0}),
+						{density: _p6._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 		}
@@ -8365,15 +8386,15 @@ var _user$project$Field$field_entry = function (model) {
 				{ctor: '_Tuple2', _0: 'border', _1: '1px solid red'}
 			]));
 	var focused_field = function () {
-		var _p7 = model.focused;
-		if (_p7 === true) {
+		var _p9 = model.focused;
+		if (_p9 === true) {
 			return _elm_lang$html$Html_Attributes$class('focused_field');
 		} else {
 			return _elm_lang$html$Html_Attributes$class('');
 		}
 	}();
-	var _p8 = model.value;
-	switch (_p8.ctor) {
+	var _p10 = model.value;
+	switch (_p10.ctor) {
 		case 'String':
 			return A2(
 				_elm_lang$html$Html$input,
@@ -8382,7 +8403,7 @@ var _user$project$Field$field_entry = function (model) {
 						_elm_lang$html$Html_Attributes$type$('text'),
 						field_check,
 						focused_field,
-						_elm_lang$html$Html_Attributes$value(_p8._0),
+						_elm_lang$html$Html_Attributes$value(_p10._0),
 						_elm_lang$html$Html_Events$onInput(_user$project$Field$ChangeValue),
 						_elm_lang$html$Html_Attributes$placeholder(model.field.name)
 					]),
@@ -8395,7 +8416,7 @@ var _user$project$Field$field_entry = function (model) {
 					[
 						_elm_lang$html$Html_Attributes$type$('checkbox'),
 						field_check,
-						_elm_lang$html$Html_Attributes$checked(_p8._0),
+						_elm_lang$html$Html_Attributes$checked(_p10._0),
 						_elm_lang$html$Html_Events$onCheck(_user$project$Field$ChangeValueBool)
 					]),
 				_elm_lang$core$Native_List.fromArray(
@@ -8407,7 +8428,7 @@ var _user$project$Field$field_entry = function (model) {
 					[
 						_elm_lang$html$Html_Attributes$type$('text'),
 						_elm_lang$html$Html_Attributes$value(
-						_elm_lang$core$Basics$toString(_p8._0)),
+						_elm_lang$core$Basics$toString(_p10._0)),
 						_elm_lang$html$Html_Events$onInput(_user$project$Field$ChangeValue)
 					]),
 				_elm_lang$core$Native_List.fromArray(
@@ -8429,7 +8450,7 @@ var _user$project$Field$view = function (model) {
 			[
 				{ctor: '_Tuple2', _0: 'color', _1: 'red'}
 			]));
-	var field = _user$project$Field$field_entry(model);
+	var edit_field = _user$project$Field$field_entry(model);
 	var label_style = _elm_lang$html$Html_Attributes$style(
 		_elm_lang$core$Native_List.fromArray(
 			[
@@ -8437,10 +8458,10 @@ var _user$project$Field$view = function (model) {
 				{ctor: '_Tuple2', _0: 'text-align', _1: 'right'},
 				{ctor: '_Tuple2', _0: 'padding', _1: '5px'}
 			]));
-	var _p9 = model.mode;
-	if (_p9.ctor === 'Edit') {
-		var _p10 = model.presentation;
-		switch (_p10.ctor) {
+	var _p11 = model.mode;
+	if (_p11.ctor === 'Edit') {
+		var _p12 = model.presentation;
+		switch (_p12.ctor) {
 			case 'Form':
 				return A2(
 					_elm_lang$html$Html$div,
@@ -8457,7 +8478,7 @@ var _user$project$Field$view = function (model) {
 									_elm_lang$html$Html$text(
 									A2(_elm_lang$core$Basics_ops['++'], model.field.name, ': '))
 								])),
-							field
+							edit_field
 						]));
 			case 'Table':
 				return A2(
@@ -8465,13 +8486,15 @@ var _user$project$Field$view = function (model) {
 					_elm_lang$core$Native_List.fromArray(
 						[]),
 					_elm_lang$core$Native_List.fromArray(
-						[field]));
+						[edit_field]));
+			case 'Grid':
+				return edit_field;
 			default:
-				return field;
+				return _user$project$Field$field_read_list(model);
 		}
 	} else {
-		var _p11 = model.presentation;
-		switch (_p11.ctor) {
+		var _p13 = model.presentation;
+		switch (_p13.ctor) {
 			case 'Form':
 				return A2(
 					_elm_lang$html$Html$div,
@@ -8491,7 +8514,7 @@ var _user$project$Field$view = function (model) {
 									_elm_lang$html$Html$text(
 									A2(_elm_lang$core$Basics_ops['++'], model.field.name, ':'))
 								])),
-							A2(_user$project$Field$field_read, model.value, model.field)
+							_user$project$Field$field_read(model)
 						]));
 			case 'Table':
 				return A2(
@@ -8504,11 +8527,11 @@ var _user$project$Field$view = function (model) {
 						]),
 					_elm_lang$core$Native_List.fromArray(
 						[
-							A2(_user$project$Field$field_read, model.value, model.field)
+							_user$project$Field$field_read(model)
 						]));
-			default:
-				var _p12 = model.density;
-				switch (_p12.ctor) {
+			case 'Grid':
+				var _p14 = model.density;
+				switch (_p14.ctor) {
 					case 'Compact':
 						return model.field.is_significant ? A2(
 							_elm_lang$html$Html$div,
@@ -8519,7 +8542,7 @@ var _user$project$Field$view = function (model) {
 								]),
 							_elm_lang$core$Native_List.fromArray(
 								[
-									A2(_user$project$Field$field_read, model.value, model.field)
+									_user$project$Field$field_read(model)
 								])) : A2(
 							_elm_lang$html$Html$div,
 							_elm_lang$core$Native_List.fromArray(
@@ -8543,7 +8566,7 @@ var _user$project$Field$view = function (model) {
 									]),
 								_elm_lang$core$Native_List.fromArray(
 									[
-										A2(_user$project$Field$field_read, model.value, model.field)
+										_user$project$Field$field_read(model)
 									]));
 						} else {
 							return A2(
@@ -8571,29 +8594,81 @@ var _user$project$Field$view = function (model) {
 								]),
 							_elm_lang$core$Native_List.fromArray(
 								[
-									A2(_user$project$Field$field_read, model.value, model.field)
+									_user$project$Field$field_read(model)
 								]));
 				}
+			default:
+				return _user$project$Field$field_read_list(model);
 		}
 	}
 };
 
-var _user$project$Row$most_significant = function (field_models) {
-	var significants = A2(
+var _user$project$Row$to_list = function (arg) {
+	var _p0 = arg;
+	if (_p0.ctor === 'Just') {
+		return _elm_lang$core$Native_List.fromArray(
+			[_p0._0]);
+	} else {
+		return _elm_lang$core$Native_List.fromArray(
+			[]);
+	}
+};
+var _user$project$Row$filter_fields_with_density = F2(
+	function (fields, density) {
+		var significant_fields = A2(
+			_elm_lang$core$List$filter,
+			function (f) {
+				return f.is_significant;
+			},
+			fields);
+		var sorted = A2(
+			_elm_lang$core$List$sortWith,
+			F2(
+				function (a, b) {
+					var _p1 = a.significance_priority;
+					if (_p1.ctor === 'Just') {
+						var _p2 = b.significance_priority;
+						if (_p2.ctor === 'Just') {
+							return A2(_elm_lang$core$Basics$compare, _p1._0, _p2._0);
+						} else {
+							return _elm_lang$core$Basics$EQ;
+						}
+					} else {
+						return _elm_lang$core$Basics$EQ;
+					}
+				}),
+			significant_fields);
+		var most_sig = _user$project$Row$to_list(
+			_elm_lang$core$List$head(sorted));
+		var _p3 = density;
+		switch (_p3.ctor) {
+			case 'Compact':
+				return most_sig;
+			case 'Medium':
+				return significant_fields;
+			default:
+				return fields;
+		}
+	});
+var _user$project$Row$significant_fields = function (field_models) {
+	return A2(
 		_elm_lang$core$List$filter,
 		function (f) {
 			return f.field.is_significant;
 		},
 		field_models);
+};
+var _user$project$Row$most_significant = function (field_models) {
+	var significants = _user$project$Row$significant_fields(field_models);
 	var sorted = A2(
 		_elm_lang$core$List$sortWith,
 		F2(
 			function (a, b) {
-				var _p0 = a.field.significance_priority;
-				if (_p0.ctor === 'Just') {
-					var _p1 = b.field.significance_priority;
-					if (_p1.ctor === 'Just') {
-						return A2(_elm_lang$core$Basics$compare, _p0._0, _p1._0);
+				var _p4 = a.field.significance_priority;
+				if (_p4.ctor === 'Just') {
+					var _p5 = b.field.significance_priority;
+					if (_p5.ctor === 'Just') {
+						return A2(_elm_lang$core$Basics$compare, _p4._0, _p5._0);
 					} else {
 						return _elm_lang$core$Basics$EQ;
 					}
@@ -8604,10 +8679,22 @@ var _user$project$Row$most_significant = function (field_models) {
 		significants);
 	return _elm_lang$core$List$head(sorted);
 };
+var _user$project$Row$filter_field_models_with_density = function (model) {
+	var _p6 = model.density;
+	switch (_p6.ctor) {
+		case 'Compact':
+			return _user$project$Row$to_list(
+				_user$project$Row$most_significant(model.field_models));
+		case 'Medium':
+			return _user$project$Row$significant_fields(model.field_models);
+		default:
+			return model.field_models;
+	}
+};
 var _user$project$Row$update = F2(
 	function (msg, model) {
-		var _p2 = msg;
-		switch (_p2.ctor) {
+		var _p7 = msg;
+		switch (_p7.ctor) {
 			case 'ChangeMode':
 				return {
 					ctor: '_Tuple2',
@@ -8617,12 +8704,12 @@ var _user$project$Row$update = F2(
 							field_models: A2(
 								_elm_lang$core$List$map,
 								function (f) {
-									var _p3 = A2(
+									var _p8 = A2(
 										_user$project$Field$update,
-										_user$project$Field$ChangeMode(_p2._0),
+										_user$project$Field$ChangeMode(_p7._0),
 										f);
-									var mr = _p3._0;
-									var cmd = _p3._1;
+									var mr = _p8._0;
+									var cmd = _p8._1;
 									return mr;
 								},
 								model.field_models)
@@ -8630,22 +8717,22 @@ var _user$project$Row$update = F2(
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'ChangePresentation':
-				var _p5 = _p2._0;
+				var _p10 = _p7._0;
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							presentation: _p5,
+							presentation: _p10,
 							field_models: A2(
 								_elm_lang$core$List$map,
 								function (f) {
-									var _p4 = A2(
+									var _p9 = A2(
 										_user$project$Field$update,
-										_user$project$Field$ChangePresentation(_p5),
+										_user$project$Field$ChangePresentation(_p10),
 										f);
-									var mr = _p4._0;
-									var cmd = _p4._1;
+									var mr = _p9._0;
+									var cmd = _p9._1;
 									return mr;
 								},
 								model.field_models)
@@ -8653,22 +8740,22 @@ var _user$project$Row$update = F2(
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'ChangeDensity':
-				var _p7 = _p2._0;
+				var _p12 = _p7._0;
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							density: _p7,
+							density: _p12,
 							field_models: A2(
 								_elm_lang$core$List$map,
 								function (f) {
-									var _p6 = A2(
+									var _p11 = A2(
 										_user$project$Field$update,
-										_user$project$Field$ChangeDensity(_p7),
+										_user$project$Field$ChangeDensity(_p12),
 										f);
-									var mr = _p6._0;
-									var cmd = _p6._1;
+									var mr = _p11._0;
+									var cmd = _p11._1;
 									return mr;
 								},
 								model.field_models)
@@ -8676,8 +8763,8 @@ var _user$project$Row$update = F2(
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			default:
-				var _p10 = _p2._0;
-				var _p8 = A2(_elm_lang$core$Debug$log, 'Edit only this field', _p10);
+				var _p15 = _p7._0;
+				var _p13 = A2(_elm_lang$core$Debug$log, 'Edit only this field', _p15);
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
@@ -8686,10 +8773,10 @@ var _user$project$Row$update = F2(
 							field_models: A2(
 								_elm_lang$core$List$map,
 								function (f) {
-									if (_elm_lang$core$Native_Utils.eq(f.field.column, _p10)) {
-										var _p9 = A2(_user$project$Field$update, _p2._1, f);
-										var mr = _p9._0;
-										var cmd = _p9._1;
+									if (_elm_lang$core$Native_Utils.eq(f.field.column, _p15)) {
+										var _p14 = A2(_user$project$Field$update, _p7._1, f);
+										var mr = _p14._0;
+										var cmd = _p14._1;
 										return mr;
 									} else {
 										return f;
@@ -8824,6 +8911,17 @@ var _user$project$Row$row_controls = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Events$onClick(
+						_user$project$Row$ChangePresentation(_user$project$Field$List))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('List')
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Events$onClick(
 						_user$project$Row$ChangeDensity(_user$project$Field$Compact))
 					]),
 				_elm_lang$core$Native_List.fromArray(
@@ -8855,8 +8953,9 @@ var _user$project$Row$row_controls = function (model) {
 			]));
 };
 var _user$project$Row$view = function (model) {
-	var _p11 = model.presentation;
-	switch (_p11.ctor) {
+	var field_models = _user$project$Row$filter_field_models_with_density(model);
+	var _p16 = model.presentation;
+	switch (_p16.ctor) {
 		case 'Form':
 			return A2(
 				_elm_lang$html$Html$div,
@@ -8877,10 +8976,10 @@ var _user$project$Row$view = function (model) {
 									_user$project$Row$UpdateField(f.field.column),
 									_user$project$Field$view(f));
 							},
-							model.field_models))
+							field_models))
 					]));
 		case 'Table':
-			var extended_fields = A2(_elm_lang$core$List_ops['::'], _user$project$Row$selected, model.field_models);
+			var extended_fields = A2(_elm_lang$core$List_ops['::'], _user$project$Row$selected, field_models);
 			return A2(
 				_elm_lang$html$Html$tr,
 				_elm_lang$core$Native_List.fromArray(
@@ -8897,9 +8996,7 @@ var _user$project$Row$view = function (model) {
 							_user$project$Field$view(f));
 					},
 					extended_fields));
-		default:
-			var most_sig = _user$project$Row$most_significant(model.field_models);
-			var _p12 = A2(_elm_lang$core$Debug$log, 'most significant', most_sig);
+		case 'Grid':
 			return A2(
 				_elm_lang$html$Html$div,
 				_elm_lang$core$Native_List.fromArray(
@@ -8921,36 +9018,27 @@ var _user$project$Row$view = function (model) {
 						A2(
 							_elm_lang$core$List$map,
 							function (f) {
-								var _p13 = model.density;
-								if (_p13.ctor === 'Compact') {
-									var _p14 = most_sig;
-									if (_p14.ctor === 'Just') {
-										return _elm_lang$core$Native_Utils.eq(_p14._0, f) ? A2(
-											_elm_lang$html$Html_App$map,
-											_user$project$Row$UpdateField(f.field.name),
-											_user$project$Field$view(f)) : A2(
-											_elm_lang$html$Html$div,
-											_elm_lang$core$Native_List.fromArray(
-												[]),
-											_elm_lang$core$Native_List.fromArray(
-												[]));
-									} else {
-										return A2(
-											_elm_lang$html$Html$div,
-											_elm_lang$core$Native_List.fromArray(
-												[]),
-											_elm_lang$core$Native_List.fromArray(
-												[]));
-									}
-								} else {
-									return A2(
-										_elm_lang$html$Html_App$map,
-										_user$project$Row$UpdateField(f.field.name),
-										_user$project$Field$view(f));
-								}
+								return A2(
+									_elm_lang$html$Html_App$map,
+									_user$project$Row$UpdateField(f.field.name),
+									_user$project$Field$view(f));
 							},
-							model.field_models))
+							field_models))
 					]));
+		default:
+			return A2(
+				_elm_lang$html$Html$option,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				A2(
+					_elm_lang$core$List$map,
+					function (f) {
+						return A2(
+							_elm_lang$html$Html_App$map,
+							_user$project$Row$UpdateField(f.field.name),
+							_user$project$Field$view(f));
+					},
+					field_models));
 	}
 };
 
@@ -9084,7 +9172,7 @@ var _user$project$Tab$init = {
 		rows: _elm_lang$core$Native_List.fromArray(
 			[_user$project$Row$row1, _user$project$Row$row2]),
 		mode: _user$project$Field$Read,
-		fields: A2(_elm_lang$core$List_ops['::'], _user$project$Row$selected_field, _user$project$Row$fields),
+		fields: _user$project$Row$fields,
 		presentation: _user$project$Field$Form,
 		density: _user$project$Field$Medium
 	},
@@ -9174,6 +9262,17 @@ var _user$project$Tab$tab_controls = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Events$onClick(
+						_user$project$Tab$ChangePresentation(_user$project$Field$List))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('List All rows')
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Events$onClick(
 						_user$project$Tab$ChangeDensity(_user$project$Field$Compact))
 					]),
 				_elm_lang$core$Native_List.fromArray(
@@ -9205,6 +9304,8 @@ var _user$project$Tab$tab_controls = function (model) {
 			]));
 };
 var _user$project$Tab$view = function (model) {
+	var filtered_fields = A2(_user$project$Row$filter_fields_with_density, model.fields, model.density);
+	var extended_fields = A2(_elm_lang$core$List_ops['::'], _user$project$Row$selected_field, filtered_fields);
 	var rows = function () {
 		var _p8 = model.presentation;
 		switch (_p8.ctor) {
@@ -9233,7 +9334,7 @@ var _user$project$Tab$view = function (model) {
 						]),
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_user$project$Tab$thead_view(model.fields),
+							_user$project$Tab$thead_view(extended_fields),
 							A2(
 							_elm_lang$html$Html$tbody,
 							_elm_lang$core$Native_List.fromArray(
@@ -9248,12 +9349,28 @@ var _user$project$Tab$view = function (model) {
 								},
 								model.rows))
 						]));
-			default:
+			case 'Grid':
 				return A2(
 					_elm_lang$html$Html$div,
 					_elm_lang$core$Native_List.fromArray(
 						[
 							_elm_lang$html$Html_Attributes$class('grid')
+						]),
+					A2(
+						_elm_lang$core$List$map,
+						function (r) {
+							return A2(
+								_elm_lang$html$Html_App$map,
+								_user$project$Tab$UpdateRow(r.rowId),
+								_user$project$Row$view(r));
+						},
+						model.rows));
+			default:
+				return A2(
+					_elm_lang$html$Html$select,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('list')
 						]),
 					A2(
 						_elm_lang$core$List$map,

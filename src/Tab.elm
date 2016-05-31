@@ -29,14 +29,16 @@ init =
     ({name= "Person"
      ,rows= [Row.row1, Row.row2]
      ,mode= Field.Read
-     ,fields=  Row.selected_field :: Row.fields
+     ,fields= Row.fields
      ,presentation= Field.Form
      ,density = Field.Medium
     },Cmd.none)
 
 view: Model -> Html Msg
 view model =
-    let rows = case model.presentation of
+    let filtered_fields = Row.filter_fields_with_density model.fields model.density
+        extended_fields = Row.selected_field :: filtered_fields
+        rows = case model.presentation of
         Field.Form ->
              div [class "form"]
                 (model.rows
@@ -46,7 +48,7 @@ view model =
 
         Field.Table ->
             table [class "table-striped"] 
-                [thead_view model.fields
+                [thead_view extended_fields
                 ,tbody []
                 (model.rows
                     |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
@@ -60,6 +62,13 @@ view model =
                     |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
 
                 )
+        Field.List ->
+           select [class "list"]
+                (model.rows
+                    |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
+
+                )
+                
     in 
         div [] [tab_controls model
                ,rows
@@ -71,6 +80,7 @@ tab_controls model =
            , button [onClick (ChangePresentation Field.Table)] [text "Table All rows"]
            , button [onClick (ChangePresentation Field.Form)] [text "Form All rows"]
            , button [onClick (ChangePresentation Field.Grid)] [text "Grid All rows"]
+           , button [onClick (ChangePresentation Field.List)] [text "List All rows"]
            , button [onClick (ChangeDensity Field.Compact)] [text "Compact All"]
            , button [onClick (ChangeDensity Field.Medium)] [text "Medium All"]
            , button [onClick (ChangeDensity Field.Expanded)] [text "Expanded All"]
@@ -129,5 +139,6 @@ main =
         , view = view
         , subscriptions = (\_ -> Sub.none)
         }
+
 
 
