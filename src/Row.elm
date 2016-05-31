@@ -49,7 +49,7 @@ row2 = { rowId= "d5eeef812012"
 -}
 
 selected_field =
-    { name = "selected"
+    { name = "Selected"
      ,column = "selected"
      ,complete_name = "person.selected"
      ,is_keyfield = False

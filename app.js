@@ -2,7 +2,7 @@ var app;
 
 
 function init(){
-    app = Elm.Tab.fullscreen();
+    app = Elm.Main.fullscreen();
 }
 window.onload = init
 

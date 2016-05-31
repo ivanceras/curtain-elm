@@ -9,6 +9,7 @@ import Html.Events exposing (..)
 import Date
 import Task
 import String
+import SampleData
 
 type alias Model = 
     { field: Field
@@ -111,8 +112,8 @@ bday_field =
     , display_value = Nothing
     }
 
-name_field = 
-    { name = "Name"
+name_field1 = 
+    { name = "Err_Name"
     , column= "name"
     , complete_name = "person.name"
     , is_keyfield = False
@@ -134,6 +135,16 @@ name_field =
     , display_length = Just 20
     , display_value = Nothing
      }
+
+name_field_result = 
+    let _ = Debug.log "json:" SampleData.name_json_field
+    in
+    Decode.decodeString field_decoder SampleData.name_json_field
+name_field = case name_field_result of
+    Ok name_field -> name_field
+    Err e -> let _ =Debug.log "Error" e
+                in name_field1
+
 
 active_field = 
     {name = "Active"
@@ -180,7 +191,7 @@ name =
     
 active =
     {field = active_field
-    , value = Result.withDefault (Bool False) (Decode.decodeString value_decoder json_active)
+    , value = Result.withDefault (Bool False) (Decode.decodeString value_decoder SampleData.json_active)
     , mode = Read 
     , presentation = Form 
     , focused = False
@@ -188,24 +199,6 @@ active =
     }
 
 
-json_desc = """
-        {
-            "variant": "String",
-            "fields": [
-              "Second hand Iphone4s"
-            ]
-          }
-
-"""
-
-json_active = """
-        {
-            "variant": "Bool",
-            "fields": [
-              true
-            ]
-          }
-"""
 
 
 value_decoder: Decode.Decoder Value
@@ -232,33 +225,6 @@ first_value default args =
     Decode.succeed (Maybe.withDefault default (List.head args))
 
 
-name_json_field = """
-
-{
-        "name": "name",
-        "column": "name",
-        "complete_name": "bazaar.product.name",
-        "is_keyfield": false,
-        "data_type": "String",
-        "reference": "character varying",
-        "reference_value": null,
-        "description": "This is @Required it has @DisplayLength(50) - 50 character in display length a @MinLength(1) and @MaxLength(100) - Do not go over 100 characters or else the system will throw a ValueTooLong exception\ncan also be express with @Length(1-100)",
-        "info": null,
-        "is_significant": true,
-        "significance_priority": 10,
-        "include_in_search": false,
-        "is_mandatory": false,
-        "seq_no": 0,
-        "is_same_line": false,
-        "is_displayed": true,
-        "is_readonly": false,
-        "is_autocomplete": false,
-        "display_logic": null,
-        "display_length": null,
-        "default_value": null
-      },
-
-"""
 
 field_decoder: Decode.Decoder Field
 field_decoder = 
@@ -361,7 +327,7 @@ view model =
                 List ->
                         field_read_list model
 
-update: Msg -> Model -> (Model, Cmd msg)
+update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         ChangeValue v ->

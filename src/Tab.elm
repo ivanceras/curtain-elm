@@ -6,6 +6,8 @@ import Html exposing (..)
 import Html.Events exposing (..)
 import Html.Attributes exposing (..)
 import Html.App as App
+import Json.Decode as Decode exposing ((:=))
+import Json.Decode.Extra as Extra exposing ((|:))
 
 
 type alias Model =
@@ -15,7 +17,61 @@ type alias Model =
     , fields: List Field.Field
     , presentation: Field.Presentation
     , density: Field.Density
+    , is_open: Bool
+    , page: Int
+    , page_size: Int
     }
+
+type alias Tab =
+    { name: String
+    , is_owned: Bool
+    , is_extension: Bool
+    , is_has_one: Bool
+    , is_has_many: Bool
+    , is_direct: Bool
+    , linker_table: Maybe String
+    , description: Maybe String
+    , info: Maybe String
+    , table: String
+    , schema: Maybe String
+    , fields: List Field.Field
+    , logo: Maybe String
+    , icon: Maybe String
+    , page_size: Maybe Int
+    }
+
+to_model: Tab -> Model
+to_model tab =
+    { name = tab.name
+    , rows = []
+    , mode = Field.Read
+    , fields = tab.fields
+    , presentation = Field.Form
+    , density = Field.Expanded
+    , is_open = False
+    , page = 0
+    , page_size = 15
+    }
+
+tab_decoder: Decode.Decoder Tab
+tab_decoder = 
+    Decode.succeed Tab
+        |: ("name" := Decode.string)
+        |: ("is_owned" := Decode.bool)
+        |: ("is_extension" := Decode.bool)
+        |: ("is_has_one":= Decode.bool)
+        |: ("is_has_many" := Decode.bool)
+        |: ("is_direct" := Decode.bool)
+        |: (Decode.maybe ("linker_table" := Decode.string))
+        |: (Decode.maybe ("description" := Decode.string))
+        |: (Decode.maybe ("info" := Decode.string))
+        |: ("table" := Decode.string)
+        |: (Decode.maybe ("schema" := Decode.string))
+        |: ("fields" := Decode.list Field.field_decoder)
+        |: (Decode.maybe ("logo" := Decode.string))
+        |: (Decode.maybe ("icon" := Decode.string))
+        |: (Decode.maybe ("page_size" := Decode.int))
+        
 
 
 type Msg
@@ -24,15 +80,20 @@ type Msg
     | ChangeDensity Field.Density
     | UpdateRow String Row.Msg
 
+person_tab = 
+    { name= "Person"
+    , rows= [Row.row1, Row.row2]
+    , mode= Field.Read
+    , fields= Row.fields
+    , presentation= Field.Form
+    , density = Field.Medium
+    , is_open = True
+    , page = 0
+    , page_size = 15
+    }
 
 init =
-    ({name= "Person"
-     ,rows= [Row.row1, Row.row2]
-     ,mode= Field.Read
-     ,fields= Row.fields
-     ,presentation= Field.Form
-     ,density = Field.Medium
-    },Cmd.none)
+    (person_tab, Cmd.none)
 
 view: Model -> Html Msg
 view model =
@@ -93,7 +154,7 @@ thead_view fields =
             )
         ]
 
-update: Msg -> Model -> (Model, Cmd msg)
+update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         UpdateRow rowId row_msg ->
@@ -132,13 +193,5 @@ update msg model =
 
 
  
-main = 
-    App.program
-        { init = init
-        , update = update
-        , view = view
-        , subscriptions = (\_ -> Sub.none)
-        }
-
 
 

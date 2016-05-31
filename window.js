@@ -7945,364 +7945,6 @@ var _elm_lang$html$Html_Events$Options = F2(
 		return {stopPropagation: a, preventDefault: b};
 	});
 
-//import Dict, List, Maybe, Native.Scheduler //
-
-var _evancz$elm_http$Native_Http = function() {
-
-function send(settings, request)
-{
-	return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback) {
-		var req = new XMLHttpRequest();
-
-		// start
-		if (settings.onStart.ctor === 'Just')
-		{
-			req.addEventListener('loadStart', function() {
-				var task = settings.onStart._0;
-				_elm_lang$core$Native_Scheduler.rawSpawn(task);
-			});
-		}
-
-		// progress
-		if (settings.onProgress.ctor === 'Just')
-		{
-			req.addEventListener('progress', function(event) {
-				var progress = !event.lengthComputable
-					? _elm_lang$core$Maybe$Nothing
-					: _elm_lang$core$Maybe$Just({
-						loaded: event.loaded,
-						total: event.total
-					});
-				var task = settings.onProgress._0(progress);
-				_elm_lang$core$Native_Scheduler.rawSpawn(task);
-			});
-		}
-
-		// end
-		req.addEventListener('error', function() {
-			return callback(_elm_lang$core$Native_Scheduler.fail({ ctor: 'RawNetworkError' }));
-		});
-
-		req.addEventListener('timeout', function() {
-			return callback(_elm_lang$core$Native_Scheduler.fail({ ctor: 'RawTimeout' }));
-		});
-
-		req.addEventListener('load', function() {
-			return callback(_elm_lang$core$Native_Scheduler.succeed(toResponse(req)));
-		});
-
-		req.open(request.verb, request.url, true);
-
-		// set all the headers
-		function setHeader(pair) {
-			req.setRequestHeader(pair._0, pair._1);
-		}
-		A2(_elm_lang$core$List$map, setHeader, request.headers);
-
-		// set the timeout
-		req.timeout = settings.timeout;
-
-		// enable this withCredentials thing
-		req.withCredentials = settings.withCredentials;
-
-		// ask for a specific MIME type for the response
-		if (settings.desiredResponseType.ctor === 'Just')
-		{
-			req.overrideMimeType(settings.desiredResponseType._0);
-		}
-
-		// actuall send the request
-		if(request.body.ctor === "BodyFormData")
-		{
-			req.send(request.body.formData)
-		}
-		else
-		{
-			req.send(request.body._0);
-		}
-
-		return function() {
-			req.abort();
-		};
-	});
-}
-
-
-// deal with responses
-
-function toResponse(req)
-{
-	var tag = req.responseType === 'blob' ? 'Blob' : 'Text'
-	var response = tag === 'Blob' ? req.response : req.responseText;
-	return {
-		status: req.status,
-		statusText: req.statusText,
-		headers: parseHeaders(req.getAllResponseHeaders()),
-		url: req.responseURL,
-		value: { ctor: tag, _0: response }
-	};
-}
-
-
-function parseHeaders(rawHeaders)
-{
-	var headers = _elm_lang$core$Dict$empty;
-
-	if (!rawHeaders)
-	{
-		return headers;
-	}
-
-	var headerPairs = rawHeaders.split('\u000d\u000a');
-	for (var i = headerPairs.length; i--; )
-	{
-		var headerPair = headerPairs[i];
-		var index = headerPair.indexOf('\u003a\u0020');
-		if (index > 0)
-		{
-			var key = headerPair.substring(0, index);
-			var value = headerPair.substring(index + 2);
-
-			headers = A3(_elm_lang$core$Dict$update, key, function(oldValue) {
-				if (oldValue.ctor === 'Just')
-				{
-					return _elm_lang$core$Maybe$Just(value + ', ' + oldValue._0);
-				}
-				return _elm_lang$core$Maybe$Just(value);
-			}, headers);
-		}
-	}
-
-	return headers;
-}
-
-
-function multipart(dataList)
-{
-	var formData = new FormData();
-
-	while (dataList.ctor !== '[]')
-	{
-		var data = dataList._0;
-		if (data.ctor === 'StringData')
-		{
-			formData.append(data._0, data._1);
-		}
-		else
-		{
-			var fileName = data._1.ctor === 'Nothing'
-				? undefined
-				: data._1._0;
-			formData.append(data._0, data._2, fileName);
-		}
-		dataList = dataList._1;
-	}
-
-	return { ctor: 'BodyFormData', formData: formData };
-}
-
-
-function uriEncode(string)
-{
-	return encodeURIComponent(string);
-}
-
-function uriDecode(string)
-{
-	return decodeURIComponent(string);
-}
-
-return {
-	send: F2(send),
-	multipart: multipart,
-	uriEncode: uriEncode,
-	uriDecode: uriDecode
-};
-
-}();
-
-var _evancz$elm_http$Http$send = _evancz$elm_http$Native_Http.send;
-var _evancz$elm_http$Http$defaultSettings = {timeout: 0, onStart: _elm_lang$core$Maybe$Nothing, onProgress: _elm_lang$core$Maybe$Nothing, desiredResponseType: _elm_lang$core$Maybe$Nothing, withCredentials: false};
-var _evancz$elm_http$Http$multipart = _evancz$elm_http$Native_Http.multipart;
-var _evancz$elm_http$Http$uriDecode = _evancz$elm_http$Native_Http.uriDecode;
-var _evancz$elm_http$Http$uriEncode = _evancz$elm_http$Native_Http.uriEncode;
-var _evancz$elm_http$Http$queryEscape = function (string) {
-	return A2(
-		_elm_lang$core$String$join,
-		'+',
-		A2(
-			_elm_lang$core$String$split,
-			'%20',
-			_evancz$elm_http$Http$uriEncode(string)));
-};
-var _evancz$elm_http$Http$queryPair = function (_p0) {
-	var _p1 = _p0;
-	return A2(
-		_elm_lang$core$Basics_ops['++'],
-		_evancz$elm_http$Http$queryEscape(_p1._0),
-		A2(
-			_elm_lang$core$Basics_ops['++'],
-			'=',
-			_evancz$elm_http$Http$queryEscape(_p1._1)));
-};
-var _evancz$elm_http$Http$url = F2(
-	function (baseUrl, args) {
-		var _p2 = args;
-		if (_p2.ctor === '[]') {
-			return baseUrl;
-		} else {
-			return A2(
-				_elm_lang$core$Basics_ops['++'],
-				baseUrl,
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					'?',
-					A2(
-						_elm_lang$core$String$join,
-						'&',
-						A2(_elm_lang$core$List$map, _evancz$elm_http$Http$queryPair, args))));
-		}
-	});
-var _evancz$elm_http$Http$Request = F4(
-	function (a, b, c, d) {
-		return {verb: a, headers: b, url: c, body: d};
-	});
-var _evancz$elm_http$Http$Settings = F5(
-	function (a, b, c, d, e) {
-		return {timeout: a, onStart: b, onProgress: c, desiredResponseType: d, withCredentials: e};
-	});
-var _evancz$elm_http$Http$Response = F5(
-	function (a, b, c, d, e) {
-		return {status: a, statusText: b, headers: c, url: d, value: e};
-	});
-var _evancz$elm_http$Http$TODO_implement_blob_in_another_library = {ctor: 'TODO_implement_blob_in_another_library'};
-var _evancz$elm_http$Http$TODO_implement_file_in_another_library = {ctor: 'TODO_implement_file_in_another_library'};
-var _evancz$elm_http$Http$BodyBlob = function (a) {
-	return {ctor: 'BodyBlob', _0: a};
-};
-var _evancz$elm_http$Http$BodyFormData = {ctor: 'BodyFormData'};
-var _evancz$elm_http$Http$ArrayBuffer = {ctor: 'ArrayBuffer'};
-var _evancz$elm_http$Http$BodyString = function (a) {
-	return {ctor: 'BodyString', _0: a};
-};
-var _evancz$elm_http$Http$string = _evancz$elm_http$Http$BodyString;
-var _evancz$elm_http$Http$Empty = {ctor: 'Empty'};
-var _evancz$elm_http$Http$empty = _evancz$elm_http$Http$Empty;
-var _evancz$elm_http$Http$FileData = F3(
-	function (a, b, c) {
-		return {ctor: 'FileData', _0: a, _1: b, _2: c};
-	});
-var _evancz$elm_http$Http$BlobData = F3(
-	function (a, b, c) {
-		return {ctor: 'BlobData', _0: a, _1: b, _2: c};
-	});
-var _evancz$elm_http$Http$blobData = _evancz$elm_http$Http$BlobData;
-var _evancz$elm_http$Http$StringData = F2(
-	function (a, b) {
-		return {ctor: 'StringData', _0: a, _1: b};
-	});
-var _evancz$elm_http$Http$stringData = _evancz$elm_http$Http$StringData;
-var _evancz$elm_http$Http$Blob = function (a) {
-	return {ctor: 'Blob', _0: a};
-};
-var _evancz$elm_http$Http$Text = function (a) {
-	return {ctor: 'Text', _0: a};
-};
-var _evancz$elm_http$Http$RawNetworkError = {ctor: 'RawNetworkError'};
-var _evancz$elm_http$Http$RawTimeout = {ctor: 'RawTimeout'};
-var _evancz$elm_http$Http$BadResponse = F2(
-	function (a, b) {
-		return {ctor: 'BadResponse', _0: a, _1: b};
-	});
-var _evancz$elm_http$Http$UnexpectedPayload = function (a) {
-	return {ctor: 'UnexpectedPayload', _0: a};
-};
-var _evancz$elm_http$Http$handleResponse = F2(
-	function (handle, response) {
-		if ((_elm_lang$core$Native_Utils.cmp(200, response.status) < 1) && (_elm_lang$core$Native_Utils.cmp(response.status, 300) < 0)) {
-			var _p3 = response.value;
-			if (_p3.ctor === 'Text') {
-				return handle(_p3._0);
-			} else {
-				return _elm_lang$core$Task$fail(
-					_evancz$elm_http$Http$UnexpectedPayload('Response body is a blob, expecting a string.'));
-			}
-		} else {
-			return _elm_lang$core$Task$fail(
-				A2(_evancz$elm_http$Http$BadResponse, response.status, response.statusText));
-		}
-	});
-var _evancz$elm_http$Http$NetworkError = {ctor: 'NetworkError'};
-var _evancz$elm_http$Http$Timeout = {ctor: 'Timeout'};
-var _evancz$elm_http$Http$promoteError = function (rawError) {
-	var _p4 = rawError;
-	if (_p4.ctor === 'RawTimeout') {
-		return _evancz$elm_http$Http$Timeout;
-	} else {
-		return _evancz$elm_http$Http$NetworkError;
-	}
-};
-var _evancz$elm_http$Http$getString = function (url) {
-	var request = {
-		verb: 'GET',
-		headers: _elm_lang$core$Native_List.fromArray(
-			[]),
-		url: url,
-		body: _evancz$elm_http$Http$empty
-	};
-	return A2(
-		_elm_lang$core$Task$andThen,
-		A2(
-			_elm_lang$core$Task$mapError,
-			_evancz$elm_http$Http$promoteError,
-			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request)),
-		_evancz$elm_http$Http$handleResponse(_elm_lang$core$Task$succeed));
-};
-var _evancz$elm_http$Http$fromJson = F2(
-	function (decoder, response) {
-		var decode = function (str) {
-			var _p5 = A2(_elm_lang$core$Json_Decode$decodeString, decoder, str);
-			if (_p5.ctor === 'Ok') {
-				return _elm_lang$core$Task$succeed(_p5._0);
-			} else {
-				return _elm_lang$core$Task$fail(
-					_evancz$elm_http$Http$UnexpectedPayload(_p5._0));
-			}
-		};
-		return A2(
-			_elm_lang$core$Task$andThen,
-			A2(_elm_lang$core$Task$mapError, _evancz$elm_http$Http$promoteError, response),
-			_evancz$elm_http$Http$handleResponse(decode));
-	});
-var _evancz$elm_http$Http$get = F2(
-	function (decoder, url) {
-		var request = {
-			verb: 'GET',
-			headers: _elm_lang$core$Native_List.fromArray(
-				[]),
-			url: url,
-			body: _evancz$elm_http$Http$empty
-		};
-		return A2(
-			_evancz$elm_http$Http$fromJson,
-			decoder,
-			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
-	});
-var _evancz$elm_http$Http$post = F3(
-	function (decoder, url, body) {
-		var request = {
-			verb: 'POST',
-			headers: _elm_lang$core$Native_List.fromArray(
-				[]),
-			url: url,
-			body: body
-		};
-		return A2(
-			_evancz$elm_http$Http$fromJson,
-			decoder,
-			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
-	});
-
 var _user$project$SampleData$name_json_field = '{\n        \"name\": \"name\",\n        \"column\": \"name\",\n        \"complete_name\": \"bazaar.product.name\",\n        \"is_keyfield\": false,\n        \"data_type\": \"String\",\n        \"reference\": \"character varying\",\n        \"reference_value\": null,\n        \"description\": \"This is @Required it has @DisplayLength(50) - 50 character in display length a @MinLength(1) and @MaxLength(100) - Do not go over 100 characters or else the system will throw a ValueTooLong exception\\ncan also be express with @Length(1-100)\",\n        \"info\": null,\n        \"is_significant\": true,\n        \"significance_priority\": 10,\n        \"include_in_search\": false,\n        \"is_mandatory\": false,\n        \"seq_no\": 0,\n        \"is_same_line\": false,\n        \"is_displayed\": true,\n        \"is_readonly\": false,\n        \"is_autocomplete\": false,\n        \"display_logic\": null,\n        \"display_length\": null,\n        \"default_value\": null\n      }\n';
 var _user$project$SampleData$json_active = '\n        {\n            \"variant\": \"Bool\",\n            \"fields\": [\n              true\n            ]\n          }\n';
 var _user$project$SampleData$json_desc = '\n        {\n            \"variant\": \"String\",\n            \"fields\": [\n              \"Second hand Iphone4s\"\n            ]\n          }\n\n';
@@ -9545,28 +9187,13 @@ var _user$project$Tab$person_tab = {
 	fields: _user$project$Row$fields,
 	presentation: _user$project$Field$Form,
 	density: _user$project$Field$Medium,
-	is_open: true,
 	page: 0,
 	page_size: 15
 };
 var _user$project$Tab$init = {ctor: '_Tuple2', _0: _user$project$Tab$person_tab, _1: _elm_lang$core$Platform_Cmd$none};
-var _user$project$Tab$to_model = function (tab) {
-	return {
-		name: tab.name,
-		rows: _elm_lang$core$Native_List.fromArray(
-			[]),
-		mode: _user$project$Field$Read,
-		fields: tab.fields,
-		presentation: _user$project$Field$Form,
-		density: _user$project$Field$Expanded,
-		is_open: false,
-		page: 0,
-		page_size: 15
-	};
-};
-var _user$project$Tab$Model = F9(
-	function (a, b, c, d, e, f, g, h, i) {
-		return {name: a, rows: b, mode: c, fields: d, presentation: e, density: f, is_open: g, page: h, page_size: i};
+var _user$project$Tab$Model = F8(
+	function (a, b, c, d, e, f, g, h) {
+		return {name: a, rows: b, mode: c, fields: d, presentation: e, density: f, page: g, page_size: h};
 	});
 var _user$project$Tab$Tab = function (a) {
 	return function (b) {
@@ -9866,6 +9493,17 @@ var _user$project$Tab$view = function (model) {
 				rows
 			]));
 };
+var _user$project$Tab$main = {
+	main: _elm_lang$html$Html_App$program(
+		{
+			init: _user$project$Tab$init,
+			update: _user$project$Tab$update,
+			view: _user$project$Tab$view,
+			subscriptions: function (_p9) {
+				return _elm_lang$core$Platform_Sub$none;
+			}
+		})
+};
 
 var _user$project$Window$update = F2(
 	function (msg, model) {
@@ -9890,7 +9528,6 @@ var _user$project$Window$person_window = {
 	main_tab: _user$project$Tab$person_tab,
 	presentation: _user$project$Field$Form,
 	mode: _user$project$Field$Read,
-	is_open: true,
 	ext_tabs: _elm_lang$core$Native_List.fromArray(
 		[]),
 	has_many_tabs: _elm_lang$core$Native_List.fromArray(
@@ -9899,51 +9536,14 @@ var _user$project$Window$person_window = {
 		[])
 };
 var _user$project$Window$init = {ctor: '_Tuple2', _0: _user$project$Window$person_window, _1: _elm_lang$core$Platform_Cmd$none};
-var _user$project$Window$to_model = function (window) {
-	return {
-		name: window.name,
-		main_tab: _user$project$Tab$to_model(window.main_tab),
-		presentation: _user$project$Field$Form,
-		mode: _user$project$Field$Read,
-		is_open: false,
-		ext_tabs: _elm_lang$core$Native_List.fromArray(
-			[]),
-		has_many_tabs: _elm_lang$core$Native_List.fromArray(
-			[]),
-		has_many_indirect_tabs: _elm_lang$core$Native_List.fromArray(
-			[])
-	};
-};
-var _user$project$Window$Model = F8(
-	function (a, b, c, d, e, f, g, h) {
-		return {name: a, main_tab: b, presentation: c, mode: d, is_open: e, ext_tabs: f, has_many_tabs: g, has_many_indirect_tabs: h};
+var _user$project$Window$Model = F7(
+	function (a, b, c, d, e, f, g) {
+		return {name: a, main_tab: b, presentation: c, mode: d, ext_tabs: e, has_many_tabs: f, has_many_indirect_tabs: g};
 	});
 var _user$project$Window$Window = F8(
 	function (a, b, c, d, e, f, g, h) {
 		return {name: a, description: b, table: c, schema: d, main_tab: e, ext_tabs: f, has_many_tabs: g, has_many_indirect_tabs: h};
 	});
-var _user$project$Window$window_decoder = A9(
-	_elm_lang$core$Json_Decode$object8,
-	_user$project$Window$Window,
-	A2(_elm_lang$core$Json_Decode_ops[':='], 'name', _elm_lang$core$Json_Decode$string),
-	_elm_lang$core$Json_Decode$maybe(
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'description', _elm_lang$core$Json_Decode$string)),
-	A2(_elm_lang$core$Json_Decode_ops[':='], 'table', _elm_lang$core$Json_Decode$string),
-	_elm_lang$core$Json_Decode$maybe(
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'schema', _elm_lang$core$Json_Decode$string)),
-	A2(_elm_lang$core$Json_Decode_ops[':='], 'main_tab', _user$project$Tab$tab_decoder),
-	A2(
-		_elm_lang$core$Json_Decode_ops[':='],
-		'ext_tabs',
-		_elm_lang$core$Json_Decode$list(_user$project$Tab$tab_decoder)),
-	A2(
-		_elm_lang$core$Json_Decode_ops[':='],
-		'has_many_tabs',
-		_elm_lang$core$Json_Decode$list(_user$project$Tab$tab_decoder)),
-	A2(
-		_elm_lang$core$Json_Decode_ops[':='],
-		'has_many_indirect_tabs',
-		_elm_lang$core$Json_Decode$list(_user$project$Tab$tab_decoder)));
 var _user$project$Window$UpdateMainTab = function (a) {
 	return {ctor: 'UpdateMainTab', _0: a};
 };
@@ -9963,6 +9563,17 @@ var _user$project$Window$view = function (model) {
 				_elm_lang$html$Html$text('has_many tabs here.. direct and indirect')
 			]));
 };
+var _user$project$Window$main = {
+	main: _elm_lang$html$Html_App$program(
+		{
+			init: _user$project$Window$init,
+			update: _user$project$Window$update,
+			view: _user$project$Window$view,
+			subscriptions: function (_p2) {
+				return _elm_lang$core$Platform_Sub$none;
+			}
+		})
+};
 var _user$project$Window$ChangePresentation = function (a) {
 	return {ctor: 'ChangePresentation', _0: a};
 };
@@ -9970,346 +9581,53 @@ var _user$project$Window$ChangeMode = function (a) {
 	return {ctor: 'ChangeMode', _0: a};
 };
 
-var _user$project$WindowList$update = F2(
+var _user$project$Main$update = F2(
 	function (msg, model) {
 		return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 	});
-var _user$project$WindowList$to_model = function (window_list) {
-	return {window_list: window_list, search_text: ''};
-};
-var _user$project$WindowList$Model = F2(
-	function (a, b) {
-		return {window_list: a, search_text: b};
-	});
-var _user$project$WindowList$WindowName = F4(
-	function (a, b, c, d) {
-		return {name: a, description: b, table: c, schema: d};
-	});
-var _user$project$WindowList$window_name_decoder = A5(
-	_elm_lang$core$Json_Decode$object4,
-	_user$project$WindowList$WindowName,
-	A2(_elm_lang$core$Json_Decode_ops[':='], 'name', _elm_lang$core$Json_Decode$string),
-	_elm_lang$core$Json_Decode$maybe(
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'description', _elm_lang$core$Json_Decode$string)),
-	A2(_elm_lang$core$Json_Decode_ops[':='], 'table', _elm_lang$core$Json_Decode$string),
-	_elm_lang$core$Json_Decode$maybe(
-		A2(_elm_lang$core$Json_Decode_ops[':='], 'schema', _elm_lang$core$Json_Decode$string)));
-var _user$project$WindowList$window_list_decoder = _elm_lang$core$Json_Decode$list(_user$project$WindowList$window_name_decoder);
-var _user$project$WindowList$OpenWindow = function (a) {
-	return {ctor: 'OpenWindow', _0: a};
-};
-var _user$project$WindowList$view = function (model) {
-	return A2(
-		_elm_lang$html$Html$nav,
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_elm_lang$html$Html_Attributes$class('nav-group')
-			]),
-		A2(
-			_elm_lang$core$List_ops['::'],
-			A2(
-				_elm_lang$html$Html$h5,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$class('nav-group-title')
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text('Window')
-					])),
-			A2(
-				_elm_lang$core$List$map,
-				function (w) {
-					return A2(
-						_elm_lang$html$Html$a,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$class('nav-group-item'),
-								_elm_lang$html$Html_Attributes$href(
-								A2(_elm_lang$core$Basics_ops['++'], '#', w.table)),
-								_elm_lang$html$Html_Events$onClick(
-								_user$project$WindowList$OpenWindow(w.table))
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								A2(
-								_elm_lang$html$Html$span,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$class('icon icon-list')
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[])),
-								_elm_lang$html$Html$text(w.name)
-							]));
-				},
-				model.window_list)));
-};
-
-var _user$project$Main$http_get = F2(
-	function (model, url) {
-		return A2(
-			_evancz$elm_http$Http$send,
-			_evancz$elm_http$Http$defaultSettings,
-			{
-				verb: 'GET',
-				headers: _elm_lang$core$Native_List.fromArray(
-					[
-						{ctor: '_Tuple2', _0: 'db_url', _1: model.db_url}
-					]),
-				url: A2(_elm_lang$core$Basics_ops['++'], model.api_server, url),
-				body: _evancz$elm_http$Http$empty
-			});
-	});
-var _user$project$Main$app_model = {
-	title: 'Curtain UI',
-	db_url: 'postgres://postgres:p0stgr3s@localhost:5432/bazaar_v8',
-	api_server: 'http://localhost:8181',
-	window_list: _user$project$WindowList$to_model(
-		_elm_lang$core$Native_List.fromArray(
-			[])),
-	focused_window: _elm_lang$core$Maybe$Just('person'),
-	opened_windows: _elm_lang$core$Native_List.fromArray(
-		[]),
-	error: _elm_lang$core$Native_List.fromArray(
-		[])
-};
-var _user$project$Main$Model = F7(
-	function (a, b, c, d, e, f, g) {
-		return {title: a, db_url: b, api_server: c, window_list: d, focused_window: e, opened_windows: f, error: g};
-	});
-var _user$project$Main$FetchError = function (a) {
-	return {ctor: 'FetchError', _0: a};
-};
-var _user$project$Main$WindowDetailRetrieved = function (a) {
-	return {ctor: 'WindowDetailRetrieved', _0: a};
-};
-var _user$project$Main$fetch_window_detail = F2(
-	function (model, table) {
-		return A3(
-			_elm_lang$core$Task$perform,
-			_user$project$Main$FetchError,
-			_user$project$Main$WindowDetailRetrieved,
-			A2(
-				_evancz$elm_http$Http$fromJson,
-				_user$project$Window$window_decoder,
-				A2(
-					_user$project$Main$http_get,
-					model,
-					A2(_elm_lang$core$Basics_ops['++'], '/window/', table))));
-	});
-var _user$project$Main$UpdateWindowList = function (a) {
-	return {ctor: 'UpdateWindowList', _0: a};
-};
-var _user$project$Main$UpdateWindow = function (a) {
-	return {ctor: 'UpdateWindow', _0: a};
-};
-var _user$project$Main$OpenWindow = function (a) {
-	return {ctor: 'OpenWindow', _0: a};
-};
-var _user$project$Main$WindowListReceived = function (a) {
-	return {ctor: 'WindowListReceived', _0: a};
-};
-var _user$project$Main$fetch_window_list = function (model) {
-	return A3(
-		_elm_lang$core$Task$perform,
-		_user$project$Main$FetchError,
-		_user$project$Main$WindowListReceived,
-		A2(
-			_evancz$elm_http$Http$fromJson,
-			_user$project$WindowList$window_list_decoder,
-			A2(_user$project$Main$http_get, model, '/window')));
-};
-var _user$project$Main$init = {
-	ctor: '_Tuple2',
-	_0: _user$project$Main$app_model,
-	_1: _user$project$Main$fetch_window_list(_user$project$Main$app_model)
-};
-var _user$project$Main$update = F2(
-	function (msg, model) {
-		var _p0 = msg;
-		switch (_p0.ctor) {
-			case 'UpdateWindow':
-				var window_updates = A2(
-					_elm_lang$core$List$map,
-					function (w) {
-						var _p1 = A2(_user$project$Window$update, _p0._0, w);
-						var mr = _p1._0;
-						var cmd = _p1._1;
-						return mr;
-					},
-					model.opened_windows);
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{opened_windows: window_updates}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			case 'UpdateWindowList':
-				var _p2 = _p0._0;
-				var _p4 = _p2._0;
-				var _p3 = A2(_elm_lang$core$Debug$log, 'This should trigger to open window', _p4);
-				return {
-					ctor: '_Tuple2',
-					_0: model,
-					_1: A2(_user$project$Main$fetch_window_detail, model, _p4)
-				};
-			case 'GetWindowList':
-				var _p5 = A2(_elm_lang$core$Debug$log, 'fetching window_list', model);
-				return {
-					ctor: '_Tuple2',
-					_0: model,
-					_1: _user$project$Main$fetch_window_list(model)
-				};
-			case 'WindowListReceived':
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							window_list: _user$project$WindowList$to_model(_p0._0)
-						}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			case 'WindowDetailRetrieved':
-				var _p7 = _p0._0;
-				var _p6 = A2(_elm_lang$core$Debug$log, 'windowDetailRetrieve', _p7);
-				var window_model = _user$project$Window$to_model(_p7);
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							opened_windows: A2(_elm_lang$core$List_ops['::'], window_model, model.opened_windows)
-						}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			case 'OpenWindow':
-				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
-			default:
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							error: A2(
-								_elm_lang$core$List_ops['::'],
-								_elm_lang$core$Basics$toString(_p0._0),
-								model.error)
-						}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-		}
-	});
-var _user$project$Main$GetWindowList = {ctor: 'GetWindowList'};
 var _user$project$Main$view = function (model) {
 	return A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
-			[
-				_elm_lang$html$Html_Attributes$class('window')
-			]),
+			[]),
 		_elm_lang$core$Native_List.fromArray(
 			[
-				A2(
-				_elm_lang$html$Html$header,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$class('toolbar toolbar-header')
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						A2(
-						_elm_lang$html$Html$button,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Events$onClick(_user$project$Main$GetWindowList)
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('Refresh WindowList')
-							]))
-					])),
-				A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$class('window-content')
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						A2(
-						_elm_lang$html$Html$div,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$class('pane-group')
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								A2(
-								_elm_lang$html$Html$div,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$class('pane pane-sm sidebar')
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										A2(
-										_elm_lang$html$Html_App$map,
-										_user$project$Main$UpdateWindowList,
-										_user$project$WindowList$view(model.window_list))
-									])),
-								A2(
-								_elm_lang$html$Html$div,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$class('pane')
-									]),
-								A2(
-									_elm_lang$core$List$map,
-									function (w) {
-										return A2(
-											_elm_lang$html$Html_App$map,
-											_user$project$Main$UpdateWindow,
-											_user$project$Window$view(w));
-									},
-									model.opened_windows))
-							]))
-					])),
-				A2(
-				_elm_lang$html$Html$footer,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$class('toolbar toolbar-footer')
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						A2(
-						_elm_lang$html$Html$span,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$class('pull-right')
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text(
-								_elm_lang$core$Basics$toString(model.error))
-							]))
-					]))
+				_elm_lang$html$Html$text('This is main')
 			]));
 };
+var _user$project$Main$app_model = {
+	title: 'Curtain UI',
+	window_list: _elm_lang$core$Native_List.fromArray(
+		[]),
+	focused_window: _elm_lang$core$Maybe$Just('person'),
+	opened_windows: _elm_lang$core$Native_List.fromArray(
+		[_user$project$Window$person_window])
+};
+var _user$project$Main$init = {ctor: '_Tuple2', _0: _user$project$Main$app_model, _1: _elm_lang$core$Platform_Cmd$none};
 var _user$project$Main$main = {
 	main: _elm_lang$html$Html_App$program(
 		{
 			init: _user$project$Main$init,
 			update: _user$project$Main$update,
 			view: _user$project$Main$view,
-			subscriptions: function (_p8) {
+			subscriptions: function (_p0) {
 				return _elm_lang$core$Platform_Sub$none;
 			}
 		})
 };
+var _user$project$Main$Model = F4(
+	function (a, b, c, d) {
+		return {title: a, window_list: b, focused_window: c, opened_windows: d};
+	});
+var _user$project$Main$WindowName = F4(
+	function (a, b, c, d) {
+		return {name: a, description: b, table: c, schema: d};
+	});
+var _user$project$Main$OpenWindow = function (a) {
+	return {ctor: 'OpenWindow', _0: a};
+};
+var _user$project$Main$WindowListReceived = {ctor: 'WindowListReceived'};
+var _user$project$Main$GetWindowList = {ctor: 'GetWindowList'};
 
 var Elm = {};
 Elm['Main'] = Elm['Main'] || {};
