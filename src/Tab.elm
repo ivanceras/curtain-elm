@@ -12,9 +12,9 @@ import Json.Decode.Extra as Extra exposing ((|:))
 
 type alias Model =
     { name: String 
-    , rows: List Row.Model
+    , rows: List Row.Model -- this contains the dao
     , mode: Field.Mode
-    , fields: List Field.Field
+    , fields: List Field.Field -- just the field without the dao
     , presentation: Field.Presentation
     , density: Field.Density
     , is_open: Bool
@@ -40,18 +40,7 @@ type alias Tab =
     , page_size: Maybe Int
     }
 
-to_model: Tab -> Model
-to_model tab =
-    { name = tab.name
-    , rows = []
-    , mode = Field.Read
-    , fields = tab.fields
-    , presentation = Field.Form
-    , density = Field.Expanded
-    , is_open = False
-    , page = 0
-    , page_size = 15
-    }
+
 
 tab_decoder: Decode.Decoder Tab
 tab_decoder = 
@@ -79,21 +68,21 @@ type Msg
     | ChangePresentation Field.Presentation
     | ChangeDensity Field.Density
     | UpdateRow String Row.Msg
+    | TabReceived Tab
+    | TabDataReceived (List Row.DaoState)
 
-person_tab = 
-    { name= "Person"
-    , rows= [Row.row1, Row.row2]
+empty = 
+    { name= ""
+    , rows= []
     , mode= Field.Read
-    , fields= Row.fields
+    , fields = [] 
     , presentation= Field.Form
-    , density = Field.Medium
+    , density = Field.Expanded
     , is_open = True
     , page = 0
     , page_size = 15
     }
-
-init =
-    (person_tab, Cmd.none)
+ 
 
 view: Model -> Html Msg
 view model =
@@ -191,6 +180,20 @@ update msg model =
                             in mr
                         ) model.rows)}, Cmd.none)
 
+        TabReceived tab ->
+            ( {model | fields = tab.fields}, Cmd.none )
+
+        TabDataReceived list_dao_state ->
+            let _ = Debug.log "tab data recieved" (List.length list_dao_state)
+                first_row = Maybe.withDefault Row.empty (List.head model.rows)
+                rows = 
+                List.map (
+                \dao_state ->
+                    let (mo, cmd) = Row.update (Row.DaoStateReceived dao_state) (Row.create model.fields) 
+                    in mo
+                ) list_dao_state 
+            in
+            ( {model | rows = rows }, Cmd.none)
 
  
 

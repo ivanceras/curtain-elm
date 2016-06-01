@@ -6,6 +6,7 @@ import Json.Decode as Decode exposing ((:=))
 
 import Tab
 import Field
+import Row
 
 
 type alias Model =
@@ -23,8 +24,9 @@ type Msg
     = ChangeMode Field.Mode
     | ChangePresentation Field.Presentation
     | UpdateMainTab Tab.Msg
+    | WindowDetailReceived Window
+    | WindowDataReceived (List TableDao)
     
-
 type alias Window =
     { name: String
     , description: Maybe String
@@ -36,17 +38,16 @@ type alias Window =
     , has_many_indirect_tabs: List Tab.Tab
     }
 
-to_model: Window -> Model
-to_model window =
-    { name = window.name
-    , main_tab = Tab.to_model window.main_tab
-    , presentation = Field.Form
-    , mode = Field.Read
-    , is_open = False
-    , ext_tabs = []
-    , has_many_tabs = []
-    , has_many_indirect_tabs = []
+type alias TableDao =
+    { table: String
+    , dao_list: List Row.DaoState
     }
+
+table_dao_decoder =
+    Decode.object2 TableDao
+        ("table" := Decode.string)
+        ("dao_list" := Decode.list Row.dao_state_decoder)
+
 
 
 window_decoder =
@@ -60,19 +61,20 @@ window_decoder =
         ("has_many_tabs" := Decode.list Tab.tab_decoder)
         ("has_many_indirect_tabs" := Decode.list Tab.tab_decoder)
 
-person_window = 
-    { name = "Person Window"
-     , main_tab = Tab.person_tab
-     , presentation = Field.Form
-     , mode = Field.Read
-     , is_open = True
-     , ext_tabs = []
-     , has_many_tabs = []
-     , has_many_indirect_tabs = []
-     }
+empty =
+    { name = ""
+    , main_tab = Tab.empty
+    , presentation = Field.Form
+    , mode = Field.Read
+    , is_open = True
+    , ext_tabs = []
+    , has_many_tabs = []
+    , has_many_indirect_tabs = []
+    }
+
 
 init: (Model, Cmd Msg)
-init = (person_window, Cmd.none)
+init = (empty, Cmd.none)
 
 view: Model -> Html Msg
 view model = 
@@ -89,6 +91,30 @@ update msg model =
             let (mr,cmd) = Tab.update msg model.main_tab
             in
             ({model | main_tab = mr}, Cmd.none)
-        _ ->
-            ( model, Cmd.none )
+        
+        WindowDetailReceived window ->
+            let _ = Debug.log "Window got: " window.table
+                (mo, cmd) = Tab.update (Tab.TabReceived window.main_tab) 
+                                    model.main_tab 
+                -- include the ext_tabs, has_many_tabs, has_many_indirect_tabs
+            in
+            ({model | main_tab = mo}
+            ,Cmd.none
+            )
+
+        WindowDataReceived list_table_dao ->
+            let _ = Debug.log "Window data received" (List.length list_table_dao)
+                main_tab = case (List.head list_table_dao) of
+                    Just table_dao -> 
+                        let (mo, cmd) = Tab.update (Tab.TabDataReceived table_dao.dao_list) model.main_tab
+                        in mo
+                    Nothing -> model.main_tab 
+            in
+            ({model | main_tab = main_tab}, Cmd.none)
+
+        ChangeMode mode ->
+            (model, Cmd.none)
+
+        ChangePresentation presentation ->
+            (model, Cmd.none)
 

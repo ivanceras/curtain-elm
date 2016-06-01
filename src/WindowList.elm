@@ -21,13 +21,14 @@ type alias WindowName =
 
 type Msg
     = OpenWindow String
+    | WindowListReceived (List WindowName)
 
 
-to_model: List WindowName -> Model
-to_model window_list =
-    { window_list = window_list
+empty =
+    { window_list = []
     , search_text = ""
     }
+
 
 view: Model -> Html Msg
 view model =
@@ -49,7 +50,15 @@ view model =
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-    (model, Cmd.none)
+    case msg of
+        WindowListReceived window_list ->
+            ({model | window_list = window_list}
+            , Cmd.none
+            )
+        OpenWindow table -> -- will be caught by the main app
+            let _ = Debug.log "did it opened" table
+            in
+            (model, Cmd.none)
  
 
 window_name_decoder =

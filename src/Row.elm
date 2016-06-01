@@ -5,6 +5,8 @@ import Html exposing (..)
 import Html.App as App
 import Html.Events exposing (..)
 import Html.Attributes exposing (..)
+import Dict
+import Json.Decode as Decode exposing ((:=))
 
 type alias Model =
     { rowId: String
@@ -12,38 +14,48 @@ type alias Model =
     , mode: Field.Mode
     , presentation: Field.Presentation
     , density: Field.Density
+    , is_focused: Bool --determine by dao state
     }
+
+empty =
+    { rowId = "rowX"
+    , field_models = []
+    , mode = Field.Read
+    , presentation = Field.Table
+    , density = Field.Expanded
+    , is_focused = False
+    }
+
+
+create list_fields =
+     let field_models = 
+        List.map (\f -> Field.create f) list_fields
+     in
+     {empty | field_models = field_models}
 
 type Msg
     = ChangeMode Field.Mode
     | ChangePresentation Field.Presentation
     | UpdateField String Field.Msg
     | ChangeDensity Field.Density
+    | DaoStateReceived DaoState
 
-
-fields = [Field.name_field
-        ,Field.bday_field
-        ,Field.active_field
-        ]
-
-field_values = [Field.name
-        ,Field.birthday
-        ,Field.active
-        ]
-
-row1 = { rowId= "f6a7b9290012"
-     , field_models = field_values 
-     , mode = Field.Edit
-     , presentation = Field.Form
-     , density = Field.Medium
+type alias Dao = Dict.Dict String Field.Value
+type alias DaoState =
+    { dao: Dao
+    , focused: Bool
     }
 
-row2 = { rowId= "d5eeef812012"
-     , field_models =  field_values
-     , mode = Field.Edit
-     , presentation = Field.Form
-     , density = Field.Medium
-    }
+dao_state_decoder =
+    Decode.object2 DaoState
+        ("dao" := dao_decoder)
+        ("focused" := Decode.bool)
+
+dao_decoder =
+    Decode.dict Field.value_decoder
+
+
+
 
 {-| selection columns appended to the rows when viewed in table 
 -}
@@ -51,7 +63,7 @@ row2 = { rowId= "d5eeef812012"
 selected_field =
     { name = "Selected"
      ,column = "selected"
-     ,complete_name = "person.selected"
+     ,complete_name = "selected"
      ,is_keyfield = False
      ,data_type = "boolean"
      ,reference = "Bool"
@@ -82,8 +94,6 @@ selected =
      ,focused = False
     }
 
-init = 
-    (row1, Cmd.none)
 
 view: Model -> Html Msg
 view model = 
@@ -178,6 +188,30 @@ update msg model =
                     else
                         f
                   ) }, Cmd.none)
+
+        DaoStateReceived dao_state ->
+            let _ = Debug.log "Row received dao_state" dao_state
+                field_models =
+                List.map(
+                    \f ->
+                        let value = Dict.get f.field.column dao_state.dao
+                            _ = Debug.log "value" value
+                        in
+                        case value of
+                            Just value ->
+                                let (mo, cmd) = Field.update (Field.SetValue value) f
+                                in mo
+                            Nothing -> 
+                                let _ = Debug.log "no value"
+                                in
+                                f
+                ) model.field_models
+            in
+            ({model | is_focused = dao_state.focused
+                    , field_models = field_models
+              }
+            , Cmd.none
+            )
 
 
 significant_fields: List Field.Model -> List Field.Model

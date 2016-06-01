@@ -9,7 +9,6 @@ import Html.Events exposing (..)
 import Date
 import Task
 import String
-import SampleData
 
 type alias Model = 
     { field: Field
@@ -18,6 +17,15 @@ type alias Model =
     , presentation: Presentation
     , focused: Bool
     , density: Density
+    }
+
+create field =
+    { field = field
+    , value = default_value
+    , mode = Read
+    , presentation = Table
+    , focused = False
+    , density = Expanded
     }
 
 type Mode = Edit | Read 
@@ -76,9 +84,20 @@ type alias Field =
 
 type Value
     = Bool Bool
+    | I8 Int
+    | I16 Int
+    | I32 Int
+    | I64 Int
+    | U8 Int
+    | U16 Int
+    | U32 Int
+    | U64 Int
+    | F32 Int
+    | F64 Float
     | String String
     | Date Date.Date
 
+default_value = String "" 
 
 type Msg
     = ChangeValue String
@@ -86,117 +105,7 @@ type Msg
     | ChangeMode Mode 
     | ChangePresentation Presentation
     | ChangeDensity Density
-
-
-bday_field = 
-    { name = "Birthday"
-    , column = "birthday"
-    , complete_name = "person.birthday"
-    , is_keyfield = False
-    , data_type = "Timestamp with time zone"
-    , reference = "Date"
-    , reference_value = Nothing
-    , description = Nothing
-    , info = Nothing
-    , is_significant = False
-    , significance_priority = Nothing
-    , include_in_search = False
-    , is_mandatory = False
-    , seq_no = 0
-    , is_same_line = False
-    , is_displayed = True
-    , is_readonly = False
-    , is_autocomplete = False
-    , display_logic = Nothing
-    , display_length = Just 1
-    , display_value = Nothing
-    }
-
-name_field1 = 
-    { name = "Err_Name"
-    , column= "name"
-    , complete_name = "person.name"
-    , is_keyfield = False
-    , data_type = "character varying"
-    , reference = "String"
-    , reference_value = Nothing
-    , description = Nothing
-    , info = Nothing
-    , is_significant = True
-    , significance_priority = Just 10
-    , include_in_search = False
-    , is_mandatory = True 
-    , seq_no = 0
-    , is_same_line = False
-    , is_displayed = True
-    , is_readonly = False
-    , is_autocomplete = False
-    , display_logic = Nothing
-    , display_length = Just 20
-    , display_value = Nothing
-     }
-
-name_field_result = 
-    let _ = Debug.log "json:" SampleData.name_json_field
-    in
-    Decode.decodeString field_decoder SampleData.name_json_field
-name_field = case name_field_result of
-    Ok name_field -> name_field
-    Err e -> let _ =Debug.log "Error" e
-                in name_field1
-
-
-active_field = 
-    {name = "Active"
-     ,column = "active"
-     ,complete_name = "person.active"
-     ,is_keyfield = False
-     ,data_type = "boolean"
-     ,reference = "Bool"
-     ,reference_value = Nothing
-     ,description = Nothing
-     ,info = Nothing
-     ,is_significant = True
-     ,significance_priority = Just 20
-     ,include_in_search = False
-     ,is_mandatory = False
-     ,seq_no = 0
-     ,is_same_line = False
-     ,is_displayed = True
-     ,is_readonly = False
-     ,is_autocomplete = False
-     ,display_logic = Nothing
-     ,display_length = Just 1
-     ,display_value = Nothing
-     }
-
-birthday =
-    {field = bday_field
-    , value = String "2016-05-01"
-    , mode = Read 
-    , presentation = Form
-    , focused = False
-    , density = Medium 
-    }
-
-name =
-    {field = name_field 
-    , value = String "Jon Snow"
-    , mode = Read 
-    , presentation = Form 
-    , focused = False
-    , density = Medium
-    }
-
-    
-active =
-    {field = active_field
-    , value = Result.withDefault (Bool False) (Decode.decodeString value_decoder SampleData.json_active)
-    , mode = Read 
-    , presentation = Form 
-    , focused = False
-    , density = Medium
-    }
+    | SetValue Value
 
 
 
@@ -216,9 +125,18 @@ value_variant tag =
             Decode.map Bool
                 (("fields" := Decode.list Decode.bool)
                     `Decode.andThen` first_value False)
+        "F64" ->
+            Decode.map F64 
+                (("fields" := Decode.list Decode.float)
+                    `Decode.andThen` first_value 0)
+        "I32" ->
+            Decode.map I32 
+                (("fields" := Decode.list Decode.int)
+                    `Decode.andThen` first_value 0)
         _ ->
             Decode.map String 
-                ("fields" := Decode.string)
+                (("fields" := Decode.list Decode.string)
+                    `Decode.andThen` first_value "")
 
 first_value: a -> List a -> Decode.Decoder a
 first_value default args =
@@ -345,6 +263,8 @@ update msg model =
             ({model | presentation = presentation}, Cmd.none )
         ChangeDensity density ->
             ({model | density = density}, Cmd.none)
+        SetValue value ->
+            ({model | value = value}, Cmd.none)
 
 
 is_empty_value: Value -> Bool
@@ -387,11 +307,26 @@ field_entry model =
                   , field_check
                   , checked b
                   , onCheck ChangeValueBool] []
+        I64 v -> 
+            input [ type' "number"
+                  , field_check
+                  , value (toString v)
+                  ] []
+        F64 v -> 
+            input [ type' "number"
+                  , field_check
+                  , value (toString v)
+                  ] []
+
         Date d -> 
-            input [ type' "text"
+            input [ type' "date"
                   , value (toString d)
                   , onInput ChangeValue] []
-
+        _ ->
+            input [ type' "text"
+                  , value (toString model.value)
+                  , placeholder model.field.name] []
+            
 
 field_read: Model -> Html Msg 
 field_read model =
@@ -404,8 +339,18 @@ field_read model =
                     span [class "icon icon-check text-center", style [("color", "green")]] []
                 False ->
                     span [class "icon icon-cancel text-center", style [("color", "red")]] []
+        I32 v ->
+            text (toString v)
+        I64 v ->
+            text (toString v)
+        F64 v ->
+            text (toString v)
+
         Date d ->
             text (toString d)
+
+        _  ->
+            text (toString value)
             
 
 field_read_list: Model -> Html Msg
@@ -418,5 +363,15 @@ field_read_list model =
             case b of
                 True -> text " true"
                 False -> text " false"
+        I32 v ->
+            text (" "++(toString v))
+        I64 v ->
+            text (" "++(toString v))
+        F64 v ->
+            text (" "++(toString v))
+
         Date d ->
             text (" "++(toString d))
+
+        _ ->
+            text (" "++(toString model.value))

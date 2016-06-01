@@ -8,6 +8,7 @@ import WindowList
 import Http
 import Task
 import Html.Attributes exposing (..)
+import Json.Decode as Decode
 
 
 type alias Model =
@@ -29,16 +30,18 @@ type Msg
     | OpenWindow String
     | UpdateWindow Window.Msg
     | UpdateWindowList WindowList.Msg
-    | WindowDetailRetrieved Window.Window
+    | WindowDetailReceived Window.Window
+    | GetWindowData String
+    | WindowDataReceived (List Window.TableDao) 
     | FetchError Http.Error
 
 app_model =
     { title = "Curtain UI"
     , db_url = "postgres://postgres:p0stgr3s@localhost:5432/bazaar_v8"
     , api_server = "http://localhost:8181"
-    , window_list = WindowList.to_model [] 
+    , window_list = WindowList.empty 
     , focused_window = Just "person"
-    , opened_windows = []
+    , opened_windows = [Window.empty]
     , error = []
     }
 
@@ -77,29 +80,46 @@ update msg model =
         UpdateWindowList msg ->
             case msg of
                 WindowList.OpenWindow table ->
-                    let _ = Debug.log "This should trigger to open window" table
-                    in
                     (model, fetch_window_detail model table)
+                _ ->
+                    (model, Cmd.none)
         
         GetWindowList ->
-            let _ = Debug.log "fetching window_list" model
-            in
             ( model, fetch_window_list model)
 
         WindowListReceived window_list ->
-            ({model | window_list = WindowList.to_model window_list}
-            , Cmd.none)
-       
-        WindowDetailRetrieved window ->
-            let window_model = Window.to_model window
-                _ = Debug.log "windowDetailRetrieve" window
+            let (wm, cmd) = WindowList.update (WindowList.WindowListReceived window_list) model.window_list 
             in
-            ({model | opened_windows = window_model::model.opened_windows}
-            , Cmd.none)
+            ({model | window_list = wm}
+            , Cmd.none
+            )
+       
+        WindowDetailReceived window ->
+            let _ = Debug.log "window detail" window.name
+                opened_windows = 
+                List.map(\window_model ->
+                            let (mo, cmd) = Window.update (Window.WindowDetailReceived window) window_model
+                            in mo
+                        ) model.opened_windows
+            in
+            ({model | opened_windows = opened_windows} 
+            , get_window_data model window.table)
 
         OpenWindow table ->
-            (model, Cmd.none)
-           
+            (model, fetch_window_detail model table)
+
+        GetWindowData table ->
+            ( model, Cmd.none)
+
+        WindowDataReceived table_dao_list ->
+            let opened_windows =
+                List.map(
+                    \window_model ->
+                        let (mo, cmd) = Window.update (Window.WindowDataReceived table_dao_list) window_model
+                        in mo
+                ) model.opened_windows
+            in
+            ( {model | opened_windows = opened_windows} , Cmd.none)
 
         FetchError e ->
             ( { model | error = (toString e)::model.error }, Cmd.none )
@@ -131,4 +151,10 @@ fetch_window_detail: Model -> String -> Cmd Msg
 fetch_window_detail model table =
     http_get model ("/window/"++table)
         |> Http.fromJson Window.window_decoder
-        |> Task.perform FetchError WindowDetailRetrieved
+        |> Task.perform FetchError WindowDetailReceived
+
+get_window_data: Model -> String -> Cmd Msg
+get_window_data model main_table =
+    http_get model ("/app/" ++ main_table)
+        |> Http.fromJson (Decode.list Window.table_dao_decoder)
+        |> Task.perform FetchError WindowDataReceived
