@@ -9255,7 +9255,7 @@ var _user$project$Row$selected = {
 };
 var _user$project$Row$dao_decoder = _elm_lang$core$Json_Decode$dict(_user$project$Field$value_decoder);
 var _user$project$Row$empty = {
-	rowId: 'rowX',
+	rowId: 0,
 	field_models: _elm_lang$core$Native_List.fromArray(
 		[]),
 	mode: _user$project$Field$Read,
@@ -9263,17 +9263,18 @@ var _user$project$Row$empty = {
 	density: _user$project$Field$Expanded,
 	is_focused: false
 };
-var _user$project$Row$create = function (list_fields) {
-	var field_models = A2(
-		_elm_lang$core$List$map,
-		function (f) {
-			return _user$project$Field$create(f);
-		},
-		list_fields);
-	return _elm_lang$core$Native_Utils.update(
-		_user$project$Row$empty,
-		{field_models: field_models});
-};
+var _user$project$Row$create = F2(
+	function (list_fields, rowId) {
+		var field_models = A2(
+			_elm_lang$core$List$map,
+			function (f) {
+				return _user$project$Field$create(f);
+			},
+			list_fields);
+		return _elm_lang$core$Native_Utils.update(
+			_user$project$Row$empty,
+			{field_models: field_models, rowId: rowId});
+	});
 var _user$project$Row$Model = F6(
 	function (a, b, c, d, e, f) {
 		return {rowId: a, field_models: b, mode: c, presentation: d, density: e, is_focused: f};
@@ -9310,7 +9311,8 @@ var _user$project$Row$row_controls = function (model) {
 			[]),
 		_elm_lang$core$Native_List.fromArray(
 			[
-				_elm_lang$html$Html$text(model.rowId),
+				_elm_lang$html$Html$text(
+				_elm_lang$core$Basics$toString(model.rowId)),
 				A2(
 				_elm_lang$html$Html$button,
 				_elm_lang$core$Native_List.fromArray(
@@ -9608,16 +9610,18 @@ var _user$project$Tab$update = F2(
 			default:
 				var _p10 = _p0._0;
 				var rows = A2(
-					_elm_lang$core$List$map,
-					function (dao_state) {
-						var _p8 = A2(
-							_user$project$Row$update,
-							_user$project$Row$DaoStateReceived(dao_state),
-							_user$project$Row$create(model.fields));
-						var mo = _p8._0;
-						var cmd = _p8._1;
-						return mo;
-					},
+					_elm_lang$core$List$indexedMap,
+					F2(
+						function (index, dao_state) {
+							var new_row = A2(_user$project$Row$create, model.fields, model.uid + index);
+							var _p8 = A2(
+								_user$project$Row$update,
+								_user$project$Row$DaoStateReceived(dao_state),
+								new_row);
+							var mo = _p8._0;
+							var cmd = _p8._1;
+							return mo;
+						}),
 					_p10);
 				var first_row = A2(
 					_elm_lang$core$Maybe$withDefault,
@@ -9631,7 +9635,10 @@ var _user$project$Tab$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{rows: rows}),
+						{
+							rows: rows,
+							uid: model.uid + _elm_lang$core$List$length(rows)
+						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 		}
@@ -9673,12 +9680,35 @@ var _user$project$Tab$empty = {
 	density: _user$project$Field$Expanded,
 	is_open: true,
 	page: 0,
-	page_size: 15
+	page_size: 15,
+	uid: 0
 };
-var _user$project$Tab$Model = F9(
-	function (a, b, c, d, e, f, g, h, i) {
-		return {name: a, rows: b, mode: c, fields: d, presentation: e, density: f, is_open: g, page: h, page_size: i};
-	});
+var _user$project$Tab$create = function (tab) {
+	return _elm_lang$core$Native_Utils.update(
+		_user$project$Tab$empty,
+		{fields: tab.fields});
+};
+var _user$project$Tab$Model = function (a) {
+	return function (b) {
+		return function (c) {
+			return function (d) {
+				return function (e) {
+					return function (f) {
+						return function (g) {
+							return function (h) {
+								return function (i) {
+									return function (j) {
+										return {name: a, rows: b, mode: c, fields: d, presentation: e, density: f, is_open: g, page: h, page_size: i, uid: j};
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+	};
+};
 var _user$project$Tab$Tab = function (a) {
 	return function (b) {
 		return function (c) {
@@ -10059,12 +10089,23 @@ var _user$project$Window$empty = {
 	has_many_tabs: _elm_lang$core$Native_List.fromArray(
 		[]),
 	has_many_indirect_tabs: _elm_lang$core$Native_List.fromArray(
-		[])
+		[]),
+	window_id: 0
 };
 var _user$project$Window$init = {ctor: '_Tuple2', _0: _user$project$Window$empty, _1: _elm_lang$core$Platform_Cmd$none};
-var _user$project$Window$Model = F8(
-	function (a, b, c, d, e, f, g, h) {
-		return {name: a, main_tab: b, presentation: c, mode: d, is_open: e, ext_tabs: f, has_many_tabs: g, has_many_indirect_tabs: h};
+var _user$project$Window$create = F2(
+	function (window, window_id) {
+		return _elm_lang$core$Native_Utils.update(
+			_user$project$Window$empty,
+			{
+				name: window.name,
+				window_id: window_id,
+				main_tab: _user$project$Tab$create(window.main_tab)
+			});
+	});
+var _user$project$Window$Model = F9(
+	function (a, b, c, d, e, f, g, h, i) {
+		return {name: a, main_tab: b, presentation: c, mode: d, is_open: e, ext_tabs: f, has_many_tabs: g, has_many_indirect_tabs: h, window_id: i};
 	});
 var _user$project$Window$Window = F8(
 	function (a, b, c, d, e, f, g, h) {
@@ -10120,7 +10161,11 @@ var _user$project$Window$view = function (model) {
 			[]),
 		_elm_lang$core$Native_List.fromArray(
 			[
-				_elm_lang$html$Html$text(model.name),
+				_elm_lang$html$Html$text(
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					model.name,
+					_elm_lang$core$Basics$toString(model.window_id))),
 				A2(
 				_elm_lang$html$Html_App$map,
 				_user$project$Window$UpdateMainTab,
@@ -10251,26 +10296,28 @@ var _user$project$Main$app_model = {
 	window_list: _user$project$WindowList$empty,
 	focused_window: _elm_lang$core$Maybe$Just('person'),
 	opened_windows: _elm_lang$core$Native_List.fromArray(
-		[_user$project$Window$empty]),
+		[]),
 	error: _elm_lang$core$Native_List.fromArray(
-		[])
+		[]),
+	uid: 0
 };
-var _user$project$Main$Model = F7(
-	function (a, b, c, d, e, f, g) {
-		return {title: a, db_url: b, api_server: c, window_list: d, focused_window: e, opened_windows: f, error: g};
+var _user$project$Main$Model = F8(
+	function (a, b, c, d, e, f, g, h) {
+		return {title: a, db_url: b, api_server: c, window_list: d, focused_window: e, opened_windows: f, error: g, uid: h};
 	});
 var _user$project$Main$FetchError = function (a) {
 	return {ctor: 'FetchError', _0: a};
 };
-var _user$project$Main$WindowDataReceived = function (a) {
-	return {ctor: 'WindowDataReceived', _0: a};
-};
-var _user$project$Main$get_window_data = F2(
-	function (model, main_table) {
+var _user$project$Main$WindowDataReceived = F2(
+	function (a, b) {
+		return {ctor: 'WindowDataReceived', _0: a, _1: b};
+	});
+var _user$project$Main$get_window_data = F3(
+	function (model, main_table, window_id) {
 		return A3(
 			_elm_lang$core$Task$perform,
 			_user$project$Main$FetchError,
-			_user$project$Main$WindowDataReceived,
+			_user$project$Main$WindowDataReceived(window_id),
 			A2(
 				_evancz$elm_http$Http$fromJson,
 				_elm_lang$core$Json_Decode$list(_user$project$Window$table_dao_decoder),
@@ -10302,9 +10349,10 @@ var _user$project$Main$fetch_window_detail = F2(
 var _user$project$Main$UpdateWindowList = function (a) {
 	return {ctor: 'UpdateWindowList', _0: a};
 };
-var _user$project$Main$UpdateWindow = function (a) {
-	return {ctor: 'UpdateWindow', _0: a};
-};
+var _user$project$Main$UpdateWindow = F2(
+	function (a, b) {
+		return {ctor: 'UpdateWindow', _0: a, _1: b};
+	});
 var _user$project$Main$OpenWindow = function (a) {
 	return {ctor: 'OpenWindow', _0: a};
 };
@@ -10334,10 +10382,14 @@ var _user$project$Main$update = F2(
 				var window_updates = A2(
 					_elm_lang$core$List$map,
 					function (w) {
-						var _p1 = A2(_user$project$Window$update, _p0._0, w);
-						var mr = _p1._0;
-						var cmd = _p1._1;
-						return mr;
+						if (_elm_lang$core$Native_Utils.eq(w.window_id, _p0._0)) {
+							var _p1 = A2(_user$project$Window$update, _p0._1, w);
+							var mr = _p1._0;
+							var cmd = _p1._1;
+							return mr;
+						} else {
+							return w;
+						}
 					},
 					model.opened_windows);
 				return {
@@ -10380,25 +10432,23 @@ var _user$project$Main$update = F2(
 				};
 			case 'WindowDetailReceived':
 				var _p6 = _p0._0;
-				var opened_windows = A2(
-					_elm_lang$core$List$map,
-					function (window_model) {
-						var _p4 = A2(
-							_user$project$Window$update,
-							_user$project$Window$WindowDetailReceived(_p6),
-							window_model);
-						var mo = _p4._0;
-						var cmd = _p4._1;
-						return mo;
-					},
-					model.opened_windows);
+				var new_window = A2(_user$project$Window$create, _p6, model.uid);
+				var _p4 = A2(
+					_user$project$Window$update,
+					_user$project$Window$WindowDetailReceived(_p6),
+					new_window);
+				var mo = _p4._0;
+				var cmd = _p4._1;
 				var _p5 = A2(_elm_lang$core$Debug$log, 'window detail', _p6.name);
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{opened_windows: opened_windows}),
-					_1: A2(_user$project$Main$get_window_data, model, _p6.table)
+						{
+							opened_windows: A2(_elm_lang$core$List_ops['::'], mo, model.opened_windows),
+							uid: model.uid + 1
+						}),
+					_1: A3(_user$project$Main$get_window_data, model, _p6.table, mo.window_id)
 				};
 			case 'OpenWindow':
 				return {
@@ -10412,13 +10462,17 @@ var _user$project$Main$update = F2(
 				var opened_windows = A2(
 					_elm_lang$core$List$map,
 					function (window_model) {
-						var _p7 = A2(
-							_user$project$Window$update,
-							_user$project$Window$WindowDataReceived(_p0._0),
-							window_model);
-						var mo = _p7._0;
-						var cmd = _p7._1;
-						return mo;
+						if (_elm_lang$core$Native_Utils.eq(window_model.window_id, _p0._0)) {
+							var _p7 = A2(
+								_user$project$Window$update,
+								_user$project$Window$WindowDataReceived(_p0._1),
+								window_model);
+							var mo = _p7._0;
+							var cmd = _p7._1;
+							return mo;
+						} else {
+							return window_model;
+						}
 					},
 					model.opened_windows);
 				return {
@@ -10512,7 +10566,7 @@ var _user$project$Main$view = function (model) {
 									function (w) {
 										return A2(
 											_elm_lang$html$Html_App$map,
-											_user$project$Main$UpdateWindow,
+											_user$project$Main$UpdateWindow(w.window_id),
 											_user$project$Window$view(w));
 									},
 									model.opened_windows))

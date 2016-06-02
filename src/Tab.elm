@@ -20,6 +20,7 @@ type alias Model =
     , is_open: Bool
     , page: Int
     , page_size: Int
+    , uid: Int -- used for tracking row number
     }
 
 type alias Tab =
@@ -67,9 +68,14 @@ type Msg
     = ChangeMode Field.Mode
     | ChangePresentation Field.Presentation
     | ChangeDensity Field.Density
-    | UpdateRow String Row.Msg
+    | UpdateRow Int Row.Msg
     | TabReceived Tab
     | TabDataReceived (List Row.DaoState)
+
+create: Tab -> Model
+create tab =
+    { empty | fields = tab.fields
+    }
 
 empty = 
     { name= ""
@@ -81,6 +87,7 @@ empty =
     , is_open = True
     , page = 0
     , page_size = 15
+    , uid = 0 --will be incremented every row added
     }
  
 
@@ -187,13 +194,18 @@ update msg model =
             let _ = Debug.log "tab data recieved" (List.length list_dao_state)
                 first_row = Maybe.withDefault Row.empty (List.head model.rows)
                 rows = 
-                List.map (
-                \dao_state ->
-                    let (mo, cmd) = Row.update (Row.DaoStateReceived dao_state) (Row.create model.fields) 
-                    in mo
-                ) list_dao_state 
+                    List.indexedMap (
+                    \index dao_state ->
+                        let new_row = Row.create model.fields (model.uid + index)
+                            (mo, cmd) = Row.update (Row.DaoStateReceived dao_state) new_row 
+                        in mo
+                    ) list_dao_state 
             in
-            ( {model | rows = rows }, Cmd.none)
+            ( {model | rows = rows
+              , uid = model.uid + List.length rows
+              }
+             , Cmd.none
+            )
 
  
 

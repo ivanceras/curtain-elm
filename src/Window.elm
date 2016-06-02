@@ -18,6 +18,15 @@ type alias Model =
     , ext_tabs: List Tab.Model
     , has_many_tabs: List Tab.Model
     , has_many_indirect_tabs: List Tab.Model
+    , window_id: Int
+    }
+
+
+create: Window -> Int -> Model
+create window window_id =
+    { empty | name = window.name
+    , window_id = window_id
+    , main_tab = Tab.create window.main_tab
     }
 
 type Msg
@@ -70,6 +79,7 @@ empty =
     , ext_tabs = []
     , has_many_tabs = []
     , has_many_indirect_tabs = []
+    , window_id = 0
     }
 
 
@@ -78,7 +88,7 @@ init = (empty, Cmd.none)
 
 view: Model -> Html Msg
 view model = 
-    div [] [ text model.name
+    div [] [ text (model.name ++ (toString model.window_id))
            , App.map UpdateMainTab(Tab.view model.main_tab)
            , text "extension tab here.."
            , text "has_many tabs here.. direct and indirect"

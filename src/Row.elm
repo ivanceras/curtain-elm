@@ -9,7 +9,7 @@ import Dict
 import Json.Decode as Decode exposing ((:=))
 
 type alias Model =
-    { rowId: String
+    { rowId: Int
     , field_models: List Field.Model
     , mode: Field.Mode
     , presentation: Field.Presentation
@@ -18,7 +18,7 @@ type alias Model =
     }
 
 empty =
-    { rowId = "rowX"
+    { rowId = 0 
     , field_models = []
     , mode = Field.Read
     , presentation = Field.Table
@@ -27,11 +27,13 @@ empty =
     }
 
 
-create list_fields =
+create list_fields rowId =
      let field_models = 
         List.map (\f -> Field.create f) list_fields
      in
-     {empty | field_models = field_models}
+     {empty | field_models = field_models
+            , rowId = rowId
+     }
 
 type Msg
     = ChangeMode Field.Mode
@@ -130,7 +132,7 @@ view model =
 
 row_controls model =  
     div [] 
-      [text model.rowId
+      [text (toString model.rowId)
       ,button [onClick (ChangeMode Field.Edit)] [text "Edit"]
       ,button [onClick (ChangeMode Field.Read)] [text "Read"]
       ,button [onClick (ChangePresentation Field.Table)] [text "Table"]

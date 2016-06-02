@@ -19,6 +19,7 @@ type alias Model =
     , focused_window: Maybe String -- table of the window currently in focused/active
     , opened_windows: List Window.Model
     , error: List String
+    , uid: Int -- id for the opened windows
     }
 
 
@@ -28,11 +29,11 @@ type Msg
     = GetWindowList
     | WindowListReceived (List WindowList.WindowName) 
     | OpenWindow String
-    | UpdateWindow Window.Msg
+    | UpdateWindow Int Window.Msg
     | UpdateWindowList WindowList.Msg
     | WindowDetailReceived Window.Window
     | GetWindowData String
-    | WindowDataReceived (List Window.TableDao) 
+    | WindowDataReceived Int (List Window.TableDao) 
     | FetchError Http.Error
 
 app_model =
@@ -41,8 +42,9 @@ app_model =
     , api_server = "http://localhost:8181"
     , window_list = WindowList.empty 
     , focused_window = Just "person"
-    , opened_windows = [Window.empty]
+    , opened_windows = []
     , error = []
+    , uid = 0
     }
 
 
@@ -59,7 +61,13 @@ view model =
                    [ div [class "pane pane-sm sidebar"]
                          [(App.map UpdateWindowList (WindowList.view model.window_list))]
                    , div [class "pane"] 
-                         (List.map(\w ->App.map UpdateWindow (Window.view w)) model.opened_windows)
+                         (model.opened_windows
+                              |> List.map (
+                                        \w -> 
+                                            Window.view w
+                                                |> App.map (UpdateWindow w.window_id)
+                                     ) 
+                         )
                    ]
                 ]
           ,footer [class "toolbar toolbar-footer"]
@@ -70,9 +78,12 @@ view model =
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
-        UpdateWindow msg -> --todo: window identification should be added here, else all windows are updated
+        UpdateWindow window_id msg -> --todo: window identification should be added here, else all windows are updated
             let window_updates = List.map(\w ->
-                        let (mr,cmd) = Window.update msg w in mr
+                        if w.window_id == window_id then
+                           let (mr,cmd) = Window.update msg w in mr
+                        else
+                            w
                     ) model.opened_windows
             in
             ({model | opened_windows = window_updates}, Cmd.none)
@@ -96,14 +107,13 @@ update msg model =
        
         WindowDetailReceived window ->
             let _ = Debug.log "window detail" window.name
-                opened_windows = 
-                List.map(\window_model ->
-                            let (mo, cmd) = Window.update (Window.WindowDetailReceived window) window_model
-                            in mo
-                        ) model.opened_windows
+                new_window = Window.create window model.uid
+                (mo, cmd) = Window.update (Window.WindowDetailReceived window) new_window 
             in
-            ({model | opened_windows = opened_windows} 
-            , get_window_data model window.table)
+            ({model | opened_windows = mo :: model.opened_windows
+             , uid = model.uid + 1
+             } 
+            , get_window_data model window.table mo.window_id)
 
         OpenWindow table ->
             (model, fetch_window_detail model table)
@@ -111,12 +121,15 @@ update msg model =
         GetWindowData table ->
             ( model, Cmd.none)
 
-        WindowDataReceived table_dao_list ->
+        WindowDataReceived window_id table_dao_list ->
             let opened_windows =
                 List.map(
                     \window_model ->
-                        let (mo, cmd) = Window.update (Window.WindowDataReceived table_dao_list) window_model
-                        in mo
+                        if window_model.window_id == window_id then
+                            let (mo, cmd) = Window.update (Window.WindowDataReceived table_dao_list) window_model
+                            in mo
+                        else
+                            window_model
                 ) model.opened_windows
             in
             ( {model | opened_windows = opened_windows} , Cmd.none)
@@ -153,8 +166,8 @@ fetch_window_detail model table =
         |> Http.fromJson Window.window_decoder
         |> Task.perform FetchError WindowDetailReceived
 
-get_window_data: Model -> String -> Cmd Msg
-get_window_data model main_table =
+get_window_data: Model -> String -> Int -> Cmd Msg
+get_window_data model main_table window_id =
     http_get model ("/app/" ++ main_table)
         |> Http.fromJson (Decode.list Window.table_dao_decoder)
-        |> Task.perform FetchError WindowDataReceived
+        |> Task.perform FetchError (WindowDataReceived window_id)
