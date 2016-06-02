@@ -9643,6 +9643,168 @@ var _user$project$Tab$update = F2(
 				};
 		}
 	});
+var _user$project$Tab$paging = A2(
+	_elm_lang$html$Html$div,
+	_elm_lang$core$Native_List.fromArray(
+		[
+			_elm_lang$html$Html_Attributes$class('btn-group')
+		]),
+	_elm_lang$core$Native_List.fromArray(
+		[
+			A2(
+			_elm_lang$html$Html$button,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Attributes$class('btn btn-large btn-default')
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('icon icon-left-open icon-text')
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[])),
+					_elm_lang$html$Html$text('prev')
+				])),
+			A2(
+			_elm_lang$html$Html$button,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Attributes$class('btn btn-large btn-default')
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('icon icon-right-open icon-text')
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[])),
+					_elm_lang$html$Html$text('next')
+				])),
+			A2(
+			_elm_lang$html$Html$button,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Attributes$class('btn btn-large btn-default')
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('icon icon-arrows-ccw icon-text')
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[])),
+					_elm_lang$html$Html$text('refresh')
+				]))
+		]));
+var _user$project$Tab$toolbar = A2(
+	_elm_lang$html$Html$div,
+	_elm_lang$core$Native_List.fromArray(
+		[
+			_elm_lang$html$Html_Attributes$class('btn-group')
+		]),
+	_elm_lang$core$Native_List.fromArray(
+		[
+			A2(
+			_elm_lang$html$Html$button,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Attributes$class('btn btn-large btn-default')
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('icon icon-floppy icon-text')
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[])),
+					_elm_lang$html$Html$text('save')
+				])),
+			A2(
+			_elm_lang$html$Html$button,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Attributes$class('btn btn-large btn-default')
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('icon icon-plus icon-text')
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[])),
+					_elm_lang$html$Html$text('new')
+				])),
+			A2(
+			_elm_lang$html$Html$button,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Attributes$class('btn btn-large btn-default')
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('icon icon-trash icon-text')
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[])),
+					_elm_lang$html$Html$text('delete')
+				])),
+			A2(
+			_elm_lang$html$Html$button,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Attributes$class('btn btn-large btn-default')
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('icon icon-search icon-text')
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[])),
+					_elm_lang$html$Html$text('search')
+				])),
+			A2(
+			_elm_lang$html$Html$button,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Attributes$class('btn btn-large btn-default')
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('icon icon-hourglass icon-text')
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[])),
+					_elm_lang$html$Html$text('filter')
+				]))
+		]));
 var _user$project$Tab$thead_view = function (fields) {
 	return A2(
 		_elm_lang$html$Html$thead,
@@ -9676,7 +9838,7 @@ var _user$project$Tab$empty = {
 	mode: _user$project$Field$Read,
 	fields: _elm_lang$core$Native_List.fromArray(
 		[]),
-	presentation: _user$project$Field$Form,
+	presentation: _user$project$Field$Table,
 	density: _user$project$Field$Expanded,
 	is_open: true,
 	page: 0,
@@ -10010,7 +10172,9 @@ var _user$project$Tab$view = function (model) {
 		_elm_lang$core$Native_List.fromArray(
 			[
 				_user$project$Tab$tab_controls(model),
-				rows
+				_user$project$Tab$toolbar,
+				rows,
+				_user$project$Tab$paging
 			]));
 };
 
@@ -10074,16 +10238,32 @@ var _user$project$Window$update = F2(
 				};
 			case 'ChangeMode':
 				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
-			default:
+			case 'ChangePresentation':
 				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+			case 'ActivateWindow':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{is_active: true}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			default:
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{is_active: false}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
 		}
 	});
 var _user$project$Window$empty = {
 	name: '',
 	main_tab: _user$project$Tab$empty,
-	presentation: _user$project$Field$Form,
+	presentation: _user$project$Field$Table,
 	mode: _user$project$Field$Read,
-	is_open: true,
+	is_active: true,
 	ext_tabs: _elm_lang$core$Native_List.fromArray(
 		[]),
 	has_many_tabs: _elm_lang$core$Native_List.fromArray(
@@ -10105,7 +10285,7 @@ var _user$project$Window$create = F2(
 	});
 var _user$project$Window$Model = F9(
 	function (a, b, c, d, e, f, g, h, i) {
-		return {name: a, main_tab: b, presentation: c, mode: d, is_open: e, ext_tabs: f, has_many_tabs: g, has_many_indirect_tabs: h, window_id: i};
+		return {name: a, main_tab: b, presentation: c, mode: d, is_active: e, ext_tabs: f, has_many_tabs: g, has_many_indirect_tabs: h, window_id: i};
 	});
 var _user$project$Window$Window = F8(
 	function (a, b, c, d, e, f, g, h) {
@@ -10145,6 +10325,8 @@ var _user$project$Window$table_dao_decoder = A3(
 		_elm_lang$core$Json_Decode_ops[':='],
 		'dao_list',
 		_elm_lang$core$Json_Decode$list(_user$project$Row$dao_state_decoder)));
+var _user$project$Window$DeactivateWindow = {ctor: 'DeactivateWindow'};
+var _user$project$Window$ActivateWindow = {ctor: 'ActivateWindow'};
 var _user$project$Window$WindowDataReceived = function (a) {
 	return {ctor: 'WindowDataReceived', _0: a};
 };
@@ -10155,24 +10337,38 @@ var _user$project$Window$UpdateMainTab = function (a) {
 	return {ctor: 'UpdateMainTab', _0: a};
 };
 var _user$project$Window$view = function (model) {
-	return A2(
+	return model.is_active ? A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
 			[]),
 		_elm_lang$core$Native_List.fromArray(
 			[
-				_elm_lang$html$Html$text(
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					model.name,
-					_elm_lang$core$Basics$toString(model.window_id))),
 				A2(
 				_elm_lang$html$Html_App$map,
 				_user$project$Window$UpdateMainTab,
 				_user$project$Tab$view(model.main_tab)),
-				_elm_lang$html$Html$text('extension tab here..'),
-				_elm_lang$html$Html$text('has_many tabs here.. direct and indirect')
-			]));
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('extension tab here..')
+					])),
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('has_many tabs here.. direct and indirect')
+					]))
+			])) : A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[]));
 };
 var _user$project$Window$ChangePresentation = function (a) {
 	return {ctor: 'ChangePresentation', _0: a};
@@ -10223,8 +10419,8 @@ var _user$project$WindowList$window_list_decoder = _elm_lang$core$Json_Decode$li
 var _user$project$WindowList$WindowListReceived = function (a) {
 	return {ctor: 'WindowListReceived', _0: a};
 };
-var _user$project$WindowList$OpenWindow = function (a) {
-	return {ctor: 'OpenWindow', _0: a};
+var _user$project$WindowList$LoadWindow = function (a) {
+	return {ctor: 'LoadWindow', _0: a};
 };
 var _user$project$WindowList$view = function (model) {
 	return A2(
@@ -10256,7 +10452,7 @@ var _user$project$WindowList$view = function (model) {
 								_elm_lang$html$Html_Attributes$href(
 								A2(_elm_lang$core$Basics_ops['++'], '#', w.table)),
 								_elm_lang$html$Html_Events$onClick(
-								_user$project$WindowList$OpenWindow(w.table))
+								_user$project$WindowList$LoadWindow(w.table))
 							]),
 						_elm_lang$core$Native_List.fromArray(
 							[
@@ -10289,6 +10485,63 @@ var _user$project$Main$http_get = F2(
 				body: _evancz$elm_http$Http$empty
 			});
 	});
+var _user$project$Main$in_opened_windows = F2(
+	function (opened_windows, window_id) {
+		return _elm_lang$core$Basics$not(
+			_elm_lang$core$List$isEmpty(
+				A2(
+					_elm_lang$core$List$filter,
+					function (w) {
+						return _elm_lang$core$Native_Utils.eq(w.window_id, window_id);
+					},
+					opened_windows)));
+	});
+var _user$project$Main$update_activated_window = F2(
+	function (opened_windows, window_id) {
+		return A2(_user$project$Main$in_opened_windows, opened_windows, window_id) ? A2(
+			_elm_lang$core$List$map,
+			function (w) {
+				if (_elm_lang$core$Native_Utils.eq(w.window_id, window_id)) {
+					var _p0 = A2(_user$project$Window$update, _user$project$Window$ActivateWindow, w);
+					var mo = _p0._0;
+					var cmd = _p0._1;
+					return mo;
+				} else {
+					var _p1 = A2(_user$project$Window$update, _user$project$Window$DeactivateWindow, w);
+					var mo = _p1._0;
+					var cmd = _p1._1;
+					return mo;
+				}
+			},
+			opened_windows) : opened_windows;
+	});
+var _user$project$Main$settings = A2(
+	_elm_lang$html$Html$div,
+	_elm_lang$core$Native_List.fromArray(
+		[
+			_elm_lang$html$Html_Attributes$class('toolbar-actions')
+		]),
+	_elm_lang$core$Native_List.fromArray(
+		[
+			A2(
+			_elm_lang$html$Html$button,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Attributes$class('btn btn-default')
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('icon icon-cancel icon-cog')
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[])),
+					_elm_lang$html$Html$text(' Settings')
+				]))
+		]));
 var _user$project$Main$app_model = {
 	title: 'Curtain UI',
 	db_url: 'postgres://postgres:p0stgr3s@localhost:5432/bazaar_v8',
@@ -10353,151 +10606,12 @@ var _user$project$Main$UpdateWindow = F2(
 	function (a, b) {
 		return {ctor: 'UpdateWindow', _0: a, _1: b};
 	});
-var _user$project$Main$OpenWindow = function (a) {
-	return {ctor: 'OpenWindow', _0: a};
+var _user$project$Main$ActivateWindow = function (a) {
+	return {ctor: 'ActivateWindow', _0: a};
 };
-var _user$project$Main$WindowListReceived = function (a) {
-	return {ctor: 'WindowListReceived', _0: a};
+var _user$project$Main$CloseWindow = function (a) {
+	return {ctor: 'CloseWindow', _0: a};
 };
-var _user$project$Main$fetch_window_list = function (model) {
-	return A3(
-		_elm_lang$core$Task$perform,
-		_user$project$Main$FetchError,
-		_user$project$Main$WindowListReceived,
-		A2(
-			_evancz$elm_http$Http$fromJson,
-			_user$project$WindowList$window_list_decoder,
-			A2(_user$project$Main$http_get, model, '/window')));
-};
-var _user$project$Main$init = {
-	ctor: '_Tuple2',
-	_0: _user$project$Main$app_model,
-	_1: _user$project$Main$fetch_window_list(_user$project$Main$app_model)
-};
-var _user$project$Main$update = F2(
-	function (msg, model) {
-		var _p0 = msg;
-		switch (_p0.ctor) {
-			case 'UpdateWindow':
-				var window_updates = A2(
-					_elm_lang$core$List$map,
-					function (w) {
-						if (_elm_lang$core$Native_Utils.eq(w.window_id, _p0._0)) {
-							var _p1 = A2(_user$project$Window$update, _p0._1, w);
-							var mr = _p1._0;
-							var cmd = _p1._1;
-							return mr;
-						} else {
-							return w;
-						}
-					},
-					model.opened_windows);
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{opened_windows: window_updates}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			case 'UpdateWindowList':
-				var _p2 = _p0._0;
-				if (_p2.ctor === 'OpenWindow') {
-					return {
-						ctor: '_Tuple2',
-						_0: model,
-						_1: A2(_user$project$Main$fetch_window_detail, model, _p2._0)
-					};
-				} else {
-					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
-				}
-			case 'GetWindowList':
-				return {
-					ctor: '_Tuple2',
-					_0: model,
-					_1: _user$project$Main$fetch_window_list(model)
-				};
-			case 'WindowListReceived':
-				var _p3 = A2(
-					_user$project$WindowList$update,
-					_user$project$WindowList$WindowListReceived(_p0._0),
-					model.window_list);
-				var wm = _p3._0;
-				var cmd = _p3._1;
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{window_list: wm}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			case 'WindowDetailReceived':
-				var _p6 = _p0._0;
-				var new_window = A2(_user$project$Window$create, _p6, model.uid);
-				var _p4 = A2(
-					_user$project$Window$update,
-					_user$project$Window$WindowDetailReceived(_p6),
-					new_window);
-				var mo = _p4._0;
-				var cmd = _p4._1;
-				var _p5 = A2(_elm_lang$core$Debug$log, 'window detail', _p6.name);
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							opened_windows: A2(_elm_lang$core$List_ops['::'], mo, model.opened_windows),
-							uid: model.uid + 1
-						}),
-					_1: A3(_user$project$Main$get_window_data, model, _p6.table, mo.window_id)
-				};
-			case 'OpenWindow':
-				return {
-					ctor: '_Tuple2',
-					_0: model,
-					_1: A2(_user$project$Main$fetch_window_detail, model, _p0._0)
-				};
-			case 'GetWindowData':
-				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
-			case 'WindowDataReceived':
-				var opened_windows = A2(
-					_elm_lang$core$List$map,
-					function (window_model) {
-						if (_elm_lang$core$Native_Utils.eq(window_model.window_id, _p0._0)) {
-							var _p7 = A2(
-								_user$project$Window$update,
-								_user$project$Window$WindowDataReceived(_p0._1),
-								window_model);
-							var mo = _p7._0;
-							var cmd = _p7._1;
-							return mo;
-						} else {
-							return window_model;
-						}
-					},
-					model.opened_windows);
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{opened_windows: opened_windows}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			default:
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							error: A2(
-								_elm_lang$core$List_ops['::'],
-								_elm_lang$core$Basics$toString(_p0._0),
-								model.error)
-						}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-		}
-	});
-var _user$project$Main$GetWindowList = {ctor: 'GetWindowList'};
 var _user$project$Main$view = function (model) {
 	return A2(
 		_elm_lang$html$Html$div,
@@ -10516,14 +10630,14 @@ var _user$project$Main$view = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						A2(
-						_elm_lang$html$Html$button,
+						_elm_lang$html$Html$h1,
 						_elm_lang$core$Native_List.fromArray(
 							[
-								_elm_lang$html$Html_Events$onClick(_user$project$Main$GetWindowList)
+								_elm_lang$html$Html_Attributes$class('title')
 							]),
 						_elm_lang$core$Native_List.fromArray(
 							[
-								_elm_lang$html$Html$text('Refresh WindowList')
+								_elm_lang$html$Html$text('Curtain')
 							]))
 					])),
 				A2(
@@ -10550,6 +10664,7 @@ var _user$project$Main$view = function (model) {
 									]),
 								_elm_lang$core$Native_List.fromArray(
 									[
+										_user$project$Main$settings,
 										A2(
 										_elm_lang$html$Html_App$map,
 										_user$project$Main$UpdateWindowList,
@@ -10561,15 +10676,60 @@ var _user$project$Main$view = function (model) {
 									[
 										_elm_lang$html$Html_Attributes$class('pane')
 									]),
-								A2(
-									_elm_lang$core$List$map,
-									function (w) {
-										return A2(
-											_elm_lang$html$Html_App$map,
-											_user$project$Main$UpdateWindow(w.window_id),
-											_user$project$Window$view(w));
-									},
-									model.opened_windows))
+								_elm_lang$core$Native_List.fromArray(
+									[
+										A2(
+										_elm_lang$html$Html$div,
+										_elm_lang$core$Native_List.fromArray(
+											[
+												_elm_lang$html$Html_Attributes$class('tab-group')
+											]),
+										A2(
+											_elm_lang$core$List$map,
+											function (w) {
+												return A2(
+													_elm_lang$html$Html$div,
+													_elm_lang$core$Native_List.fromArray(
+														[
+															_elm_lang$html$Html_Attributes$classList(
+															_elm_lang$core$Native_List.fromArray(
+																[
+																	{ctor: '_Tuple2', _0: 'tab-item', _1: true},
+																	{ctor: '_Tuple2', _0: 'active', _1: w.is_active}
+																])),
+															_elm_lang$html$Html_Events$onClick(
+															_user$project$Main$ActivateWindow(w.window_id))
+														]),
+													_elm_lang$core$Native_List.fromArray(
+														[
+															A2(
+															_elm_lang$html$Html$span,
+															_elm_lang$core$Native_List.fromArray(
+																[
+																	_elm_lang$html$Html_Events$onClick(
+																	_user$project$Main$CloseWindow(w.window_id)),
+																	_elm_lang$html$Html_Attributes$class('icon icon-cancel icon-close-tab')
+																]),
+															_elm_lang$core$Native_List.fromArray(
+																[])),
+															_elm_lang$html$Html$text(w.name)
+														]));
+											},
+											model.opened_windows)),
+										A2(
+										_elm_lang$html$Html$div,
+										_elm_lang$core$Native_List.fromArray(
+											[]),
+										A2(
+											_elm_lang$core$List$map,
+											function (w) {
+												return A2(
+													_elm_lang$html$Html_App$map,
+													_user$project$Main$UpdateWindow(w.window_id),
+													_user$project$Window$view(w));
+											},
+											model.opened_windows))
+									]))
 							]))
 					])),
 				A2(
@@ -10594,17 +10754,205 @@ var _user$project$Main$view = function (model) {
 					]))
 			]));
 };
+var _user$project$Main$LoadWindow = function (a) {
+	return {ctor: 'LoadWindow', _0: a};
+};
+var _user$project$Main$WindowListReceived = function (a) {
+	return {ctor: 'WindowListReceived', _0: a};
+};
+var _user$project$Main$fetch_window_list = function (model) {
+	return A3(
+		_elm_lang$core$Task$perform,
+		_user$project$Main$FetchError,
+		_user$project$Main$WindowListReceived,
+		A2(
+			_evancz$elm_http$Http$fromJson,
+			_user$project$WindowList$window_list_decoder,
+			A2(_user$project$Main$http_get, model, '/window')));
+};
+var _user$project$Main$init = {
+	ctor: '_Tuple2',
+	_0: _user$project$Main$app_model,
+	_1: _user$project$Main$fetch_window_list(_user$project$Main$app_model)
+};
+var _user$project$Main$update = F2(
+	function (msg, model) {
+		var _p2 = msg;
+		switch (_p2.ctor) {
+			case 'UpdateWindow':
+				var window_updates = A2(
+					_elm_lang$core$List$map,
+					function (w) {
+						if (_elm_lang$core$Native_Utils.eq(w.window_id, _p2._0)) {
+							var _p3 = A2(_user$project$Window$update, _p2._1, w);
+							var mr = _p3._0;
+							var cmd = _p3._1;
+							return mr;
+						} else {
+							return w;
+						}
+					},
+					model.opened_windows);
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{opened_windows: window_updates}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			case 'CloseWindow':
+				var opened_windows = A2(
+					_elm_lang$core$List$filter,
+					function (w) {
+						return !_elm_lang$core$Native_Utils.eq(w.window_id, _p2._0);
+					},
+					model.opened_windows);
+				var first_opened = function () {
+					var _p4 = _elm_lang$core$List$head(opened_windows);
+					if (_p4.ctor === 'Just') {
+						var first = _elm_lang$core$Native_Utils.update(
+							_p4._0,
+							{is_active: true});
+						return A2(
+							_elm_lang$core$List_ops['::'],
+							first,
+							A2(
+								_elm_lang$core$Maybe$withDefault,
+								_elm_lang$core$Native_List.fromArray(
+									[]),
+								_elm_lang$core$List$tail(opened_windows)));
+					} else {
+						return opened_windows;
+					}
+				}();
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{opened_windows: first_opened}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			case 'ActivateWindow':
+				var _p6 = _p2._0;
+				var _p5 = A2(_elm_lang$core$Debug$log, 'activating window ', _p6);
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							opened_windows: A2(_user$project$Main$update_activated_window, model.opened_windows, _p6)
+						}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			case 'UpdateWindowList':
+				var _p7 = _p2._0;
+				if (_p7.ctor === 'LoadWindow') {
+					return {
+						ctor: '_Tuple2',
+						_0: model,
+						_1: A2(_user$project$Main$fetch_window_detail, model, _p7._0)
+					};
+				} else {
+					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+				}
+			case 'GetWindowList':
+				return {
+					ctor: '_Tuple2',
+					_0: model,
+					_1: _user$project$Main$fetch_window_list(model)
+				};
+			case 'WindowListReceived':
+				var _p8 = A2(
+					_user$project$WindowList$update,
+					_user$project$WindowList$WindowListReceived(_p2._0),
+					model.window_list);
+				var wm = _p8._0;
+				var cmd = _p8._1;
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{window_list: wm}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			case 'WindowDetailReceived':
+				var _p11 = _p2._0;
+				var new_window = A2(_user$project$Window$create, _p11, model.uid);
+				var _p9 = A2(
+					_user$project$Window$update,
+					_user$project$Window$WindowDetailReceived(_p11),
+					new_window);
+				var mo = _p9._0;
+				var cmd = _p9._1;
+				var all_windows = A2(_elm_lang$core$List_ops['::'], mo, model.opened_windows);
+				var updated_windows = A2(_user$project$Main$update_activated_window, all_windows, mo.window_id);
+				var _p10 = A2(_elm_lang$core$Debug$log, 'window detail', _p11.name);
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{opened_windows: updated_windows, uid: model.uid + 1}),
+					_1: A3(_user$project$Main$get_window_data, model, _p11.table, mo.window_id)
+				};
+			case 'LoadWindow':
+				return {
+					ctor: '_Tuple2',
+					_0: model,
+					_1: A2(_user$project$Main$fetch_window_detail, model, _p2._0)
+				};
+			case 'GetWindowData':
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+			case 'WindowDataReceived':
+				var opened_windows = A2(
+					_elm_lang$core$List$map,
+					function (window_model) {
+						if (_elm_lang$core$Native_Utils.eq(window_model.window_id, _p2._0)) {
+							var _p12 = A2(
+								_user$project$Window$update,
+								_user$project$Window$WindowDataReceived(_p2._1),
+								window_model);
+							var mo = _p12._0;
+							var cmd = _p12._1;
+							return mo;
+						} else {
+							return window_model;
+						}
+					},
+					model.opened_windows);
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{opened_windows: opened_windows}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			default:
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							error: A2(
+								_elm_lang$core$List_ops['::'],
+								_elm_lang$core$Basics$toString(_p2._0),
+								model.error)
+						}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+		}
+	});
 var _user$project$Main$main = {
 	main: _elm_lang$html$Html_App$program(
 		{
 			init: _user$project$Main$init,
 			update: _user$project$Main$update,
 			view: _user$project$Main$view,
-			subscriptions: function (_p8) {
+			subscriptions: function (_p13) {
 				return _elm_lang$core$Platform_Sub$none;
 			}
 		})
 };
+var _user$project$Main$GetWindowList = {ctor: 'GetWindowList'};
 
 var Elm = {};
 Elm['Main'] = Elm['Main'] || {};

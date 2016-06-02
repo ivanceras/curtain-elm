@@ -82,7 +82,7 @@ empty =
     , rows= []
     , mode= Field.Read
     , fields = [] 
-    , presentation= Field.Form
+    , presentation= Field.Table
     , density = Field.Expanded
     , is_open = True
     , page = 0
@@ -128,7 +128,9 @@ view model =
                 
     in 
         div [] [tab_controls model
+               ,toolbar
                ,rows
+               ,paging
                ]
 
 tab_controls model =
@@ -148,6 +150,50 @@ thead_view fields =
         [tr []
             (List.map (\f -> th [] [text f.name]) fields
             )
+        ]
+
+
+toolbar: Html Msg
+toolbar = 
+        div [class "btn-group"]
+            [button [class "btn btn-large btn-default"]
+                [span [class "icon icon-floppy icon-text"] []
+                ,text "save"
+                ]
+            ,button [class "btn btn-large btn-default"]
+                [span [class "icon icon-plus icon-text"] []
+                ,text "new" 
+                ]
+            ,button [class "btn btn-large btn-default"]
+                [span [class "icon icon-trash icon-text"] []
+                ,text "delete"
+                ]
+            ,button [class "btn btn-large btn-default"]
+                [span [class "icon icon-search icon-text"] []
+                ,text "search"
+                ]
+            ,button [class "btn btn-large btn-default"]
+                [span [class "icon icon-hourglass icon-text"] []
+                ,text "filter"
+                ]
+            ]
+ 
+
+paging: Html Msg
+paging = 
+    div [class "btn-group"]
+        [button [class "btn btn-large btn-default"]
+            [span [class "icon icon-left-open icon-text"] []
+            , text "prev"
+            ]
+        ,button [class "btn btn-large btn-default"]
+            [span [class "icon icon-right-open icon-text"] []
+            , text "next"
+            ]
+        ,button [class "btn btn-large btn-default"]
+            [span [class "icon icon-arrows-ccw icon-text"] []
+            , text "refresh"
+            ]
         ]
 
 update: Msg -> Model -> (Model, Cmd Msg)

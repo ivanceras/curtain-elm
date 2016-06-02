@@ -20,7 +20,7 @@ type alias WindowName =
 
 
 type Msg
-    = OpenWindow String
+    = LoadWindow String
     | WindowListReceived (List WindowName)
 
 
@@ -37,7 +37,7 @@ view model =
             (List.map(\w ->
                 a [ class "nav-group-item"
                   , href ("#"++w.table)
-                  , onClick (OpenWindow w.table)
+                  , onClick (LoadWindow w.table)
                   ] 
                       [ span [class "icon icon-list"] []
                       , text w.name
@@ -55,7 +55,7 @@ update msg model =
             ({model | window_list = window_list}
             , Cmd.none
             )
-        OpenWindow table -> -- will be caught by the main app
+        LoadWindow table -> -- will be caught by the main app
             let _ = Debug.log "did it opened" table
             in
             (model, Cmd.none)

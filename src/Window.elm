@@ -3,6 +3,7 @@ module Window exposing (..)
 import Html.App as App
 import Html exposing (..)
 import Json.Decode as Decode exposing ((:=))
+import Html.Attributes exposing (..)
 
 import Tab
 import Field
@@ -14,7 +15,7 @@ type alias Model =
     , main_tab: Tab.Model
     , presentation: Field.Presentation
     , mode: Field.Mode
-    , is_open: Bool
+    , is_active: Bool
     , ext_tabs: List Tab.Model
     , has_many_tabs: List Tab.Model
     , has_many_indirect_tabs: List Tab.Model
@@ -35,6 +36,8 @@ type Msg
     | UpdateMainTab Tab.Msg
     | WindowDetailReceived Window
     | WindowDataReceived (List TableDao)
+    | ActivateWindow
+    | DeactivateWindow
     
 type alias Window =
     { name: String
@@ -73,9 +76,9 @@ window_decoder =
 empty =
     { name = ""
     , main_tab = Tab.empty
-    , presentation = Field.Form
+    , presentation = Field.Table
     , mode = Field.Read
-    , is_open = True
+    , is_active = True
     , ext_tabs = []
     , has_many_tabs = []
     , has_many_indirect_tabs = []
@@ -88,11 +91,16 @@ init = (empty, Cmd.none)
 
 view: Model -> Html Msg
 view model = 
-    div [] [ text (model.name ++ (toString model.window_id))
-           , App.map UpdateMainTab(Tab.view model.main_tab)
-           , text "extension tab here.."
-           , text "has_many tabs here.. direct and indirect"
-           ]
+    if model.is_active then
+        div [] [
+                 App.map UpdateMainTab(Tab.view model.main_tab)
+               , div [] [text "extension tab here.."]
+               , div [] [text "has_many tabs here.. direct and indirect"]
+               ]
+    else div[] []
+
+ 
+
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -127,4 +135,10 @@ update msg model =
 
         ChangePresentation presentation ->
             (model, Cmd.none)
+
+        ActivateWindow ->
+            ({model | is_active = True}, Cmd.none)
+
+        DeactivateWindow ->
+            ({model | is_active = False}, Cmd.none)
 

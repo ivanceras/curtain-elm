@@ -28,7 +28,9 @@ type alias Model =
 type Msg
     = GetWindowList
     | WindowListReceived (List WindowList.WindowName) 
-    | OpenWindow String
+    | LoadWindow String
+    | CloseWindow Int
+    | ActivateWindow Int
     | UpdateWindow Int Window.Msg
     | UpdateWindowList WindowList.Msg
     | WindowDetailReceived Window.Window
@@ -55,12 +57,31 @@ view: Model -> Html Msg
 view model =
     div [class "window"] 
          [ header [class "toolbar toolbar-header"]
-                [button [onClick GetWindowList] [text "Refresh WindowList"]]
+                [h1 [class "title"] [text "Curtain"]
+                ]
           ,div [class "window-content"]
                [div [class "pane-group"] 
                    [ div [class "pane pane-sm sidebar"]
-                         [(App.map UpdateWindowList (WindowList.view model.window_list))]
+                         [ settings
+                         , (App.map UpdateWindowList (WindowList.view model.window_list))
+                         ]
                    , div [class "pane"] 
+                         [ div [class "tab-group"] 
+                                (model.opened_windows 
+                                    |> List.map(
+                                        \w ->
+                                            div [ classList [("tab-item", True)
+                                                            ,("active", w.is_active)
+                                                            ]
+                                                       ,onClick (ActivateWindow w.window_id)
+                                                  ]
+                                                [ span [ onClick (CloseWindow w.window_id)
+                                                        ,class "icon icon-cancel icon-close-tab"] []
+                                                  ,text w.name
+                                                ]
+                                    )
+                                )
+                         , div []
                          (model.opened_windows
                               |> List.map (
                                         \w -> 
@@ -68,12 +89,21 @@ view model =
                                                 |> App.map (UpdateWindow w.window_id)
                                      ) 
                          )
+                         ]
                    ]
                 ]
           ,footer [class "toolbar toolbar-footer"]
                 [span [class "pull-right"] [text (toString model.error)]]
           ]
 
+settings: Html Msg
+settings = 
+    div [class "toolbar-actions"]
+         [ button [class "btn btn-default"]
+            [ span [class "icon icon-cancel icon-cog"] []
+            , text " Settings"
+            ]
+         ]
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -87,10 +117,32 @@ update msg model =
                     ) model.opened_windows
             in
             ({model | opened_windows = window_updates}, Cmd.none)
+
+        CloseWindow window_id ->
+            let opened_windows = List.filter (\w -> w.window_id /= window_id ) model.opened_windows
+                first_opened = 
+                    case List.head opened_windows of
+                        Just window -> 
+                           let first  = {window | is_active = True}
+                           in
+                           first :: Maybe.withDefault [] (List.tail opened_windows)
+                        Nothing -> opened_windows
+            in
+            ({model | opened_windows = first_opened}
+            , Cmd.none
+            )
+
+        ActivateWindow window_id -> --set focus to the window
+            let _ = Debug.log "activating window " window_id
+            in
+             ( { model | opened_windows = update_activated_window model.opened_windows window_id
+               }
+               ,Cmd.none
+             )
         
         UpdateWindowList msg ->
             case msg of
-                WindowList.OpenWindow table ->
+                WindowList.LoadWindow table ->
                     (model, fetch_window_detail model table)
                 _ ->
                     (model, Cmd.none)
@@ -109,13 +161,16 @@ update msg model =
             let _ = Debug.log "window detail" window.name
                 new_window = Window.create window model.uid
                 (mo, cmd) = Window.update (Window.WindowDetailReceived window) new_window 
+                all_windows = mo :: model.opened_windows
+                updated_windows = update_activated_window all_windows mo.window_id
             in
-            ({model | opened_windows = mo :: model.opened_windows
+            ({ model | opened_windows = updated_windows
              , uid = model.uid + 1
              } 
-            , get_window_data model window.table mo.window_id)
+            , get_window_data model window.table mo.window_id
+            )
 
-        OpenWindow table ->
+        LoadWindow table ->
             (model, fetch_window_detail model table)
 
         GetWindowData table ->
@@ -145,6 +200,28 @@ main =
         , subscriptions= (\_ -> Sub.none)
         }
 
+
+update_activated_window: List Window.Model -> Int -> List Window.Model
+update_activated_window opened_windows window_id =
+    if in_opened_windows opened_windows window_id then
+        opened_windows
+            |> List.map(
+                \w ->
+                    if w.window_id == window_id then
+                        let (mo, cmd) = Window.update Window.ActivateWindow w
+                        in mo
+                    else
+                        let (mo, cmd) = Window.update Window.DeactivateWindow w
+                        in mo
+            )
+    else
+        opened_windows
+    
+-- check to see if the window_id is in opened_windows
+in_opened_windows opened_windows window_id =
+    List.filter (\w -> w.window_id == window_id ) opened_windows
+        |> List.isEmpty 
+        |> not
 
 http_get model url =
     Http.send Http.defaultSettings
