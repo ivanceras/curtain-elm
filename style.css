@@ -13,7 +13,45 @@
   padding-bottom: 5px;
 }
 
+
 .uuid {
   font-size: 12px!important
 }
 
+.tooltip {
+   /*position: absolute;*/
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    margin-top: 20px;
+    visibility: hidden;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    padding: 4px;
+    border-radius: 2px;
+    position: absolute;
+    z-index: 1000;
+    font-size: 12px; 
+
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+}
+
+td.record_control div{
+    padding: 4px;
+    font-size: 1.2em;
+}
+
+.tab-action{
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.form-action{
+    font-size: 1.3em;
+    font-weight: bold
+}

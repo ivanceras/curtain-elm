@@ -9,30 +9,32 @@ import Dict
 import Json.Decode as Decode exposing ((:=))
 
 type alias Model =
-    { rowId: Int
+    { row_id: Int
     , field_models: List Field.Model
     , mode: Field.Mode
     , presentation: Field.Presentation
     , density: Field.Density
     , is_focused: Bool --determine by dao state
+    , is_selected: Bool
     }
 
 empty =
-    { rowId = 0 
+    { row_id = 0 
     , field_models = []
     , mode = Field.Read
     , presentation = Field.Table
     , density = Field.Expanded
     , is_focused = False
+    , is_selected = False
     }
 
 
-create list_fields rowId =
+create list_fields row_id =
      let field_models = 
         List.map (\f -> Field.create f) list_fields
      in
      {empty | field_models = field_models
-            , rowId = rowId
+            , row_id = row_id
      }
 
 type Msg
@@ -41,6 +43,7 @@ type Msg
     | UpdateField String Field.Msg
     | ChangeDensity Field.Density
     | DaoStateReceived DaoState
+    | Selection Bool
 
 type alias Dao = Dict.Dict String Field.Value
 type alias DaoState =
@@ -59,42 +62,6 @@ dao_decoder =
 
 
 
-{-| selection columns appended to the rows when viewed in table 
--}
-
-selected_field =
-    { name = "Selected"
-     ,column = "selected"
-     ,complete_name = "selected"
-     ,is_keyfield = False
-     ,data_type = "boolean"
-     ,reference = "Bool"
-     ,reference_value = Nothing
-     ,description = Nothing
-     ,info = Nothing
-     ,is_significant = False
-     ,significance_priority = Nothing
-     ,include_in_search = False
-     ,is_mandatory = False
-     ,seq_no = 0
-     ,is_same_line = False
-     ,is_displayed = True
-     ,is_readonly = False
-     ,is_autocomplete = False
-     ,display_logic = Nothing
-     ,display_length = Just 1
-     ,display_value = Nothing
-    }
-
-selected: Field.Model
-selected = 
-    {field = selected_field 
-     ,value = Field.Bool True
-     ,mode = Field.Edit
-     ,presentation = Field.Table
-     ,density = Field.Expanded
-     ,focused = False
-    }
 
 
 view: Model -> Html Msg
@@ -104,15 +71,16 @@ view model =
     case model.presentation of
         Field.Form ->
             div []
-                [ row_controls model
+                [ --row_controls model,
+                  form_record_controls model
                 , Html.form [] 
                   (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| field_models)
                ]
         Field.Table ->
-            let extended_fields = selected :: field_models
-            in
             tr [onDoubleClick (ChangeMode Field.Edit)] 
-               (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| extended_fields)
+               ((tabular_record_controls model) ++
+                (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| field_models)
+               )
         Field.Grid ->
             div []
                 [ row_controls model
@@ -132,7 +100,7 @@ view model =
 
 row_controls model =  
     div [] 
-      [text (toString model.rowId)
+      [text (toString model.row_id)
       ,button [onClick (ChangeMode Field.Edit)] [text "Edit"]
       ,button [onClick (ChangeMode Field.Read)] [text "Read"]
       ,button [onClick (ChangePresentation Field.Table)] [text "Table"]
@@ -144,11 +112,68 @@ row_controls model =
       ,button [onClick (ChangeDensity Field.Expanded)] [text "Expanded"]
        ]
 
+
+
+tabular_record_controls model =
+    let selection = 
+        td [class "tooltip"] 
+                [input [type' "checkbox", checked model.is_selected, onCheck Selection] []
+                ,span [class "tooltiptext"] [text "Click to (un)select this records"]
+                ]
+
+        modification_controls = 
+            case model.mode of
+                Field.Read ->
+                    td [class "record_control"] 
+                        [div [class "icon icon-menu tooltip", onClick (ChangePresentation Field.Form)] 
+                               [span [class "tooltiptext"] [text "Click to open record in a form"]
+                               ]
+                        ,div [class "icon icon-pencil tooltip", onClick (ChangeMode Field.Edit)]
+                               [span [class "tooltiptext"] [text "Click to edit record in the grid"]
+                               ]
+                        ]
+                Field.Edit ->
+                    td [class "record_control"] 
+                                [div [class "icon icon-block tooltip", onClick (ChangeMode Field.Read)] 
+                                    [span [class "tooltiptext"][text "Click to cancel your changes"]
+                                    ]
+                                ,div [class "icon icon-floppy tooltip", onClick (ChangeMode Field.Read)]
+                                    [span [class "tooltiptext"][text "Click to save your changes to the database"]
+                                    ]
+                                ]
+                  
+
+    in
+        selection :: [modification_controls]
+
+
+form_record_controls model =
+    div []
+        [button [class "btn btn-mini btn-default"]
+            [text "Prev"
+            ,span [class "icon icon-left-open"] []
+            ]
+        ,button [class "btn btn-mini btn-default"]
+            [text "Next"
+            ,span [class "icon icon-right-open"] []
+            ]
+        ,button [class "btn btn-mini btn-default"]
+            [text "Maximize"
+            ,span [class "icon icon-resize-full"] []
+            ]
+        ,button [class "btn btn-mini btn-default", onClick (ChangePresentation Field.Table)]
+            [text "Close"
+            ,span [class "icon icon-cancel"] []
+            ]
+        ]
+
+
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         ChangeMode mode ->
-            ({ model | field_models = 
+            ({model | mode = mode 
+                    , field_models = 
                  List.map (\f -> 
                     let (mr,cmd) = Field.update (Field.ChangeMode mode) f
                     in mr
@@ -215,6 +240,8 @@ update msg model =
             , Cmd.none
             )
 
+        Selection checked ->
+            ({model | is_selected = checked}, Cmd.none)
 
 significant_fields: List Field.Model -> List Field.Model
 significant_fields field_models =
