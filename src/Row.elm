@@ -44,6 +44,7 @@ type Msg
     | ChangeDensity Field.Density
     | DaoStateReceived DaoState
     | Selection Bool
+    | Close
 
 type alias Dao = Dict.Dict String Field.Value
 type alias DaoState =
@@ -73,11 +74,11 @@ view model =
             div []
                 [ --row_controls model,
                   form_record_controls model
-                , Html.form [] 
+                , Html.form [style [("display", "flex"), ("flex-wrap", "wrap"), ("align-items", "flex-end")]] 
                   (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| field_models)
                ]
         Field.Table ->
-            tr [onDoubleClick (ChangeMode Field.Edit)] 
+            tr [] 
                ((tabular_record_controls model) ++
                 (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| field_models)
                )
@@ -161,7 +162,7 @@ form_record_controls model =
             [text "Maximize"
             ,span [class "icon icon-resize-full"] []
             ]
-        ,button [class "btn btn-mini btn-default", onClick (ChangePresentation Field.Table)]
+        ,button [class "btn btn-mini btn-default", onClick Close]
             [text "Close"
             ,span [class "icon icon-cancel"] []
             ]
@@ -242,6 +243,9 @@ update msg model =
 
         Selection checked ->
             ({model | is_selected = checked}, Cmd.none)
+
+        Close -> --tab should tap on this event
+            (model, Cmd.none)
 
 significant_fields: List Field.Model -> List Field.Model
 significant_fields field_models =

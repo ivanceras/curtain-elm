@@ -110,14 +110,13 @@ view model =
                         Nothing ->
                             div[] [text "No record selected"]
                     ]
-                 ,paging
                  ]
 
         Field.Table ->
             div []
                 [tab_controls model
                 ,toolbar
-                ,table [class "table-striped"] 
+                ,table [] 
                     [thead_view model 
                     ,tbody []
                     (model.rows
@@ -179,12 +178,16 @@ tab_filters: Model ->List Field.Field -> Html Msg
 tab_filters model filtered_fields =
     let rows = List.length model.rows
         selected = List.filter (\r -> r.is_selected) model.rows |> List.length
+        selected_str = 
+            if selected > 0 then
+                (toString selected)
+            else ""
     in
     tr []
         (
-            [th [] [text (toString selected)]
+            [th [] [text selected_str]
             ,th [] [text (toString rows)
-                   ,span [class "icon icon-hourglass pull-right"] []
+                   ,i [style [("margin-left", "10px")], class "icon ion-funnel"] []
                    ]
             ] ++
             (List.map (
@@ -323,6 +326,10 @@ update msg model =
                     _ ->
                         ( {model | rows = update_row row_id row_msg model }, Cmd.none)
                         
+            Row.Close ->
+                let (mo, cmd) =update_presentation model Field.Table
+                in
+                update_mode mo Field.Read
             _ ->
                 ( {model | rows = update_row row_id row_msg model }, Cmd.none)
 

@@ -95,7 +95,8 @@ type Value
     | F32 Int
     | F64 Float
     | String String
-    | Date Date.Date
+    | Date String
+    | DateTime String
 
 default_value = String "" 
 
@@ -133,6 +134,14 @@ value_variant tag =
             Decode.map I32 
                 (("fields" := Decode.list Decode.int)
                     `Decode.andThen` first_value 0)
+        "Date" ->
+            Decode.map Date 
+                (("fields" := Decode.list Decode.string)
+                    `Decode.andThen` first_value "")
+        "DateTime" ->
+            Decode.map DateTime 
+                (("fields" := Decode.list Decode.string)
+                    `Decode.andThen` first_value "")
         _ ->
             Decode.map String 
                 (("fields" := Decode.list Decode.string)
@@ -172,8 +181,11 @@ field_decoder =
 view : Model -> Html Msg
 view model = 
      let label_style = style [ ("width", "200px") 
-                             , ("text-align", "right")
-                             , ("padding", "5px")
+                             , ("text-align", "left")
+                             , ("padding-top", "5px")
+                             , ("display", "block")
+                             , ("margin-bottom", "0px")
+                             , ("font-weight", "bold")
                              ]
          edit_field = field_entry model
          label_check = if is_mandatory_ok model then
@@ -185,17 +197,35 @@ view model =
              else
                 style [("border", "1px solid red")]
 
+         label_html = label [label_check, label_style] [text (model.field.name)]
+
      in
      case model.mode of
         Edit ->
             case model.presentation of
                 Form ->
-                    div []
-                        [label [label_check, label_style] [text (model.field.name ++ ": ")]
-                        ,edit_field
-                        ]
+                    let container_style = style [("width","350px"),("padding", "2px")]
+                    in
+                    case model.field.data_type of
+                        "Bool" -> -- checkbox before label
+                            let label_bool = label [style [("margin-left","10px"),("margin-bottom", "0px"),("font-weight","bold")]] [text (model.field.name)]
+                            in
+                            div [container_style]
+                                [div [style [("margin-top", "2em")]]
+                                    [edit_field
+                                    ,label_bool
+                                    ]
+                                ]
+
+                        _ ->
+                            div [container_style]
+                                [label_html
+                                ,edit_field
+                                ]
+
                 Table ->
                     td [] [edit_field]
+
                 Grid ->
                     edit_field
                 List -> 
@@ -203,20 +233,19 @@ view model =
         Read ->
             case model.presentation of
                 Form ->
-                    div [onClick (ChangeMode Edit)]
+                    div []
                         [label [label_check, label_style] [text (model.field.name ++ ":")]
                         ,(field_read model)
                         ]
                 Table ->
-                    td [container_style 
-                       , onClick (ChangeMode Edit)]
+                    td [container_style]
                        [(field_read model)
                        ]
                 Grid ->
                     case model.density of
                         Compact -> -- the most significant field without bold
                             if model.field.is_significant then
-                                div [onClick (ChangeMode Edit)] 
+                                div [] 
                                     [(field_read model)
                                     ]
                             else
@@ -225,8 +254,7 @@ view model =
                             if model.field.is_significant then
                                 let text_style = style [("font-weight", "bold")]
                                 in
-                                div [ text_style
-                                    , onClick (ChangeMode Edit)] 
+                                div [ text_style] 
                                     [(field_read model)
                                     ]
                             else
@@ -238,8 +266,7 @@ view model =
                                 else
                                     style []
                             in
-                            div [ text_style
-                                , onClick (ChangeMode Edit)] 
+                            div [ text_style] 
                                 [(field_read model)
                                 ]
                 List ->
@@ -293,15 +320,17 @@ field_entry model =
             style []
         else
             style [("border", "1px solid red")]
+        text_width = style [("width", "300px")]
     in
     case model.value of
         String s ->
             input [ type' "text"
                   , field_check
+                  , text_width
                   , focused_field
                   , value s
                   , onInput ChangeValue
-                  , placeholder model.field.name] []
+                  ] []
         Bool b -> 
             input [ type' "checkbox"
                   , field_check
@@ -310,22 +339,32 @@ field_entry model =
         I64 v -> 
             input [ type' "number"
                   , field_check
+                  , text_width
                   , value (toString v)
                   ] []
         F64 v -> 
             input [ type' "number"
                   , field_check
+                  , text_width
                   , value (toString v)
                   ] []
 
         Date d -> 
             input [ type' "date"
-                  , value (toString d)
+                  , value d
+                  , text_width
+                  , onInput ChangeValue] []
+
+        DateTime d -> 
+            input [ type' "datetime-local"
+                  , value d
+                  , text_width
                   , onInput ChangeValue] []
         _ ->
             input [ type' "text"
+                  , text_width
                   , value (toString model.value)
-                  , placeholder model.field.name] []
+                  ] []
             
 
 field_read: Model -> Html Msg 
@@ -347,7 +386,9 @@ field_read model =
             text (toString v)
 
         Date d ->
-            text (toString d)
+            text d
+        DateTime d ->
+            text d
 
         _  ->
             text (toString value)
