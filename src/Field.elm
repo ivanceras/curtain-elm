@@ -9,6 +9,8 @@ import Html.Events exposing (..)
 import Date
 import Task
 import String
+import ISO8601
+import Date.Format
 
 type alias Model = 
     { field: Field
@@ -356,8 +358,8 @@ field_entry model =
                   , onInput ChangeValue] []
 
         DateTime d -> 
-            input [ type' "datetime-local"
-                  , value d
+            input [ type' "datetime"
+                  , value (simple_date d)
                   , text_width
                   , onInput ChangeValue] []
         _ ->
@@ -366,6 +368,17 @@ field_entry model =
                   , value (toString model.value)
                   ] []
             
+
+simple_date: String -> String
+simple_date str =
+    let time = ISO8601.fromString str 
+                |> Result.withDefault (ISO8601.fromTime 0)
+                |> ISO8601.toTime
+        date = Date.fromTime (toFloat time)
+        iso = Date.Format.formatISO8601 date
+        simple = Date.Format.format "%Y-%m-%d %H:%M" date
+    in
+    simple
 
 field_read: Model -> Html Msg 
 field_read model =
@@ -388,7 +401,7 @@ field_read model =
         Date d ->
             text d
         DateTime d ->
-            text d
+            text (simple_date d)
 
         _  ->
             text (toString value)

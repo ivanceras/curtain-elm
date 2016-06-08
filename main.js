@@ -6302,6 +6302,141 @@ var _elm_community$elm_json_extra$Json_Decode_Extra$apply = _elm_lang$core$Json_
 var _elm_community$elm_json_extra$Json_Decode_Extra_ops = _elm_community$elm_json_extra$Json_Decode_Extra_ops || {};
 _elm_community$elm_json_extra$Json_Decode_Extra_ops['|:'] = _elm_community$elm_json_extra$Json_Decode_Extra$apply;
 
+//import Maybe, Native.List //
+
+var _elm_lang$core$Native_Regex = function() {
+
+function escape(str)
+{
+	return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
+function caseInsensitive(re)
+{
+	return new RegExp(re.source, 'gi');
+}
+function regex(raw)
+{
+	return new RegExp(raw, 'g');
+}
+
+function contains(re, string)
+{
+	return string.match(re) !== null;
+}
+
+function find(n, re, str)
+{
+	n = n.ctor === 'All' ? Infinity : n._0;
+	var out = [];
+	var number = 0;
+	var string = str;
+	var lastIndex = re.lastIndex;
+	var prevLastIndex = -1;
+	var result;
+	while (number++ < n && (result = re.exec(string)))
+	{
+		if (prevLastIndex === re.lastIndex) break;
+		var i = result.length - 1;
+		var subs = new Array(i);
+		while (i > 0)
+		{
+			var submatch = result[i];
+			subs[--i] = submatch === undefined
+				? _elm_lang$core$Maybe$Nothing
+				: _elm_lang$core$Maybe$Just(submatch);
+		}
+		out.push({
+			match: result[0],
+			submatches: _elm_lang$core$Native_List.fromArray(subs),
+			index: result.index,
+			number: number
+		});
+		prevLastIndex = re.lastIndex;
+	}
+	re.lastIndex = lastIndex;
+	return _elm_lang$core$Native_List.fromArray(out);
+}
+
+function replace(n, re, replacer, string)
+{
+	n = n.ctor === 'All' ? Infinity : n._0;
+	var count = 0;
+	function jsReplacer(match)
+	{
+		if (count++ >= n)
+		{
+			return match;
+		}
+		var i = arguments.length - 3;
+		var submatches = new Array(i);
+		while (i > 0)
+		{
+			var submatch = arguments[i];
+			submatches[--i] = submatch === undefined
+				? _elm_lang$core$Maybe$Nothing
+				: _elm_lang$core$Maybe$Just(submatch);
+		}
+		return replacer({
+			match: match,
+			submatches: _elm_lang$core$Native_List.fromArray(submatches),
+			index: arguments[i - 1],
+			number: count
+		});
+	}
+	return string.replace(re, jsReplacer);
+}
+
+function split(n, re, str)
+{
+	n = n.ctor === 'All' ? Infinity : n._0;
+	if (n === Infinity)
+	{
+		return _elm_lang$core$Native_List.fromArray(str.split(re));
+	}
+	var string = str;
+	var result;
+	var out = [];
+	var start = re.lastIndex;
+	while (n--)
+	{
+		if (!(result = re.exec(string))) break;
+		out.push(string.slice(start, result.index));
+		start = re.lastIndex;
+	}
+	out.push(string.slice(start));
+	return _elm_lang$core$Native_List.fromArray(out);
+}
+
+return {
+	regex: regex,
+	caseInsensitive: caseInsensitive,
+	escape: escape,
+
+	contains: F2(contains),
+	find: F3(find),
+	replace: F4(replace),
+	split: F3(split)
+};
+
+}();
+
+var _elm_lang$core$Regex$split = _elm_lang$core$Native_Regex.split;
+var _elm_lang$core$Regex$replace = _elm_lang$core$Native_Regex.replace;
+var _elm_lang$core$Regex$find = _elm_lang$core$Native_Regex.find;
+var _elm_lang$core$Regex$contains = _elm_lang$core$Native_Regex.contains;
+var _elm_lang$core$Regex$caseInsensitive = _elm_lang$core$Native_Regex.caseInsensitive;
+var _elm_lang$core$Regex$regex = _elm_lang$core$Native_Regex.regex;
+var _elm_lang$core$Regex$escape = _elm_lang$core$Native_Regex.escape;
+var _elm_lang$core$Regex$Match = F4(
+	function (a, b, c, d) {
+		return {match: a, submatches: b, index: c, number: d};
+	});
+var _elm_lang$core$Regex$Regex = {ctor: 'Regex'};
+var _elm_lang$core$Regex$AtMost = function (a) {
+	return {ctor: 'AtMost', _0: a};
+};
+var _elm_lang$core$Regex$All = {ctor: 'All'};
+
 //import Native.Json //
 
 var _elm_lang$virtual_dom$Native_VirtualDom = function() {
@@ -8303,6 +8438,720 @@ var _evancz$elm_http$Http$post = F3(
 			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
 	});
 
+var _jweir$elm_iso8601$ISO8601_Helpers$calendar = _elm_lang$core$Array$fromList(
+	_elm_lang$core$Native_List.fromArray(
+		[
+			{ctor: '_Tuple3', _0: 'January', _1: 31, _2: 31},
+			{ctor: '_Tuple3', _0: 'February', _1: 28, _2: 29},
+			{ctor: '_Tuple3', _0: 'March', _1: 31, _2: 31},
+			{ctor: '_Tuple3', _0: 'April', _1: 30, _2: 30},
+			{ctor: '_Tuple3', _0: 'May', _1: 31, _2: 31},
+			{ctor: '_Tuple3', _0: 'June', _1: 30, _2: 30},
+			{ctor: '_Tuple3', _0: 'July', _1: 31, _2: 31},
+			{ctor: '_Tuple3', _0: 'August', _1: 31, _2: 31},
+			{ctor: '_Tuple3', _0: 'September', _1: 30, _2: 30},
+			{ctor: '_Tuple3', _0: 'October', _1: 31, _2: 31},
+			{ctor: '_Tuple3', _0: 'November', _1: 30, _2: 30},
+			{ctor: '_Tuple3', _0: 'December', _1: 31, _2: 31}
+		]));
+var _jweir$elm_iso8601$ISO8601_Helpers$isLeapYear = function (year) {
+	var c = _elm_lang$core$Native_Utils.eq(
+		0,
+		A2(_elm_lang$core$Basics_ops['%'], year, 400));
+	var b = _elm_lang$core$Native_Utils.eq(
+		0,
+		A2(_elm_lang$core$Basics_ops['%'], year, 100));
+	var a = _elm_lang$core$Native_Utils.eq(
+		0,
+		A2(_elm_lang$core$Basics_ops['%'], year, 4));
+	var _p0 = _elm_lang$core$Native_List.fromArray(
+		[a, b, c]);
+	_v0_3:
+	do {
+		if (((_p0.ctor === '::') && (_p0._0 === true)) && (_p0._1.ctor === '::')) {
+			if (_p0._1._0 === false) {
+				if ((_p0._1._1.ctor === '::') && (_p0._1._1._1.ctor === '[]')) {
+					return true;
+				} else {
+					break _v0_3;
+				}
+			} else {
+				if (_p0._1._1.ctor === '::') {
+					if (_p0._1._1._0 === true) {
+						if (_p0._1._1._1.ctor === '[]') {
+							return true;
+						} else {
+							break _v0_3;
+						}
+					} else {
+						if (_p0._1._1._1.ctor === '[]') {
+							return false;
+						} else {
+							break _v0_3;
+						}
+					}
+				} else {
+					break _v0_3;
+				}
+			}
+		} else {
+			break _v0_3;
+		}
+	} while(false);
+	return false;
+};
+var _jweir$elm_iso8601$ISO8601_Helpers$daysInMonth = F2(
+	function (year, monthInt) {
+		var calMonth = A2(_elm_lang$core$Array$get, monthInt - 1, _jweir$elm_iso8601$ISO8601_Helpers$calendar);
+		var _p1 = calMonth;
+		if (_p1.ctor === 'Just') {
+			return _jweir$elm_iso8601$ISO8601_Helpers$isLeapYear(year) ? _p1._0._2 : _p1._0._1;
+		} else {
+			return 0;
+		}
+	});
+var _jweir$elm_iso8601$ISO8601_Helpers$daysToMonths = F3(
+	function (year, startMonth, remainingDays) {
+		daysToMonths:
+		while (true) {
+			var remainingDays$ = remainingDays - A2(_jweir$elm_iso8601$ISO8601_Helpers$daysInMonth, year, startMonth);
+			if (_elm_lang$core$Native_Utils.cmp(remainingDays$, 0) > 0) {
+				var _v2 = year,
+					_v3 = startMonth + 1,
+					_v4 = remainingDays$;
+				year = _v2;
+				startMonth = _v3;
+				remainingDays = _v4;
+				continue daysToMonths;
+			} else {
+				return {ctor: '_Tuple2', _0: startMonth, _1: remainingDays};
+			}
+		}
+	});
+var _jweir$elm_iso8601$ISO8601_Helpers$daysInYear = function (year) {
+	return _jweir$elm_iso8601$ISO8601_Helpers$isLeapYear(year) ? 366 : 365;
+};
+var _jweir$elm_iso8601$ISO8601_Helpers$yearsToDays = F3(
+	function (ending, current, days) {
+		yearsToDays:
+		while (true) {
+			if (_elm_lang$core$Native_Utils.cmp(ending, current) > 0) {
+				var _v5 = ending,
+					_v6 = current + 1,
+					_v7 = _jweir$elm_iso8601$ISO8601_Helpers$daysInYear(current);
+				ending = _v5;
+				current = _v6;
+				days = _v7;
+				continue yearsToDays;
+			} else {
+				return days;
+			}
+		}
+	});
+var _jweir$elm_iso8601$ISO8601_Helpers$toInt = function (str) {
+	return A2(
+		_elm_lang$core$Maybe$withDefault,
+		0,
+		_elm_lang$core$Result$toMaybe(
+			_elm_lang$core$String$toInt(str)));
+};
+var _jweir$elm_iso8601$ISO8601_Helpers$After = {ctor: 'After'};
+var _jweir$elm_iso8601$ISO8601_Helpers$Before = {ctor: 'Before'};
+var _jweir$elm_iso8601$ISO8601_Helpers$daysToYears = F3(
+	function (rel, startYear, remainingDays) {
+		daysToYears:
+		while (true) {
+			var _p2 = rel;
+			if (_p2.ctor === 'After') {
+				var remainingDays$ = remainingDays - _jweir$elm_iso8601$ISO8601_Helpers$daysInYear(startYear);
+				if (_elm_lang$core$Native_Utils.cmp(remainingDays$, 0) > 0) {
+					var _v9 = _jweir$elm_iso8601$ISO8601_Helpers$After,
+						_v10 = startYear + 1,
+						_v11 = remainingDays$;
+					rel = _v9;
+					startYear = _v10;
+					remainingDays = _v11;
+					continue daysToYears;
+				} else {
+					return {ctor: '_Tuple2', _0: startYear, _1: remainingDays};
+				}
+			} else {
+				var remainingDays$ = remainingDays + _jweir$elm_iso8601$ISO8601_Helpers$daysInYear(startYear);
+				if (_elm_lang$core$Native_Utils.cmp(remainingDays$, 0) < 0) {
+					var _v12 = _jweir$elm_iso8601$ISO8601_Helpers$Before,
+						_v13 = startYear - 1,
+						_v14 = remainingDays$;
+					rel = _v12;
+					startYear = _v13;
+					remainingDays = _v14;
+					continue daysToYears;
+				} else {
+					return {
+						ctor: '_Tuple2',
+						_0: startYear,
+						_1: _jweir$elm_iso8601$ISO8601_Helpers$daysInYear(startYear) + remainingDays
+					};
+				}
+			}
+		}
+	});
+
+var _jweir$elm_iso8601$ISO8601$validateHour = function (time) {
+	var s = time.second;
+	var m = time.minute;
+	var h = time.hour;
+	return (_elm_lang$core$Native_Utils.eq(h, 24) && (_elm_lang$core$Native_Utils.cmp(m + s, 0) > 0)) ? _elm_lang$core$Result$Err('hour is out of range') : (((_elm_lang$core$Native_Utils.cmp(h, 0) < 0) || (_elm_lang$core$Native_Utils.cmp(h, 24) > 0)) ? _elm_lang$core$Result$Err('hour is out of range') : (((_elm_lang$core$Native_Utils.cmp(m, 0) < 0) || (_elm_lang$core$Native_Utils.cmp(m, 59) > 0)) ? _elm_lang$core$Result$Err('minute is out of range') : (((_elm_lang$core$Native_Utils.cmp(s, 0) < 0) || (_elm_lang$core$Native_Utils.cmp(s, 59) > 0)) ? _elm_lang$core$Result$Err('second is out of range') : _elm_lang$core$Result$Ok(time))));
+};
+var _jweir$elm_iso8601$ISO8601$validateTime = function (time) {
+	var maxDays = _jweir$elm_iso8601$ISO8601_Helpers$daysInMonth;
+	return ((_elm_lang$core$Native_Utils.cmp(time.month, 1) < 0) || (_elm_lang$core$Native_Utils.cmp(time.month, 12) > 0)) ? _elm_lang$core$Result$Err('month is out of range') : (((_elm_lang$core$Native_Utils.cmp(time.day, 1) < 0) || (_elm_lang$core$Native_Utils.cmp(
+		time.day,
+		A2(_jweir$elm_iso8601$ISO8601_Helpers$daysInMonth, time.year, time.month)) > 0)) ? _elm_lang$core$Result$Err('day is out of range') : _jweir$elm_iso8601$ISO8601$validateHour(time));
+};
+var _jweir$elm_iso8601$ISO8601$parseOffset = function (timeString) {
+	var setHour = F2(
+		function (modifier, hour) {
+			var _p0 = modifier;
+			switch (_p0) {
+				case '+':
+					return hour;
+				case '-':
+					return A2(_elm_lang$core$Basics_ops['++'], modifier, hour);
+				default:
+					return hour;
+			}
+		});
+	var match = A3(
+		_elm_lang$core$Regex$find,
+		_elm_lang$core$Regex$AtMost(1),
+		_elm_lang$core$Regex$regex('([-+])(\\d\\d):?(\\d\\d)'),
+		A2(_elm_lang$core$Maybe$withDefault, '', timeString));
+	var parts = A2(
+		_elm_lang$core$List$map,
+		function (_) {
+			return _.submatches;
+		},
+		match);
+	var re = _elm_lang$core$Regex$regex('(Z|([+-]\\d{2}:?\\d{2}))?');
+	var _p1 = parts;
+	_v1_2:
+	do {
+		if (((((_p1.ctor === '::') && (_p1._0.ctor === '::')) && (_p1._0._0.ctor === 'Just')) && (_p1._0._1.ctor === '::')) && (_p1._0._1._0.ctor === 'Just')) {
+			if (_p1._0._1._1.ctor === '::') {
+				if (((_p1._0._1._1._0.ctor === 'Just') && (_p1._0._1._1._1.ctor === '[]')) && (_p1._1.ctor === '[]')) {
+					return {
+						ctor: '_Tuple2',
+						_0: _jweir$elm_iso8601$ISO8601_Helpers$toInt(
+							A2(setHour, _p1._0._0._0, _p1._0._1._0._0)),
+						_1: _jweir$elm_iso8601$ISO8601_Helpers$toInt(_p1._0._1._1._0._0)
+					};
+				} else {
+					break _v1_2;
+				}
+			} else {
+				if (_p1._1.ctor === '[]') {
+					return {
+						ctor: '_Tuple2',
+						_0: _jweir$elm_iso8601$ISO8601_Helpers$toInt(
+							A2(setHour, _p1._0._0._0, _p1._0._1._0._0)),
+						_1: 0
+					};
+				} else {
+					break _v1_2;
+				}
+			}
+		} else {
+			break _v1_2;
+		}
+	} while(false);
+	return {ctor: '_Tuple2', _0: 0, _1: 0};
+};
+var _jweir$elm_iso8601$ISO8601$parseMilliseconds = function (msString) {
+	var _p2 = msString;
+	if (_p2.ctor === 'Nothing') {
+		return 0;
+	} else {
+		var decimalStr = A4(
+			_elm_lang$core$Regex$replace,
+			_elm_lang$core$Regex$AtMost(1),
+			_elm_lang$core$Regex$regex('[,.]'),
+			function (_p3) {
+				return '0.';
+			},
+			_p2._0);
+		var decimal = A2(
+			_elm_lang$core$Maybe$withDefault,
+			0.0,
+			_elm_lang$core$Result$toMaybe(
+				_elm_lang$core$String$toFloat(decimalStr)));
+		return _elm_lang$core$Basics$round(1000 * decimal);
+	}
+};
+var _jweir$elm_iso8601$ISO8601$iso8601Regex = A2(
+	_elm_lang$core$Regex$find,
+	_elm_lang$core$Regex$AtMost(1),
+	_elm_lang$core$Regex$regex(
+		A2(
+			_elm_lang$core$Basics_ops['++'],
+			'(\\d{4})?-?',
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				'(\\d{2})?-?',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					'(\\d{2})?',
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						'T?',
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							'(\\d{2})?:?',
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								'(\\d{2})?:?',
+								A2(
+									_elm_lang$core$Basics_ops['++'],
+									'(\\d{2})?',
+									A2(
+										_elm_lang$core$Basics_ops['++'],
+										'([.,]\\d{1,})?',
+										A2(_elm_lang$core$Basics_ops['++'], '(Z|[+-]\\d{2}:?\\d{2})?', '(.*)?')))))))))));
+var _jweir$elm_iso8601$ISO8601$fromString = function (s) {
+	var unwrap = F2(
+		function (x, d) {
+			return _jweir$elm_iso8601$ISO8601_Helpers$toInt(
+				A2(_elm_lang$core$Maybe$withDefault, d, x));
+		});
+	var parts = A2(
+		_elm_lang$core$List$map,
+		function (_) {
+			return _.submatches;
+		},
+		_jweir$elm_iso8601$ISO8601$iso8601Regex(s));
+	var _p4 = parts;
+	if ((((((((((((_p4.ctor === '::') && (_p4._0.ctor === '::')) && (_p4._0._1.ctor === '::')) && (_p4._0._1._1.ctor === '::')) && (_p4._0._1._1._1.ctor === '::')) && (_p4._0._1._1._1._1.ctor === '::')) && (_p4._0._1._1._1._1._1.ctor === '::')) && (_p4._0._1._1._1._1._1._1.ctor === '::')) && (_p4._0._1._1._1._1._1._1._1.ctor === '::')) && (_p4._0._1._1._1._1._1._1._1._1.ctor === '::')) && (_p4._0._1._1._1._1._1._1._1._1._1.ctor === '[]')) && (_p4._1.ctor === '[]')) {
+		var _p5 = _p4._0._1._1._1._1._1._1._1._1._0;
+		if (_p5.ctor === 'Just') {
+			return _elm_lang$core$Result$Err('unexpected text');
+		} else {
+			return _jweir$elm_iso8601$ISO8601$validateTime(
+				{
+					year: A2(unwrap, _p4._0._0, '0'),
+					month: A2(unwrap, _p4._0._1._0, '1'),
+					day: A2(unwrap, _p4._0._1._1._0, '1'),
+					hour: A2(unwrap, _p4._0._1._1._1._0, '0'),
+					minute: A2(unwrap, _p4._0._1._1._1._1._0, '0'),
+					second: A2(unwrap, _p4._0._1._1._1._1._1._0, '0'),
+					millisecond: _jweir$elm_iso8601$ISO8601$parseMilliseconds(_p4._0._1._1._1._1._1._1._0),
+					offset: _jweir$elm_iso8601$ISO8601$parseOffset(_p4._0._1._1._1._1._1._1._1._0)
+				});
+		}
+	} else {
+		var _p6 = A2(_elm_lang$core$Debug$log, s, parts);
+		return _elm_lang$core$Result$Err('unknown error');
+	}
+};
+var _jweir$elm_iso8601$ISO8601$fmtMs = function (n) {
+	return _elm_lang$core$Native_Utils.eq(n, 0) ? '' : ((_elm_lang$core$Native_Utils.cmp(n, 10) < 0) ? A2(
+		_elm_lang$core$Basics_ops['++'],
+		'.00',
+		_elm_lang$core$Basics$toString(n)) : ((_elm_lang$core$Native_Utils.cmp(n, 100) < 0) ? A2(
+		_elm_lang$core$Basics_ops['++'],
+		'.0',
+		_elm_lang$core$Basics$toString(n)) : A2(
+		_elm_lang$core$Basics_ops['++'],
+		'.',
+		_elm_lang$core$Basics$toString(n))));
+};
+var _jweir$elm_iso8601$ISO8601$fmt = function (n) {
+	return (_elm_lang$core$Native_Utils.cmp(n, 10) < 0) ? A2(
+		_elm_lang$core$Basics_ops['++'],
+		'0',
+		_elm_lang$core$Basics$toString(n)) : _elm_lang$core$Basics$toString(n);
+};
+var _jweir$elm_iso8601$ISO8601$fmtOffset = function (offset) {
+	var _p7 = offset;
+	if ((_p7._0 === 0) && (_p7._1 === 0)) {
+		return 'Z';
+	} else {
+		var _p8 = _p7._0;
+		var symbol = (_elm_lang$core$Native_Utils.cmp(_p8, 0) > -1) ? '+' : '-';
+		return A2(
+			_elm_lang$core$Basics_ops['++'],
+			symbol,
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				_jweir$elm_iso8601$ISO8601$fmt(
+					_elm_lang$core$Basics$abs(_p8)),
+				_jweir$elm_iso8601$ISO8601$fmt(_p7._1)));
+	}
+};
+var _jweir$elm_iso8601$ISO8601$toString = function (time) {
+	return A2(
+		_elm_lang$core$String$join,
+		'',
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_jweir$elm_iso8601$ISO8601$fmt(time.year),
+				'-',
+				_jweir$elm_iso8601$ISO8601$fmt(time.month),
+				'-',
+				_jweir$elm_iso8601$ISO8601$fmt(time.day),
+				'T',
+				_jweir$elm_iso8601$ISO8601$fmt(time.hour),
+				':',
+				_jweir$elm_iso8601$ISO8601$fmt(time.minute),
+				':',
+				_jweir$elm_iso8601$ISO8601$fmt(time.second),
+				_jweir$elm_iso8601$ISO8601$fmtMs(time.millisecond),
+				_jweir$elm_iso8601$ISO8601$fmtOffset(time.offset)
+			]));
+};
+var _jweir$elm_iso8601$ISO8601$defaultTime = {
+	year: 0,
+	month: 1,
+	day: 1,
+	hour: 0,
+	minute: 0,
+	second: 0,
+	millisecond: 0,
+	offset: {ctor: '_Tuple2', _0: 0, _1: 0}
+};
+var _jweir$elm_iso8601$ISO8601$ims = 1;
+var _jweir$elm_iso8601$ISO8601$isec = _jweir$elm_iso8601$ISO8601$ims * 1000;
+var _jweir$elm_iso8601$ISO8601$imin = _jweir$elm_iso8601$ISO8601$isec * 60;
+var _jweir$elm_iso8601$ISO8601$ihour = _jweir$elm_iso8601$ISO8601$imin * 60;
+var _jweir$elm_iso8601$ISO8601$iday = _jweir$elm_iso8601$ISO8601$ihour * 24;
+var _jweir$elm_iso8601$ISO8601$offsetToTime = function (time) {
+	var _p9 = time.offset;
+	var m = _p9._0;
+	var s = _p9._1;
+	return (_jweir$elm_iso8601$ISO8601$ihour * m) + (_jweir$elm_iso8601$ISO8601$imin * s);
+};
+var _jweir$elm_iso8601$ISO8601$toTime = function (time) {
+	var _p10 = _elm_lang$core$Native_Utils.cmp(time.year, 1970) > -1;
+	if (_p10 === false) {
+		var totalDays = _elm_lang$core$List$sum(
+			A2(
+				_elm_lang$core$List$map,
+				_jweir$elm_iso8601$ISO8601_Helpers$daysInMonth(time.year),
+				_elm_lang$core$Native_List.range(1, time.month)));
+		var years = A2(
+			_elm_lang$core$List$map,
+			_jweir$elm_iso8601$ISO8601_Helpers$daysInYear,
+			_elm_lang$core$Native_List.range(time.year + 1, 1970 - 1));
+		var tots = _elm_lang$core$Native_List.fromArray(
+			[
+				_jweir$elm_iso8601$ISO8601$iday * _elm_lang$core$List$sum(years),
+				_jweir$elm_iso8601$ISO8601$iday * (_jweir$elm_iso8601$ISO8601_Helpers$daysInYear(time.year) - totalDays),
+				_jweir$elm_iso8601$ISO8601$iday * (A2(_jweir$elm_iso8601$ISO8601_Helpers$daysInMonth, time.year, time.month) - time.day),
+				(_jweir$elm_iso8601$ISO8601$iday - _jweir$elm_iso8601$ISO8601$ihour) - (_jweir$elm_iso8601$ISO8601$ihour * time.hour),
+				(_jweir$elm_iso8601$ISO8601$ihour - _jweir$elm_iso8601$ISO8601$imin) - (_jweir$elm_iso8601$ISO8601$imin * time.minute),
+				_jweir$elm_iso8601$ISO8601$imin - (_jweir$elm_iso8601$ISO8601$isec * time.second),
+				_jweir$elm_iso8601$ISO8601$offsetToTime(time)
+			]);
+		return 0 - (_elm_lang$core$List$sum(tots) - time.millisecond);
+	} else {
+		var months = A2(
+			_elm_lang$core$List$map,
+			_jweir$elm_iso8601$ISO8601_Helpers$daysInMonth(time.year),
+			_elm_lang$core$Native_List.range(1, time.month - 1));
+		var years = A2(
+			_elm_lang$core$List$map,
+			_jweir$elm_iso8601$ISO8601_Helpers$daysInYear,
+			_elm_lang$core$Native_List.range(1970, time.year - 1));
+		var tots = _elm_lang$core$Native_List.fromArray(
+			[
+				_jweir$elm_iso8601$ISO8601$iday * _elm_lang$core$List$sum(years),
+				_jweir$elm_iso8601$ISO8601$iday * _elm_lang$core$List$sum(months),
+				_jweir$elm_iso8601$ISO8601$iday * (time.day - 1),
+				_jweir$elm_iso8601$ISO8601$ihour * time.hour,
+				_jweir$elm_iso8601$ISO8601$imin * time.minute,
+				_jweir$elm_iso8601$ISO8601$isec * time.second,
+				-1 * _jweir$elm_iso8601$ISO8601$offsetToTime(time)
+			]);
+		return _elm_lang$core$List$sum(tots) + time.millisecond;
+	}
+};
+var _jweir$elm_iso8601$ISO8601$fromTime = function (ms) {
+	var v = (_elm_lang$core$Native_Utils.cmp(ms, 0) > -1) ? _jweir$elm_iso8601$ISO8601_Helpers$After : _jweir$elm_iso8601$ISO8601_Helpers$Before;
+	var milliseconds = A2(_elm_lang$core$Basics_ops['%'], ms, _jweir$elm_iso8601$ISO8601$isec);
+	var _p11 = v;
+	if (_p11.ctor === 'After') {
+		var hours = A2(_elm_lang$core$Basics_ops['%'], (ms / _jweir$elm_iso8601$ISO8601$ihour) | 0, 24);
+		var minutes = A2(_elm_lang$core$Basics_ops['%'], (ms / _jweir$elm_iso8601$ISO8601$imin) | 0, 60);
+		var seconds = A2(_elm_lang$core$Basics_ops['%'], (ms / _jweir$elm_iso8601$ISO8601$isec) | 0, 60);
+		var days = (ms / _jweir$elm_iso8601$ISO8601$iday) | 0;
+		var _p12 = A3(_jweir$elm_iso8601$ISO8601_Helpers$daysToYears, _jweir$elm_iso8601$ISO8601_Helpers$After, 1970, days);
+		var years = _p12._0;
+		var remainingDays = _p12._1;
+		var _p13 = A3(_jweir$elm_iso8601$ISO8601_Helpers$daysToMonths, years, 1, remainingDays + 1);
+		var month = _p13._0;
+		var daysInMonth = _p13._1;
+		return _elm_lang$core$Native_Utils.update(
+			_jweir$elm_iso8601$ISO8601$defaultTime,
+			{second: seconds, minute: minutes, hour: hours, day: daysInMonth, month: month, year: years, millisecond: milliseconds});
+	} else {
+		var totalDays = (ms / _jweir$elm_iso8601$ISO8601$iday) | 0;
+		var rem = A2(_elm_lang$core$Basics_ops['%'], ms, _jweir$elm_iso8601$ISO8601$iday);
+		var _p14 = _elm_lang$core$Native_Utils.eq(rem, 0) ? A3(_jweir$elm_iso8601$ISO8601_Helpers$daysToYears, _jweir$elm_iso8601$ISO8601_Helpers$Before, 1969, totalDays + 1) : A3(_jweir$elm_iso8601$ISO8601_Helpers$daysToYears, _jweir$elm_iso8601$ISO8601_Helpers$Before, 1969, totalDays);
+		var years = _p14._0;
+		var remainingDays = _p14._1;
+		var _p15 = A3(_jweir$elm_iso8601$ISO8601_Helpers$daysToMonths, years, 1, remainingDays);
+		var month = _p15._0;
+		var daysInMonth = _p15._1;
+		var days = (rem / _jweir$elm_iso8601$ISO8601$iday) | 0;
+		var seconds = A2(_elm_lang$core$Basics_ops['%'], (rem / _jweir$elm_iso8601$ISO8601$isec) | 0, 60);
+		var minutes = A2(_elm_lang$core$Basics_ops['%'], (rem / _jweir$elm_iso8601$ISO8601$imin) | 0, 60);
+		var hours = A2(_elm_lang$core$Basics_ops['%'], (rem / _jweir$elm_iso8601$ISO8601$ihour) | 0, 24);
+		var _p16 = A2(
+			_elm_lang$core$Debug$log,
+			'',
+			{ctor: '_Tuple8', _0: totalDays, _1: years, _2: rem, _3: remainingDays, _4: days, _5: hours, _6: minutes, _7: seconds});
+		return _elm_lang$core$Native_Utils.update(
+			_jweir$elm_iso8601$ISO8601$defaultTime,
+			{second: seconds, minute: minutes, hour: hours, day: daysInMonth, month: month, year: years, millisecond: milliseconds});
+	}
+};
+var _jweir$elm_iso8601$ISO8601$Time = F8(
+	function (a, b, c, d, e, f, g, h) {
+		return {year: a, month: b, day: c, hour: d, minute: e, second: f, millisecond: g, offset: h};
+	});
+var _jweir$elm_iso8601$ISO8601$Sun = {ctor: 'Sun'};
+var _jweir$elm_iso8601$ISO8601$Sat = {ctor: 'Sat'};
+var _jweir$elm_iso8601$ISO8601$Fri = {ctor: 'Fri'};
+var _jweir$elm_iso8601$ISO8601$Thu = {ctor: 'Thu'};
+var _jweir$elm_iso8601$ISO8601$Wed = {ctor: 'Wed'};
+var _jweir$elm_iso8601$ISO8601$Tue = {ctor: 'Tue'};
+var _jweir$elm_iso8601$ISO8601$Mon = {ctor: 'Mon'};
+var _jweir$elm_iso8601$ISO8601$daysFromEpoch = _elm_lang$core$Array$fromList(
+	_elm_lang$core$Native_List.fromArray(
+		[_jweir$elm_iso8601$ISO8601$Thu, _jweir$elm_iso8601$ISO8601$Fri, _jweir$elm_iso8601$ISO8601$Sat, _jweir$elm_iso8601$ISO8601$Sun, _jweir$elm_iso8601$ISO8601$Mon, _jweir$elm_iso8601$ISO8601$Tue, _jweir$elm_iso8601$ISO8601$Wed]));
+var _jweir$elm_iso8601$ISO8601$dayOfWeek = function (time) {
+	var t = _elm_lang$core$Native_Utils.update(
+		_jweir$elm_iso8601$ISO8601$defaultTime,
+		{year: time.year, month: time.month, day: time.day});
+	var t$ = _jweir$elm_iso8601$ISO8601$toTime(t);
+	var days = (t$ / _jweir$elm_iso8601$ISO8601$iday) | 0;
+	var day = A2(
+		_elm_lang$core$Array$get,
+		A2(_elm_lang$core$Basics_ops['%'], days, 7),
+		_jweir$elm_iso8601$ISO8601$daysFromEpoch);
+	var _p17 = A2(
+		_elm_lang$core$Debug$log,
+		'wd',
+		{
+			ctor: '_Tuple4',
+			_0: _jweir$elm_iso8601$ISO8601$toString(t),
+			_1: t$,
+			_2: days,
+			_3: A2(_elm_lang$core$Basics_ops['%'], days, 7)
+		});
+	var _p18 = day;
+	if (_p18.ctor === 'Just') {
+		return _p18._0;
+	} else {
+		return _jweir$elm_iso8601$ISO8601$Sun;
+	}
+};
+
+var _mgold$elm_date_format$Date_Format$padWith = function (c) {
+	return function (_p0) {
+		return A3(
+			_elm_lang$core$String$padLeft,
+			2,
+			c,
+			_elm_lang$core$Basics$toString(_p0));
+	};
+};
+var _mgold$elm_date_format$Date_Format$zero2twelve = function (n) {
+	return _elm_lang$core$Native_Utils.eq(n, 0) ? 12 : n;
+};
+var _mgold$elm_date_format$Date_Format$mod12 = function (h) {
+	return A2(_elm_lang$core$Basics_ops['%'], h, 12);
+};
+var _mgold$elm_date_format$Date_Format$fullDayOfWeek = function (dow) {
+	var _p1 = dow;
+	switch (_p1.ctor) {
+		case 'Mon':
+			return 'Monday';
+		case 'Tue':
+			return 'Tuesday';
+		case 'Wed':
+			return 'Wednesday';
+		case 'Thu':
+			return 'Thursday';
+		case 'Fri':
+			return 'Friday';
+		case 'Sat':
+			return 'Saturday';
+		default:
+			return 'Sunday';
+	}
+};
+var _mgold$elm_date_format$Date_Format$monthToFullName = function (m) {
+	var _p2 = m;
+	switch (_p2.ctor) {
+		case 'Jan':
+			return 'January';
+		case 'Feb':
+			return 'February';
+		case 'Mar':
+			return 'March';
+		case 'Apr':
+			return 'April';
+		case 'May':
+			return 'May';
+		case 'Jun':
+			return 'June';
+		case 'Jul':
+			return 'July';
+		case 'Aug':
+			return 'August';
+		case 'Sep':
+			return 'September';
+		case 'Oct':
+			return 'October';
+		case 'Nov':
+			return 'November';
+		default:
+			return 'December';
+	}
+};
+var _mgold$elm_date_format$Date_Format$monthToInt = function (m) {
+	var _p3 = m;
+	switch (_p3.ctor) {
+		case 'Jan':
+			return 1;
+		case 'Feb':
+			return 2;
+		case 'Mar':
+			return 3;
+		case 'Apr':
+			return 4;
+		case 'May':
+			return 5;
+		case 'Jun':
+			return 6;
+		case 'Jul':
+			return 7;
+		case 'Aug':
+			return 8;
+		case 'Sep':
+			return 9;
+		case 'Oct':
+			return 10;
+		case 'Nov':
+			return 11;
+		default:
+			return 12;
+	}
+};
+var _mgold$elm_date_format$Date_Format$formatToken = F2(
+	function (d, m) {
+		var symbol = function () {
+			var _p4 = m.submatches;
+			if (((_p4.ctor === '::') && (_p4._0.ctor === 'Just')) && (_p4._1.ctor === '[]')) {
+				return _p4._0._0;
+			} else {
+				return ' ';
+			}
+		}();
+		var _p5 = symbol;
+		switch (_p5) {
+			case '%':
+				return '%';
+			case 'Y':
+				return _elm_lang$core$Basics$toString(
+					_elm_lang$core$Date$year(d));
+			case 'm':
+				return A3(
+					_elm_lang$core$String$padLeft,
+					2,
+					_elm_lang$core$Native_Utils.chr('0'),
+					_elm_lang$core$Basics$toString(
+						_mgold$elm_date_format$Date_Format$monthToInt(
+							_elm_lang$core$Date$month(d))));
+			case 'B':
+				return _mgold$elm_date_format$Date_Format$monthToFullName(
+					_elm_lang$core$Date$month(d));
+			case 'b':
+				return _elm_lang$core$Basics$toString(
+					_elm_lang$core$Date$month(d));
+			case 'd':
+				return A2(
+					_mgold$elm_date_format$Date_Format$padWith,
+					_elm_lang$core$Native_Utils.chr('0'),
+					_elm_lang$core$Date$day(d));
+			case 'e':
+				return A2(
+					_mgold$elm_date_format$Date_Format$padWith,
+					_elm_lang$core$Native_Utils.chr(' '),
+					_elm_lang$core$Date$day(d));
+			case 'a':
+				return _elm_lang$core$Basics$toString(
+					_elm_lang$core$Date$dayOfWeek(d));
+			case 'A':
+				return _mgold$elm_date_format$Date_Format$fullDayOfWeek(
+					_elm_lang$core$Date$dayOfWeek(d));
+			case 'H':
+				return A2(
+					_mgold$elm_date_format$Date_Format$padWith,
+					_elm_lang$core$Native_Utils.chr('0'),
+					_elm_lang$core$Date$hour(d));
+			case 'k':
+				return A2(
+					_mgold$elm_date_format$Date_Format$padWith,
+					_elm_lang$core$Native_Utils.chr(' '),
+					_elm_lang$core$Date$hour(d));
+			case 'I':
+				return A2(
+					_mgold$elm_date_format$Date_Format$padWith,
+					_elm_lang$core$Native_Utils.chr('0'),
+					_mgold$elm_date_format$Date_Format$zero2twelve(
+						_mgold$elm_date_format$Date_Format$mod12(
+							_elm_lang$core$Date$hour(d))));
+			case 'l':
+				return A2(
+					_mgold$elm_date_format$Date_Format$padWith,
+					_elm_lang$core$Native_Utils.chr(' '),
+					_mgold$elm_date_format$Date_Format$zero2twelve(
+						_mgold$elm_date_format$Date_Format$mod12(
+							_elm_lang$core$Date$hour(d))));
+			case 'p':
+				return (_elm_lang$core$Native_Utils.cmp(
+					_elm_lang$core$Date$hour(d),
+					13) < 0) ? 'AM' : 'PM';
+			case 'P':
+				return (_elm_lang$core$Native_Utils.cmp(
+					_elm_lang$core$Date$hour(d),
+					13) < 0) ? 'am' : 'pm';
+			case 'M':
+				return A2(
+					_mgold$elm_date_format$Date_Format$padWith,
+					_elm_lang$core$Native_Utils.chr('0'),
+					_elm_lang$core$Date$minute(d));
+			case 'S':
+				return A2(
+					_mgold$elm_date_format$Date_Format$padWith,
+					_elm_lang$core$Native_Utils.chr('0'),
+					_elm_lang$core$Date$second(d));
+			default:
+				return '';
+		}
+	});
+var _mgold$elm_date_format$Date_Format$re = _elm_lang$core$Regex$regex('%(%|Y|m|B|b|d|e|a|A|H|k|I|l|p|P|M|S)');
+var _mgold$elm_date_format$Date_Format$format = F2(
+	function (s, d) {
+		return A4(
+			_elm_lang$core$Regex$replace,
+			_elm_lang$core$Regex$All,
+			_mgold$elm_date_format$Date_Format$re,
+			_mgold$elm_date_format$Date_Format$formatToken(d),
+			s);
+	});
+var _mgold$elm_date_format$Date_Format$formatISO8601 = _mgold$elm_date_format$Date_Format$format('%Y-%m-%dT%H:%M:%SZ');
+
 var _user$project$Field$field_read_list = function (model) {
 	var _p0 = model.value;
 	switch (_p0.ctor) {
@@ -8347,6 +9196,18 @@ var _user$project$Field$field_read_list = function (model) {
 					' ',
 					_elm_lang$core$Basics$toString(model.value)));
 	}
+};
+var _user$project$Field$simple_date = function (str) {
+	var time = _jweir$elm_iso8601$ISO8601$toTime(
+		A2(
+			_elm_lang$core$Result$withDefault,
+			_jweir$elm_iso8601$ISO8601$fromTime(0),
+			_jweir$elm_iso8601$ISO8601$fromString(str)));
+	var date = _elm_lang$core$Date$fromTime(
+		_elm_lang$core$Basics$toFloat(time));
+	var iso = _mgold$elm_date_format$Date_Format$formatISO8601(date);
+	var simple = A2(_mgold$elm_date_format$Date_Format$format, '%Y-%m-%d %H:%M', date);
+	return simple;
 };
 var _user$project$Field$field_read = function (model) {
 	var _p2 = model.value;
@@ -8396,7 +9257,8 @@ var _user$project$Field$field_read = function (model) {
 		case 'Date':
 			return _elm_lang$html$Html$text(_p2._0);
 		case 'DateTime':
-			return _elm_lang$html$Html$text(_p2._0);
+			return _elm_lang$html$Html$text(
+				_user$project$Field$simple_date(_p2._0));
 		default:
 			return _elm_lang$html$Html$text(
 				_elm_lang$core$Basics$toString(_elm_lang$html$Html_Attributes$value));
@@ -8863,8 +9725,9 @@ var _user$project$Field$field_entry = function (model) {
 				_elm_lang$html$Html$input,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Attributes$type$('datetime-local'),
-						_elm_lang$html$Html_Attributes$value(_p10._0),
+						_elm_lang$html$Html_Attributes$type$('datetime'),
+						_elm_lang$html$Html_Attributes$value(
+						_user$project$Field$simple_date(_p10._0)),
 						text_width,
 						_elm_lang$html$Html_Events$onInput(_user$project$Field$ChangeValue)
 					]),
@@ -10119,18 +10982,37 @@ var _user$project$Tab$tab_filters = F2(
 								_elm_lang$html$Html$text(
 								_elm_lang$core$Basics$toString(rows)),
 								A2(
-								_elm_lang$html$Html$i,
+								_elm_lang$html$Html$span,
 								_elm_lang$core$Native_List.fromArray(
 									[
-										_elm_lang$html$Html_Attributes$style(
-										_elm_lang$core$Native_List.fromArray(
-											[
-												{ctor: '_Tuple2', _0: 'margin-left', _1: '10px'}
-											])),
-										_elm_lang$html$Html_Attributes$class('icon ion-funnel')
+										_elm_lang$html$Html_Attributes$class('tooltip')
 									]),
 								_elm_lang$core$Native_List.fromArray(
-									[]))
+									[
+										A2(
+										_elm_lang$html$Html$i,
+										_elm_lang$core$Native_List.fromArray(
+											[
+												_elm_lang$html$Html_Attributes$style(
+												_elm_lang$core$Native_List.fromArray(
+													[
+														{ctor: '_Tuple2', _0: 'margin-left', _1: '10px'}
+													])),
+												_elm_lang$html$Html_Attributes$class('icon ion-funnel')
+											]),
+										_elm_lang$core$Native_List.fromArray(
+											[])),
+										A2(
+										_elm_lang$html$Html$span,
+										_elm_lang$core$Native_List.fromArray(
+											[
+												_elm_lang$html$Html_Attributes$class('tooltiptext')
+											]),
+										_elm_lang$core$Native_List.fromArray(
+											[
+												_elm_lang$html$Html$text('Click to clear filter')
+											]))
+									]))
 							]))
 					]),
 				A2(
@@ -11055,27 +11937,39 @@ var _user$project$Window$ChangeMode = function (a) {
 var _user$project$WindowList$update = F2(
 	function (msg, model) {
 		var _p0 = msg;
-		if (_p0.ctor === 'WindowListReceived') {
-			return {
-				ctor: '_Tuple2',
-				_0: _elm_lang$core$Native_Utils.update(
-					model,
-					{window_list: _p0._0}),
-				_1: _elm_lang$core$Platform_Cmd$none
-			};
-		} else {
-			var _p1 = A2(_elm_lang$core$Debug$log, 'did it opened', _p0._0);
-			return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+		switch (_p0.ctor) {
+			case 'WindowListReceived':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{window_list: _p0._0}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			case 'LoadWindow':
+				var _p1 = A2(_elm_lang$core$Debug$log, 'did it opened', _p0._0);
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+			default:
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							active_window: _elm_lang$core$Maybe$Just(_p0._0)
+						}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
 		}
 	});
 var _user$project$WindowList$empty = {
 	window_list: _elm_lang$core$Native_List.fromArray(
 		[]),
-	search_text: ''
+	search_text: '',
+	active_window: _elm_lang$core$Maybe$Nothing
 };
-var _user$project$WindowList$Model = F2(
-	function (a, b) {
-		return {window_list: a, search_text: b};
+var _user$project$WindowList$Model = F3(
+	function (a, b, c) {
+		return {window_list: a, search_text: b, active_window: c};
 	});
 var _user$project$WindowList$WindowName = F4(
 	function (a, b, c, d) {
@@ -11091,6 +11985,9 @@ var _user$project$WindowList$window_name_decoder = A5(
 	_elm_lang$core$Json_Decode$maybe(
 		A2(_elm_lang$core$Json_Decode_ops[':='], 'schema', _elm_lang$core$Json_Decode$string)));
 var _user$project$WindowList$window_list_decoder = _elm_lang$core$Json_Decode$list(_user$project$WindowList$window_name_decoder);
+var _user$project$WindowList$UpdateActivated = function (a) {
+	return {ctor: 'UpdateActivated', _0: a};
+};
 var _user$project$WindowList$WindowListReceived = function (a) {
 	return {ctor: 'WindowListReceived', _0: a};
 };
@@ -11119,11 +12016,24 @@ var _user$project$WindowList$view = function (model) {
 			A2(
 				_elm_lang$core$List$map,
 				function (w) {
+					var is_active = function () {
+						var _p2 = model.active_window;
+						if (_p2.ctor === 'Just') {
+							return _elm_lang$core$Native_Utils.eq(_p2._0, w.table);
+						} else {
+							return false;
+						}
+					}();
 					return A2(
 						_elm_lang$html$Html$a,
 						_elm_lang$core$Native_List.fromArray(
 							[
-								_elm_lang$html$Html_Attributes$class('nav-group-item'),
+								_elm_lang$html$Html_Attributes$classList(
+								_elm_lang$core$Native_List.fromArray(
+									[
+										{ctor: '_Tuple2', _0: 'nav-group-item', _1: true},
+										{ctor: '_Tuple2', _0: 'active', _1: is_active}
+									])),
 								_elm_lang$html$Html_Attributes$href(
 								A2(_elm_lang$core$Basics_ops['++'], '#', w.table)),
 								_elm_lang$html$Html_Events$onClick(
@@ -11190,6 +12100,74 @@ var _user$project$Main$update_activated_window = F2(
 			},
 			opened_windows) : opened_windows;
 	});
+var _user$project$Main$update_activated_windows = F2(
+	function (model, window_id) {
+		var updated_windows = A2(_user$project$Main$in_opened_windows, model.opened_windows, window_id) ? A2(
+			_elm_lang$core$List$map,
+			function (w) {
+				if (_elm_lang$core$Native_Utils.eq(w.window_id, window_id)) {
+					var _p2 = A2(_user$project$Window$update, _user$project$Window$ActivateWindow, w);
+					var mo = _p2._0;
+					var cmd = _p2._1;
+					return mo;
+				} else {
+					var _p3 = A2(_user$project$Window$update, _user$project$Window$DeactivateWindow, w);
+					var mo = _p3._0;
+					var cmd = _p3._1;
+					return mo;
+				}
+			},
+			model.opened_windows) : model.opened_windows;
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{opened_windows: updated_windows});
+	});
+var _user$project$Main$close_window = F2(
+	function (model, window_id) {
+		var opened_windows = A2(
+			_elm_lang$core$List$filter,
+			function (w) {
+				return !_elm_lang$core$Native_Utils.eq(w.window_id, window_id);
+			},
+			model.opened_windows);
+		var first_opened = function () {
+			var _p4 = _elm_lang$core$List$head(opened_windows);
+			if (_p4.ctor === 'Just') {
+				var first = _elm_lang$core$Native_Utils.update(
+					_p4._0,
+					{is_active: true});
+				return A2(
+					_elm_lang$core$List_ops['::'],
+					first,
+					A2(
+						_elm_lang$core$Maybe$withDefault,
+						_elm_lang$core$Native_List.fromArray(
+							[]),
+						_elm_lang$core$List$tail(opened_windows)));
+			} else {
+				return opened_windows;
+			}
+		}();
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{opened_windows: first_opened});
+	});
+var _user$project$Main$display_window_detail = F2(
+	function (model, window) {
+		var new_window = A2(_user$project$Window$create, window, model.uid);
+		var _p5 = A2(
+			_user$project$Window$update,
+			_user$project$Window$WindowDetailReceived(window),
+			new_window);
+		var mo = _p5._0;
+		var cmd = _p5._1;
+		var all_windows = A2(_elm_lang$core$List_ops['::'], mo, model.opened_windows);
+		var updated_windows = A2(_user$project$Main$update_activated_window, all_windows, mo.window_id);
+		var _p6 = A2(_elm_lang$core$Debug$log, 'window detail', window.name);
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{opened_windows: updated_windows, uid: model.uid + 1});
+	});
 var _user$project$Main$settings = A2(
 	_elm_lang$html$Html$div,
 	_elm_lang$core$Native_List.fromArray(
@@ -11222,16 +12200,15 @@ var _user$project$Main$app_model = {
 	db_url: 'postgres://postgres:p0stgr3s@localhost:5432/bazaar_v8',
 	api_server: 'http://localhost:8181',
 	window_list: _user$project$WindowList$empty,
-	focused_window: _elm_lang$core$Maybe$Just('person'),
 	opened_windows: _elm_lang$core$Native_List.fromArray(
 		[]),
 	error: _elm_lang$core$Native_List.fromArray(
 		[]),
 	uid: 0
 };
-var _user$project$Main$Model = F8(
-	function (a, b, c, d, e, f, g, h) {
-		return {title: a, db_url: b, api_server: c, window_list: d, focused_window: e, opened_windows: f, error: g, uid: h};
+var _user$project$Main$Model = F7(
+	function (a, b, c, d, e, f, g) {
+		return {title: a, db_url: b, api_server: c, window_list: d, opened_windows: e, error: f, uid: g};
 	});
 var _user$project$Main$FetchError = function (a) {
 	return {ctor: 'FetchError', _0: a};
@@ -11452,16 +12429,16 @@ var _user$project$Main$init = {
 };
 var _user$project$Main$update = F2(
 	function (msg, model) {
-		var _p2 = msg;
-		switch (_p2.ctor) {
+		var _p7 = msg;
+		switch (_p7.ctor) {
 			case 'UpdateWindow':
 				var window_updates = A2(
 					_elm_lang$core$List$map,
 					function (w) {
-						if (_elm_lang$core$Native_Utils.eq(w.window_id, _p2._0)) {
-							var _p3 = A2(_user$project$Window$update, _p2._1, w);
-							var mr = _p3._0;
-							var cmd = _p3._1;
+						if (_elm_lang$core$Native_Utils.eq(w.window_id, _p7._0)) {
+							var _p8 = A2(_user$project$Window$update, _p7._1, w);
+							var mr = _p8._0;
+							var cmd = _p8._1;
 							return mr;
 						} else {
 							return w;
@@ -11476,56 +12453,24 @@ var _user$project$Main$update = F2(
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'CloseWindow':
-				var opened_windows = A2(
-					_elm_lang$core$List$filter,
-					function (w) {
-						return !_elm_lang$core$Native_Utils.eq(w.window_id, _p2._0);
-					},
-					model.opened_windows);
-				var first_opened = function () {
-					var _p4 = _elm_lang$core$List$head(opened_windows);
-					if (_p4.ctor === 'Just') {
-						var first = _elm_lang$core$Native_Utils.update(
-							_p4._0,
-							{is_active: true});
-						return A2(
-							_elm_lang$core$List_ops['::'],
-							first,
-							A2(
-								_elm_lang$core$Maybe$withDefault,
-								_elm_lang$core$Native_List.fromArray(
-									[]),
-								_elm_lang$core$List$tail(opened_windows)));
-					} else {
-						return opened_windows;
-					}
-				}();
 				return {
 					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{opened_windows: first_opened}),
+					_0: A2(_user$project$Main$close_window, model, _p7._0),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'ActivateWindow':
-				var _p6 = _p2._0;
-				var _p5 = A2(_elm_lang$core$Debug$log, 'activating window ', _p6);
 				return {
 					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							opened_windows: A2(_user$project$Main$update_activated_window, model.opened_windows, _p6)
-						}),
+					_0: A2(_user$project$Main$update_activated_windows, model, _p7._0),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'UpdateWindowList':
-				var _p7 = _p2._0;
-				if (_p7.ctor === 'LoadWindow') {
+				var _p9 = _p7._0;
+				if (_p9.ctor === 'LoadWindow') {
 					return {
 						ctor: '_Tuple2',
 						_0: model,
-						_1: A2(_user$project$Main$fetch_window_detail, model, _p7._0)
+						_1: A2(_user$project$Main$fetch_window_detail, model, _p9._0)
 					};
 				} else {
 					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
@@ -11537,12 +12482,12 @@ var _user$project$Main$update = F2(
 					_1: _user$project$Main$fetch_window_list(model)
 				};
 			case 'WindowListReceived':
-				var _p8 = A2(
+				var _p10 = A2(
 					_user$project$WindowList$update,
-					_user$project$WindowList$WindowListReceived(_p2._0),
+					_user$project$WindowList$WindowListReceived(_p7._0),
 					model.window_list);
-				var wm = _p8._0;
-				var cmd = _p8._1;
+				var wm = _p10._0;
+				var cmd = _p10._1;
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
@@ -11551,29 +12496,17 @@ var _user$project$Main$update = F2(
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'WindowDetailReceived':
-				var _p11 = _p2._0;
-				var new_window = A2(_user$project$Window$create, _p11, model.uid);
-				var _p9 = A2(
-					_user$project$Window$update,
-					_user$project$Window$WindowDetailReceived(_p11),
-					new_window);
-				var mo = _p9._0;
-				var cmd = _p9._1;
-				var all_windows = A2(_elm_lang$core$List_ops['::'], mo, model.opened_windows);
-				var updated_windows = A2(_user$project$Main$update_activated_window, all_windows, mo.window_id);
-				var _p10 = A2(_elm_lang$core$Debug$log, 'window detail', _p11.name);
+				var _p11 = _p7._0;
 				return {
 					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{opened_windows: updated_windows, uid: model.uid + 1}),
-					_1: A3(_user$project$Main$get_window_data, model, _p11.table, mo.window_id)
+					_0: A2(_user$project$Main$display_window_detail, model, _p11),
+					_1: A3(_user$project$Main$get_window_data, model, _p11.table, model.uid)
 				};
 			case 'LoadWindow':
 				return {
 					ctor: '_Tuple2',
 					_0: model,
-					_1: A2(_user$project$Main$fetch_window_detail, model, _p2._0)
+					_1: A2(_user$project$Main$fetch_window_detail, model, _p7._0)
 				};
 			case 'GetWindowData':
 				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
@@ -11581,10 +12514,10 @@ var _user$project$Main$update = F2(
 				var opened_windows = A2(
 					_elm_lang$core$List$map,
 					function (window_model) {
-						if (_elm_lang$core$Native_Utils.eq(window_model.window_id, _p2._0)) {
+						if (_elm_lang$core$Native_Utils.eq(window_model.window_id, _p7._0)) {
 							var _p12 = A2(
 								_user$project$Window$update,
-								_user$project$Window$WindowDataReceived(_p2._1),
+								_user$project$Window$WindowDataReceived(_p7._1),
 								window_model);
 							var mo = _p12._0;
 							var cmd = _p12._1;
@@ -11609,7 +12542,7 @@ var _user$project$Main$update = F2(
 						{
 							error: A2(
 								_elm_lang$core$List_ops['::'],
-								_elm_lang$core$Basics$toString(_p2._0),
+								_elm_lang$core$Basics$toString(_p7._0),
 								model.error)
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none

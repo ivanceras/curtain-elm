@@ -46,10 +46,12 @@ td.record_control div{
     font-size: 1.2em;
 }
 
-.icon{
-    font-size: 1.2em;
-    font-weight: bold;
-}
+/* override the photon highlighting */
+tr:active{
+    background-color: #eee;
+    color: #333; 
+ }
+
 
 .form-action{
     font-size: 1.3em;

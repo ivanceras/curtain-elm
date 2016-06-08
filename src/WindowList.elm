@@ -8,6 +8,7 @@ import Json.Decode as Decode exposing ((:=))
 type alias Model =
     { window_list: List WindowName
     , search_text: String
+    , active_window: Maybe String
     }
     
 
@@ -22,11 +23,13 @@ type alias WindowName =
 type Msg
     = LoadWindow String
     | WindowListReceived (List WindowName)
+    | UpdateActivated String
 
 
 empty =
     { window_list = []
     , search_text = ""
+    , active_window = Nothing
     }
 
 
@@ -35,7 +38,13 @@ view model =
     nav [class "nav-group"]
         (h5 [class "nav-group-title"][text "Window"] ::
             (List.map(\w ->
-                a [ class "nav-group-item"
+                let is_active =
+                    case model.active_window of
+                        Just active_window ->
+                            active_window == w.table
+                        Nothing -> False
+                in
+                a [classList [("nav-group-item", True),("active", is_active)]
                   , href ("#"++w.table)
                   , onClick (LoadWindow w.table)
                   ] 
@@ -59,6 +68,9 @@ update msg model =
             let _ = Debug.log "did it opened" table
             in
             (model, Cmd.none)
+
+        UpdateActivated table ->
+            ({model | active_window = Just table}, Cmd.none)
  
 
 window_name_decoder =

@@ -187,7 +187,12 @@ tab_filters model filtered_fields =
         (
             [th [] [text selected_str]
             ,th [] [text (toString rows)
-                   ,i [style [("margin-left", "10px")], class "icon ion-funnel"] []
+                   ,span [class "tooltip"]
+                        [i [style [("margin-left", "10px")]
+                              ,class "icon ion-funnel"
+                              ][] 
+                         ,span [class "tooltiptext"] [text "Click to clear filter"]
+                        ]
                    ]
             ] ++
             (List.map (
