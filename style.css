@@ -53,8 +53,11 @@ tr:active{
  }
 
 
-.form-action{
+.form-action {
     font-size: 1.3em;
     font-weight: bold
 }
 
+.tab_filters th {
+   border: 0px 
+}

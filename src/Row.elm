@@ -78,7 +78,7 @@ view model =
                   (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| field_models)
                ]
         Field.Table ->
-            tr [] 
+            tr [onDoubleClick (ChangePresentation Field.Form)] 
                ((tabular_record_controls model) ++
                 (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| field_models)
                )
@@ -206,7 +206,7 @@ update msg model =
             )
 
         UpdateField column field_msg ->
-            let _ = Debug.log "Edit only this field" column 
+            let _ = Debug.log "-->> ROW tapped signal ---->" column 
             in
                ({model | field_models = model.field_models
                 |> List.map (\f -> 

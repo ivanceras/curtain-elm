@@ -12,6 +12,7 @@ import Json.Decode.Extra as Extra exposing ((|:))
 
 type alias Model =
     { name: String 
+    , table: String
     , rows: List Row.Model -- this contains the dao
     , mode: Field.Mode
     , fields: List Field.Field -- just the field without the dao
@@ -77,10 +78,13 @@ type Msg
 create: Tab -> Model
 create tab =
     { empty | fields = tab.fields
+    , name = tab.name
+    , table = tab.table
     }
 
 empty = 
     { name= ""
+    , table = ""
     , rows= []
     , mode= Field.Read
     , fields = [] 
@@ -96,6 +100,8 @@ empty =
 
 view: Model -> Html Msg
 view model =
+    let background = style[("background-color", "#fcfcfc")]
+    in
     case model.presentation of
         Field.Form ->
             let focused = focused_row model
@@ -103,7 +109,7 @@ view model =
              div []
                  [tab_controls model
                  ,toolbar
-                 ,div [class "form"] 
+                 ,div [class "form", background] 
                     [case focused of
                         Just focused ->
                            Row.view focused |> App.map (UpdateRow focused.row_id)
@@ -116,7 +122,7 @@ view model =
             div []
                 [tab_controls model
                 ,toolbar
-                ,table [] 
+                ,table [background] 
                     [thead_view model 
                     ,tbody []
                     (model.rows
@@ -169,10 +175,11 @@ thead_view model =
         [tab_filters model filtered_fields
         ,tr []
             ((record_controls_head model) ++
-             (List.map (\f -> th [] [text f.name]) filtered_fields
+             (List.map (\f -> th [Field.alignment f] [text f.name]) filtered_fields
             )
             )
         ]
+
 
 tab_filters: Model ->List Field.Field -> Html Msg
 tab_filters model filtered_fields =
@@ -183,22 +190,25 @@ tab_filters model filtered_fields =
                 (toString selected)
             else ""
     in
-    tr []
+    tr [class "tab_filters", style [("background-color", "#fefefe")]]
         (
             [th [] [text selected_str]
             ,th [] [text (toString rows)
                    ,span [class "tooltip"]
                         [i [style [("margin-left", "10px")]
-                              ,class "icon ion-funnel"
-                              ][] 
+                            ,class "icon ion-funnel"
+                           ][] 
                          ,span [class "tooltiptext"] [text "Click to clear filter"]
                         ]
                    ]
             ] ++
             (List.map (
                 \f -> 
-                    th [] 
-                        [input [type' "text"] []
+                    th [Field.alignment f] 
+                        [input [style [("width", "300px")]
+                                ,type' "text"
+                                ,Field.alignment f
+                               ] []
                         ]
                 ) filtered_fields
             )

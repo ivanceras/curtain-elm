@@ -19,6 +19,7 @@ type alias Model =
     , opened_windows: List Window.Model
     , error: List String
     , uid: Int -- id for the opened windows
+    , active_window: Maybe Int
     }
 
 
@@ -45,6 +46,7 @@ app_model =
     , opened_windows = []
     , error = []
     , uid = 0
+    , active_window = Nothing
     }
 
 
@@ -106,7 +108,7 @@ settings =
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
-        UpdateWindow window_id msg -> --todo: window identification should be added here, else all windows are updated
+        UpdateWindow window_id msg -> 
             let window_updates = List.map(\w ->
                         if w.window_id == window_id then
                            let (mr,cmd) = Window.update msg w in mr
@@ -117,10 +119,16 @@ update msg model =
             ({model | opened_windows = window_updates}, Cmd.none)
 
         CloseWindow window_id ->
-            (close_window model window_id , Cmd.none)
+            (close_window model window_id 
+                |> update_activated_windows 
+                |> updateActivatedWindowList
+            , Cmd.none)
 
         ActivateWindow window_id -> --set focus to the window
-             (update_activated_windows model window_id, Cmd.none)
+             ( {model | active_window = Just window_id}
+                |> update_activated_windows
+                |> updateActivatedWindowList
+             , Cmd.none)
         
         UpdateWindowList msg ->
             case msg of
@@ -140,7 +148,8 @@ update msg model =
             )
        
         WindowDetailReceived window ->
-            (display_window_detail model window
+            ( display_window_detail model window
+                |> updateActivatedWindowList
             , get_window_data model window.table model.uid
             )
 
@@ -174,71 +183,107 @@ main =
         , subscriptions= (\_ -> Sub.none)
         }
 
-display_window_detail: Model -> Window.Window -> Model
-display_window_detail model window =
-    let _ = Debug.log "window detail" window.name
-        new_window = Window.create window model.uid
+add_window: Model -> Window.Window -> Model
+add_window model window =
+    let new_window = Window.create window model.uid
         (mo, cmd) = Window.update (Window.WindowDetailReceived window) new_window 
         all_windows = mo :: model.opened_windows
-        updated_windows = update_activated_window all_windows mo.window_id
     in
-    { model | opened_windows = updated_windows
-     , uid = model.uid + 1
+    { model | opened_windows = all_windows 
+    , active_window = Just mo.window_id
+    , uid = model.uid + 1
     } 
+        
 
+display_window_detail: Model -> Window.Window -> Model
+display_window_detail model window =
+    add_window model window
+        |> update_activated_windows
+        
 
 close_window: Model -> Int -> Model
 close_window model window_id =
     let opened_windows = List.filter (\w -> w.window_id /= window_id ) model.opened_windows
-        first_opened = 
-            case List.head opened_windows of
-                Just window -> 
-                   let first  = {window | is_active = True}
-                   in
-                   first :: Maybe.withDefault [] (List.tail opened_windows)
-                Nothing -> opened_windows
     in
-    {model | opened_windows = first_opened}
+    {model | opened_windows =  opened_windows
+    }
 
 
-update_activated_windows: Model -> Int -> Model
-update_activated_windows model window_id =
-    let updated_windows =
-        if in_opened_windows model.opened_windows window_id then
-            model.opened_windows
-                |> List.map(
-                    \w ->
-                        if w.window_id == window_id then
-                            let (mo, cmd) = Window.update Window.ActivateWindow w
-                            in mo
-                        else
-                            let (mo, cmd) = Window.update Window.DeactivateWindow w
-                            in mo
-                )
-        else
-            model.opened_windows
-    in 
+activate_first_window: Model -> Model
+activate_first_window model =
+    case List.head model.opened_windows of
+        Just window ->
+            let (update_window, cmd) = Window.update Window.ActivateWindow window
+                all_windows = update_window :: Maybe.withDefault [] (List.tail model.opened_windows)
+            in
+            {model | active_window = Just window.window_id
+            ,opened_windows = all_windows
+            }
+        Nothing -> 
+            model
+
+
+-- Note: closing a window activates it first since the click on the close button 
+-- propagates to the the tabm thereby activating that window
+
+update_activated_windows: Model -> Model
+update_activated_windows model =
+    let model = deactivateOpenedWindows model
+    in
+    case model.active_window of
+        Just active_window ->
+            if in_opened_windows model active_window then
+                let updated_windows = 
+                    model.opened_windows
+                        |> List.map(
+                            \w ->
+                                if w.window_id == active_window then
+                                    let (mo, cmd) = Window.update Window.ActivateWindow w
+                                    in mo
+                                else
+                                    w
+                        )
+                in
+                {model | opened_windows = updated_windows}
+            else
+                activate_first_window model
+        Nothing -> model
+
+
+deactivateOpenedWindows: Model -> Model
+deactivateOpenedWindows model =
+    let updated_windows = 
+        List.map(
+            \w ->
+                let (mo, cmd) = Window.update Window.DeactivateWindow w
+                in mo
+        ) model.opened_windows
+    in
     {model | opened_windows = updated_windows}
-
-update_activated_window: List Window.Model -> Int -> List Window.Model
-update_activated_window opened_windows window_id =
-    if in_opened_windows opened_windows window_id then
-        opened_windows
-            |> List.map(
-                \w ->
-                    if w.window_id == window_id then
-                        let (mo, cmd) = Window.update Window.ActivateWindow w
-                        in mo
-                    else
-                        let (mo, cmd) = Window.update Window.DeactivateWindow w
-                        in mo
-            )
-    else
-        opened_windows
     
+getActiveWindow: Model -> Maybe Window.Model
+getActiveWindow model =
+    case model.active_window of
+        Just active_window ->
+            List.filter (\w -> w.window_id == active_window) model.opened_windows
+            |> List.head
+        Nothing -> Nothing
+
+updateActivatedWindowList: Model -> Model
+updateActivatedWindowList model =
+    let window_list =
+        case getActiveWindow model of
+            Just window ->
+                let (mo, cmd) = WindowList.update (WindowList.UpdateActivated window.main_tab.table) model.window_list
+                in mo
+            Nothing ->
+                model.window_list
+    in
+    {model | window_list = window_list}
+
 -- check to see if the window_id is in opened_windows
-in_opened_windows opened_windows window_id =
-    List.filter (\w -> w.window_id == window_id ) opened_windows
+in_opened_windows model window_id =
+    List.filter (\w -> w.window_id == window_id ) model.opened_windows
         |> List.isEmpty 
         |> not
 
