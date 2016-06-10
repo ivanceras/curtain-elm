@@ -108,7 +108,7 @@ view model =
             in
              div []
                  [tab_controls model
-                 ,toolbar
+                 ,toolbar model
                  ,div [class "form", background] 
                     [case focused of
                         Just focused ->
@@ -121,7 +121,7 @@ view model =
         Field.Table ->
             div []
                 [tab_controls model
-                ,toolbar
+                ,toolbar model
                 ,table [background] 
                     [thead_view model 
                     ,tbody []
@@ -136,7 +136,7 @@ view model =
         Field.Grid ->
             div []
                 [tab_controls model
-                ,toolbar
+                ,toolbar model
                 ,div [class "grid"]
                     (model.rows
                         |> List.map (\r -> Row.view r |> App.map (UpdateRow r.row_id))
@@ -180,11 +180,13 @@ thead_view model =
             )
         ]
 
+numberOfSelectedRecords model = 
+    List.filter (\r -> r.is_selected) model.rows |> List.length
 
 tab_filters: Model ->List Field.Field -> Html Msg
 tab_filters model filtered_fields =
     let rows = List.length model.rows
-        selected = List.filter (\r -> r.is_selected) model.rows |> List.length
+        selected = numberOfSelectedRecords model
         selected_str = 
             if selected > 0 then
                 (toString selected)
@@ -216,16 +218,34 @@ tab_filters model filtered_fields =
 
 record_controls_head model =
     let rows = List.length model.rows
+        all_selected = areAllRecordSelected model
+        unselect = if all_selected then "unselect" else "select"
+        tooltip_text = 
+            "Click to "++unselect++" "++(toString rows)++" record(s)"
     in
     [th [class "tooltip"] 
-        [input [type' "checkbox", onCheck SelectionAll] []
-        ,span[class "tooltiptext"] [text "Click to (un)select all records"]
+        [input [type' "checkbox", onCheck SelectionAll, checked all_selected] []
+        ,span[class "tooltiptext"] [text tooltip_text]
         ]
     ,th [] []
     ]
 
-toolbar: Html Msg
-toolbar = 
+areAllRecordSelected: Model -> Bool
+areAllRecordSelected model =
+    let selected = numberOfSelectedRecords model 
+        rows = List.length model.rows
+    in 
+    rows > 0 && selected == rows
+
+toolbar: Model ->Html Msg
+toolbar model= 
+    let delete_tooltip = 
+        case model.presentation of
+            Field.Table ->
+                "Click to delete "++toString (numberOfSelectedRecords model)++" record(s) from the database"
+            _ ->
+                "Click to delete this record from the database"
+    in    
         div [class "btn-group"]
             [button [class "btn btn-large btn-default tooltip"]
                 [span [class "icon icon-plus icon-text tab-action"] []
@@ -255,7 +275,7 @@ toolbar =
             ,button [class "btn btn-large btn-default tooltip"]
                 [span [class "icon icon-trash icon-text"] []
                 ,text "Delete"
-                ,span [class "tooltiptext"] [text "Delete the current (selected) record(s) from the database"]
+                ,span [class "tooltiptext"] [text delete_tooltip] 
                 ]
             ,button [class "btn btn-large btn-default tooltip"]
                 [span [class "icon icon-arrows-ccw icon-text"] []
@@ -324,6 +344,45 @@ focused_row model =
             List.filter (\r -> r.row_id == row) model.rows
                         |> List.head
 
+updateSelectionAllRecords: Model -> Bool -> Model
+updateSelectionAllRecords model checked =
+   let rows = List.map (\r ->
+        let (mo, cmd) = Row.update (Row.Selection checked) r
+        in mo
+       ) model.rows
+    in
+    {model | rows = rows}
+    
+
+update_focused_row: Model -> Int -> Model
+update_focused_row model row_id=
+    let model = updateSelectionAllRecords model False
+        updated_rows = 
+            List.map (
+                \r -> 
+                    if r.row_id == row_id then
+                        let (mo,cmd) = Row.update Row.FocusRecord r
+                        in mo
+                    else
+                        let (mo,cmd) = Row.update Row.LooseFocusRecord r 
+                        in mo
+            ) model.rows
+    in
+    {model | rows = updated_rows
+    ,focused_row = Just row_id
+    }
+        
+removeFocusedRecord model =
+    let updated_rows = 
+        List.map(
+            \r ->
+                let (mo, cmd) = Row.update Row.LooseFocusRecord r
+                in mo
+        ) model.rows
+    in
+    { model | rows = updated_rows
+    , focused_row = Nothing
+    }
 
 
 update: Msg -> Model -> (Model, Cmd Msg)
@@ -345,6 +404,20 @@ update msg model =
                 let (mo, cmd) =update_presentation model Field.Table
                 in
                 update_mode mo Field.Read
+            Row.FocusRecord ->
+                (update_focused_row model row_id, Cmd.none)
+
+            Row.Selection checked ->
+                let updated_model = removeFocusedRecord model
+                in
+                ( {model | rows = update_row row_id row_msg updated_model }, Cmd.none)
+
+
+            Row.UpdateField column field_msg ->
+                let _ =Debug.log "TAB tapping row.update field" column
+                in
+                (update_focused_row model row_id, Cmd.none)
+                
             _ ->
                 ( {model | rows = update_row row_id row_msg model }, Cmd.none)
 

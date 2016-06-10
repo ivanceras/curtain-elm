@@ -10055,7 +10055,7 @@ var _user$project$Field$update = F2(
 						{density: _p8._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
-			default:
+			case 'SetValue':
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
@@ -10063,8 +10063,11 @@ var _user$project$Field$update = F2(
 						{value: _p8._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
+			default:
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 		}
 	});
+var _user$project$Field$FocusRecord = {ctor: 'FocusRecord'};
 var _user$project$Field$SetValue = function (a) {
 	return {ctor: 'SetValue', _0: a};
 };
@@ -10202,7 +10205,8 @@ var _user$project$Field$field_entry = function (model) {
 						text_width,
 						_user$project$Field$left_align,
 						_elm_lang$html$Html_Attributes$value(
-						_elm_lang$core$Basics$toString(model.value))
+						_elm_lang$core$Basics$toString(model.value)),
+						_elm_lang$html$Html_Events$onClick(_user$project$Field$FocusRecord)
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[]));
@@ -10373,7 +10377,8 @@ var _user$project$Field$view = function (model) {
 					_elm_lang$html$Html$td,
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_user$project$Field$alignment(model.field)
+							_user$project$Field$alignment(model.field),
+							_elm_lang$html$Html_Events$onClick(_user$project$Field$FocusRecord)
 						]),
 					_elm_lang$core$Native_List.fromArray(
 						[edit_field]));
@@ -10382,6 +10387,7 @@ var _user$project$Field$view = function (model) {
 					_elm_lang$html$Html$td,
 					_elm_lang$core$Native_List.fromArray(
 						[
+							_elm_lang$html$Html_Events$onClick(_user$project$Field$FocusRecord),
 							_user$project$Field$alignment(model.field),
 							container_style
 						]),
@@ -10680,8 +10686,24 @@ var _user$project$Row$update = F2(
 						{is_selected: _p7._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
-			default:
+			case 'Close':
 				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+			case 'FocusRecord':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{is_focused: true}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			default:
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{is_focused: false}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
 		}
 	});
 var _user$project$Row$dao_decoder = _elm_lang$core$Json_Decode$dict(_user$project$Field$value_decoder);
@@ -10803,6 +10825,8 @@ var _user$project$Row$form_record_controls = function (model) {
 					]))
 			]));
 };
+var _user$project$Row$LooseFocusRecord = {ctor: 'LooseFocusRecord'};
+var _user$project$Row$FocusRecord = {ctor: 'FocusRecord'};
 var _user$project$Row$Selection = function (a) {
 	return {ctor: 'Selection', _0: a};
 };
@@ -11041,35 +11065,38 @@ var _user$project$Row$tabular_record_controls = function (model) {
 					]));
 		}
 	}();
-	var selection = A2(
-		_elm_lang$html$Html$td,
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_elm_lang$html$Html_Attributes$class('tooltip')
-			]),
-		_elm_lang$core$Native_List.fromArray(
-			[
-				A2(
-				_elm_lang$html$Html$input,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$type$('checkbox'),
-						_elm_lang$html$Html_Attributes$checked(model.is_selected),
-						_elm_lang$html$Html_Events$onCheck(_user$project$Row$Selection)
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[])),
-				A2(
-				_elm_lang$html$Html$span,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$class('tooltiptext')
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text('Click to (un)select this records')
-					]))
-			]));
+	var selection = function () {
+		var tooltip_text = model.is_selected ? 'Click to unselect this record' : 'Click to select this record';
+		return A2(
+			_elm_lang$html$Html$td,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Attributes$class('tooltip')
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					A2(
+					_elm_lang$html$Html$input,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$type$('checkbox'),
+							_elm_lang$html$Html_Attributes$checked(model.is_selected),
+							_elm_lang$html$Html_Events$onCheck(_user$project$Row$Selection)
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[])),
+					A2(
+					_elm_lang$html$Html$span,
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html_Attributes$class('tooltiptext')
+						]),
+					_elm_lang$core$Native_List.fromArray(
+						[
+							_elm_lang$html$Html$text(tooltip_text)
+						]))
+				]));
+	}();
 	return A2(
 		_elm_lang$core$List_ops['::'],
 		selection,
@@ -11116,7 +11143,13 @@ var _user$project$Row$view = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Events$onDoubleClick(
-						_user$project$Row$ChangePresentation(_user$project$Field$Form))
+						_user$project$Row$ChangePresentation(_user$project$Field$Form)),
+						_elm_lang$html$Html_Attributes$classList(
+						_elm_lang$core$Native_List.fromArray(
+							[
+								{ctor: '_Tuple2', _0: 'focused', _1: model.is_focused},
+								{ctor: '_Tuple2', _0: 'selected', _1: model.is_selected}
+							]))
 					]),
 				A2(
 					_elm_lang$core$Basics_ops['++'],
@@ -11176,16 +11209,74 @@ var _user$project$Row$view = function (model) {
 	}
 };
 
+var _user$project$Tab$removeFocusedRecord = function (model) {
+	var updated_rows = A2(
+		_elm_lang$core$List$map,
+		function (r) {
+			var _p0 = A2(_user$project$Row$update, _user$project$Row$LooseFocusRecord, r);
+			var mo = _p0._0;
+			var cmd = _p0._1;
+			return mo;
+		},
+		model.rows);
+	return _elm_lang$core$Native_Utils.update(
+		model,
+		{rows: updated_rows, focused_row: _elm_lang$core$Maybe$Nothing});
+};
+var _user$project$Tab$updateSelectionAllRecords = F2(
+	function (model, checked) {
+		var rows = A2(
+			_elm_lang$core$List$map,
+			function (r) {
+				var _p1 = A2(
+					_user$project$Row$update,
+					_user$project$Row$Selection(checked),
+					r);
+				var mo = _p1._0;
+				var cmd = _p1._1;
+				return mo;
+			},
+			model.rows);
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{rows: rows});
+	});
+var _user$project$Tab$update_focused_row = F2(
+	function (model, row_id) {
+		var model = A2(_user$project$Tab$updateSelectionAllRecords, model, false);
+		var updated_rows = A2(
+			_elm_lang$core$List$map,
+			function (r) {
+				if (_elm_lang$core$Native_Utils.eq(r.row_id, row_id)) {
+					var _p2 = A2(_user$project$Row$update, _user$project$Row$FocusRecord, r);
+					var mo = _p2._0;
+					var cmd = _p2._1;
+					return mo;
+				} else {
+					var _p3 = A2(_user$project$Row$update, _user$project$Row$LooseFocusRecord, r);
+					var mo = _p3._0;
+					var cmd = _p3._1;
+					return mo;
+				}
+			},
+			model.rows);
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				rows: updated_rows,
+				focused_row: _elm_lang$core$Maybe$Just(row_id)
+			});
+	});
 var _user$project$Tab$focused_row = function (model) {
-	var _p0 = model.focused_row;
-	if (_p0.ctor === 'Nothing') {
+	var _p4 = model.focused_row;
+	if (_p4.ctor === 'Nothing') {
 		return _elm_lang$core$Maybe$Nothing;
 	} else {
 		return _elm_lang$core$List$head(
 			A2(
 				_elm_lang$core$List$filter,
 				function (r) {
-					return _elm_lang$core$Native_Utils.eq(r.row_id, _p0._0);
+					return _elm_lang$core$Native_Utils.eq(r.row_id, _p4._0);
 				},
 				model.rows));
 	}
@@ -11201,12 +11292,12 @@ var _user$project$Tab$update_mode = F2(
 					rows: A2(
 						_elm_lang$core$List$map,
 						function (r) {
-							var _p1 = A2(
+							var _p5 = A2(
 								_user$project$Row$update,
 								_user$project$Row$ChangeMode(mode),
 								r);
-							var mr = _p1._0;
-							var cmd = _p1._1;
+							var mr = _p5._0;
+							var cmd = _p5._1;
 							return mr;
 						},
 						model.rows)
@@ -11225,12 +11316,12 @@ var _user$project$Tab$update_presentation = F2(
 					rows: A2(
 						_elm_lang$core$List$map,
 						function (r) {
-							var _p2 = A2(
+							var _p6 = A2(
 								_user$project$Row$update,
 								_user$project$Row$ChangePresentation(presentation),
 								r);
-							var mr = _p2._0;
-							var cmd = _p2._1;
+							var mr = _p6._0;
+							var cmd = _p6._1;
 							return mr;
 						},
 						model.rows)
@@ -11244,9 +11335,9 @@ var _user$project$Tab$update_row = F3(
 			_elm_lang$core$List$map,
 			function (r) {
 				if (_elm_lang$core$Native_Utils.eq(r.row_id, row_id)) {
-					var _p3 = A2(_user$project$Row$update, row_msg, r);
-					var mr = _p3._0;
-					var cmd = _p3._1;
+					var _p7 = A2(_user$project$Row$update, row_msg, r);
+					var mr = _p7._0;
+					var cmd = _p7._1;
 					return mr;
 				} else {
 					return r;
@@ -11256,29 +11347,29 @@ var _user$project$Tab$update_row = F3(
 	});
 var _user$project$Tab$update = F2(
 	function (msg, model) {
-		var _p4 = msg;
-		switch (_p4.ctor) {
+		var _p8 = msg;
+		switch (_p8.ctor) {
 			case 'UpdateRow':
-				var _p12 = _p4._1;
-				var _p11 = _p4._0;
-				var _p5 = _p12;
-				switch (_p5.ctor) {
+				var _p17 = _p8._1;
+				var _p16 = _p8._0;
+				var _p9 = _p17;
+				switch (_p9.ctor) {
 					case 'ChangePresentation':
-						var _p9 = _p5._0;
-						var _p6 = _p9;
-						if (_p6.ctor === 'Form') {
-							var _p7 = A2(_user$project$Tab$update_presentation, model, _p9);
-							var mo = _p7._0;
-							var cmd = _p7._1;
-							var _p8 = A2(_user$project$Tab$update_mode, mo, _user$project$Field$Edit);
-							var mo2 = _p8._0;
-							var cmd2 = _p8._1;
+						var _p13 = _p9._0;
+						var _p10 = _p13;
+						if (_p10.ctor === 'Form') {
+							var _p11 = A2(_user$project$Tab$update_presentation, model, _p13);
+							var mo = _p11._0;
+							var cmd = _p11._1;
+							var _p12 = A2(_user$project$Tab$update_mode, mo, _user$project$Field$Edit);
+							var mo2 = _p12._0;
+							var cmd2 = _p12._1;
 							return {
 								ctor: '_Tuple2',
 								_0: _elm_lang$core$Native_Utils.update(
 									mo2,
 									{
-										focused_row: _elm_lang$core$Maybe$Just(_p11),
+										focused_row: _elm_lang$core$Maybe$Just(_p16),
 										mode: _user$project$Field$Edit
 									}),
 								_1: cmd2
@@ -11289,48 +11380,72 @@ var _user$project$Tab$update = F2(
 								_0: _elm_lang$core$Native_Utils.update(
 									model,
 									{
-										rows: A3(_user$project$Tab$update_row, _p11, _p12, model)
+										rows: A3(_user$project$Tab$update_row, _p16, _p17, model)
 									}),
 								_1: _elm_lang$core$Platform_Cmd$none
 							};
 						}
 					case 'Close':
-						var _p10 = A2(_user$project$Tab$update_presentation, model, _user$project$Field$Table);
-						var mo = _p10._0;
-						var cmd = _p10._1;
+						var _p14 = A2(_user$project$Tab$update_presentation, model, _user$project$Field$Table);
+						var mo = _p14._0;
+						var cmd = _p14._1;
 						return A2(_user$project$Tab$update_mode, mo, _user$project$Field$Read);
+					case 'FocusRecord':
+						return {
+							ctor: '_Tuple2',
+							_0: A2(_user$project$Tab$update_focused_row, model, _p16),
+							_1: _elm_lang$core$Platform_Cmd$none
+						};
+					case 'Selection':
+						var updated_model = _user$project$Tab$removeFocusedRecord(model);
+						return {
+							ctor: '_Tuple2',
+							_0: _elm_lang$core$Native_Utils.update(
+								model,
+								{
+									rows: A3(_user$project$Tab$update_row, _p16, _p17, updated_model)
+								}),
+							_1: _elm_lang$core$Platform_Cmd$none
+						};
+					case 'UpdateField':
+						var _p15 = A2(_elm_lang$core$Debug$log, 'TAB tapping row.update field', _p9._0);
+						return {
+							ctor: '_Tuple2',
+							_0: A2(_user$project$Tab$update_focused_row, model, _p16),
+							_1: _elm_lang$core$Platform_Cmd$none
+						};
 					default:
 						return {
 							ctor: '_Tuple2',
 							_0: _elm_lang$core$Native_Utils.update(
 								model,
 								{
-									rows: A3(_user$project$Tab$update_row, _p11, _p12, model)
+									rows: A3(_user$project$Tab$update_row, _p16, _p17, model)
 								}),
 							_1: _elm_lang$core$Platform_Cmd$none
 						};
 				}
 			case 'ChangeMode':
-				return A2(_user$project$Tab$update_mode, model, _p4._0);
+				return A2(_user$project$Tab$update_mode, model, _p8._0);
 			case 'ChangePresentation':
-				return A2(_user$project$Tab$update_presentation, model, _p4._0);
+				return A2(_user$project$Tab$update_presentation, model, _p8._0);
 			case 'ChangeDensity':
-				var _p14 = _p4._0;
+				var _p19 = _p8._0;
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							density: _p14,
+							density: _p19,
 							rows: A2(
 								_elm_lang$core$List$map,
 								function (r) {
-									var _p13 = A2(
+									var _p18 = A2(
 										_user$project$Row$update,
-										_user$project$Row$ChangeDensity(_p14),
+										_user$project$Row$ChangeDensity(_p19),
 										r);
-									var mr = _p13._0;
-									var cmd = _p13._1;
+									var mr = _p18._0;
+									var cmd = _p18._1;
 									return mr;
 								},
 								model.rows)
@@ -11342,33 +11457,33 @@ var _user$project$Tab$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{fields: _p4._0.fields}),
+						{fields: _p8._0.fields}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'TabDataReceived':
-				var _p17 = _p4._0;
+				var _p22 = _p8._0;
 				var rows = A2(
 					_elm_lang$core$List$indexedMap,
 					F2(
 						function (index, dao_state) {
 							var new_row = A2(_user$project$Row$create, model.fields, model.uid + index);
-							var _p15 = A2(
+							var _p20 = A2(
 								_user$project$Row$update,
 								_user$project$Row$DaoStateReceived(dao_state),
 								new_row);
-							var mo = _p15._0;
-							var cmd = _p15._1;
+							var mo = _p20._0;
+							var cmd = _p20._1;
 							return mo;
 						}),
-					_p17);
+					_p22);
 				var first_row = A2(
 					_elm_lang$core$Maybe$withDefault,
 					_user$project$Row$empty,
 					_elm_lang$core$List$head(model.rows));
-				var _p16 = A2(
+				var _p21 = A2(
 					_elm_lang$core$Debug$log,
 					'tab data recieved',
-					_elm_lang$core$List$length(_p17));
+					_elm_lang$core$List$length(_p22));
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
@@ -11383,12 +11498,12 @@ var _user$project$Tab$update = F2(
 				var rows = A2(
 					_elm_lang$core$List$map,
 					function (r) {
-						var _p18 = A2(
+						var _p23 = A2(
 							_user$project$Row$update,
-							_user$project$Row$Selection(_p4._0),
+							_user$project$Row$Selection(_p8._0),
 							r);
-						var mo = _p18._0;
-						var cmd = _p18._1;
+						var mo = _p23._0;
+						var cmd = _p23._1;
 						return mo;
 					},
 					model.rows);
@@ -11464,15 +11579,18 @@ var _user$project$Tab$paging = A2(
 					_elm_lang$html$Html$text('refresh')
 				]))
 		]));
+var _user$project$Tab$numberOfSelectedRecords = function (model) {
+	return _elm_lang$core$List$length(
+		A2(
+			_elm_lang$core$List$filter,
+			function (r) {
+				return r.is_selected;
+			},
+			model.rows));
+};
 var _user$project$Tab$tab_filters = F2(
 	function (model, filtered_fields) {
-		var selected = _elm_lang$core$List$length(
-			A2(
-				_elm_lang$core$List$filter,
-				function (r) {
-					return r.is_selected;
-				},
-				model.rows));
+		var selected = _user$project$Tab$numberOfSelectedRecords(model);
 		var selected_str = (_elm_lang$core$Native_Utils.cmp(selected, 0) > 0) ? _elm_lang$core$Basics$toString(selected) : '';
 		var rows = _elm_lang$core$List$length(model.rows);
 		return A2(
@@ -11569,6 +11687,11 @@ var _user$project$Tab$tab_filters = F2(
 					},
 					filtered_fields)));
 	});
+var _user$project$Tab$areAllRecordSelected = function (model) {
+	var rows = _elm_lang$core$List$length(model.rows);
+	var selected = _user$project$Tab$numberOfSelectedRecords(model);
+	return (_elm_lang$core$Native_Utils.cmp(rows, 0) > 0) && _elm_lang$core$Native_Utils.eq(selected, rows);
+};
 var _user$project$Tab$empty = {
 	name: '',
 	table: '',
@@ -11706,7 +11829,22 @@ var _user$project$Tab$SelectionAll = function (a) {
 	return {ctor: 'SelectionAll', _0: a};
 };
 var _user$project$Tab$record_controls_head = function (model) {
+	var all_selected = _user$project$Tab$areAllRecordSelected(model);
+	var unselect = all_selected ? 'unselect' : 'select';
 	var rows = _elm_lang$core$List$length(model.rows);
+	var tooltip_text = A2(
+		_elm_lang$core$Basics_ops['++'],
+		'Click to ',
+		A2(
+			_elm_lang$core$Basics_ops['++'],
+			unselect,
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				' ',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(rows),
+					' record(s)'))));
 	return _elm_lang$core$Native_List.fromArray(
 		[
 			A2(
@@ -11722,7 +11860,8 @@ var _user$project$Tab$record_controls_head = function (model) {
 					_elm_lang$core$Native_List.fromArray(
 						[
 							_elm_lang$html$Html_Attributes$type$('checkbox'),
-							_elm_lang$html$Html_Events$onCheck(_user$project$Tab$SelectionAll)
+							_elm_lang$html$Html_Events$onCheck(_user$project$Tab$SelectionAll),
+							_elm_lang$html$Html_Attributes$checked(all_selected)
 						]),
 					_elm_lang$core$Native_List.fromArray(
 						[])),
@@ -11734,7 +11873,7 @@ var _user$project$Tab$record_controls_head = function (model) {
 						]),
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_elm_lang$html$Html$text('Click to (un)select all records')
+							_elm_lang$html$Html$text(tooltip_text)
 						]))
 				])),
 			A2(
@@ -11905,255 +12044,272 @@ var _user$project$Tab$tab_controls = function (model) {
 					]))
 			]));
 };
-var _user$project$Tab$toolbar = A2(
-	_elm_lang$html$Html$div,
-	_elm_lang$core$Native_List.fromArray(
-		[
-			_elm_lang$html$Html_Attributes$class('btn-group')
-		]),
-	_elm_lang$core$Native_List.fromArray(
-		[
-			A2(
-			_elm_lang$html$Html$button,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip')
-				]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('icon icon-plus icon-text tab-action')
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[])),
-					_elm_lang$html$Html$text('New record'),
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('tooltiptext')
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text('Create a new record in a form')
-						]))
-				])),
-			A2(
-			_elm_lang$html$Html$button,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
-					_elm_lang$html$Html_Events$onClick(
-					_user$project$Tab$ChangeMode(_user$project$Field$Read))
-				]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('icon icon-list-add icon-text')
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[])),
-					_elm_lang$html$Html$text('Insert row'),
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('tooltiptext')
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text('Insert row')
-						]))
-				])),
-			A2(
-			_elm_lang$html$Html$button,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
-					_elm_lang$html$Html_Events$onClick(
-					_user$project$Tab$ChangeMode(_user$project$Field$Read))
-				]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('icon icon-floppy icon-text')
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[])),
-					_elm_lang$html$Html$text('Save'),
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('tooltiptext')
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text('Save record into the database')
-						]))
-				])),
-			A2(
-			_elm_lang$html$Html$button,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
-					_elm_lang$html$Html_Events$onClick(
-					_user$project$Tab$ChangePresentation(_user$project$Field$Table))
-				]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('icon icon-cancel icon-text')
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[])),
-					_elm_lang$html$Html$text('Close'),
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('tooltiptext')
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text('Close the current record and return to grid view')
-						]))
-				])),
-			A2(
-			_elm_lang$html$Html$button,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
-					_elm_lang$html$Html_Events$onClick(
-					_user$project$Tab$ChangePresentation(_user$project$Field$Table))
-				]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('icon icon-block icon-text')
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[])),
-					_elm_lang$html$Html$text('Cancel'),
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('tooltiptext')
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text('Cancel changes and return to the last saved state')
-						]))
-				])),
-			A2(
-			_elm_lang$html$Html$button,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip')
-				]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('icon icon-trash icon-text')
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[])),
-					_elm_lang$html$Html$text('Delete'),
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('tooltiptext')
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text('Delete the current (selected) record(s) from the database')
-						]))
-				])),
-			A2(
-			_elm_lang$html$Html$button,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip')
-				]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('icon icon-arrows-ccw icon-text')
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[])),
-					_elm_lang$html$Html$text('Refresh'),
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('tooltiptext')
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text('Refresh the current data from the database')
-						]))
-				])),
-			A2(
-			_elm_lang$html$Html$button,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip')
-				]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('icon icon-export icon-text')
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[])),
-					_elm_lang$html$Html$text('Export'),
-					A2(
-					_elm_lang$html$Html$span,
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html_Attributes$class('tooltiptext')
-						]),
-					_elm_lang$core$Native_List.fromArray(
-						[
-							_elm_lang$html$Html$text('Export to spreadsheet')
-						]))
-				]))
-		]));
+var _user$project$Tab$toolbar = function (model) {
+	var delete_tooltip = function () {
+		var _p24 = model.presentation;
+		if (_p24.ctor === 'Table') {
+			return A2(
+				_elm_lang$core$Basics_ops['++'],
+				'Click to delete ',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(
+						_user$project$Tab$numberOfSelectedRecords(model)),
+					' record(s) from the database'));
+		} else {
+			return 'Click to delete this record from the database';
+		}
+	}();
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$class('btn-group')
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$span,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('icon icon-plus icon-text tab-action')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[])),
+						_elm_lang$html$Html$text('New record'),
+						A2(
+						_elm_lang$html$Html$span,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('tooltiptext')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text('Create a new record in a form')
+							]))
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$Tab$ChangeMode(_user$project$Field$Read))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$span,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('icon icon-list-add icon-text')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[])),
+						_elm_lang$html$Html$text('Insert row'),
+						A2(
+						_elm_lang$html$Html$span,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('tooltiptext')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text('Insert row')
+							]))
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$Tab$ChangeMode(_user$project$Field$Read))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$span,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('icon icon-floppy icon-text')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[])),
+						_elm_lang$html$Html$text('Save'),
+						A2(
+						_elm_lang$html$Html$span,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('tooltiptext')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text('Save record into the database')
+							]))
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$Tab$ChangePresentation(_user$project$Field$Table))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$span,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('icon icon-cancel icon-text')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[])),
+						_elm_lang$html$Html$text('Close'),
+						A2(
+						_elm_lang$html$Html$span,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('tooltiptext')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text('Close the current record and return to grid view')
+							]))
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$Tab$ChangePresentation(_user$project$Field$Table))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$span,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('icon icon-block icon-text')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[])),
+						_elm_lang$html$Html$text('Cancel'),
+						A2(
+						_elm_lang$html$Html$span,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('tooltiptext')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text('Cancel changes and return to the last saved state')
+							]))
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$span,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('icon icon-trash icon-text')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[])),
+						_elm_lang$html$Html$text('Delete'),
+						A2(
+						_elm_lang$html$Html$span,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('tooltiptext')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text(delete_tooltip)
+							]))
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$span,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('icon icon-arrows-ccw icon-text')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[])),
+						_elm_lang$html$Html$text('Refresh'),
+						A2(
+						_elm_lang$html$Html$span,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('tooltiptext')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text('Refresh the current data from the database')
+							]))
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$span,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('icon icon-export icon-text')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[])),
+						_elm_lang$html$Html$text('Export'),
+						A2(
+						_elm_lang$html$Html$span,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('tooltiptext')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text('Export to spreadsheet')
+							]))
+					]))
+			]));
+};
 var _user$project$Tab$view = function (model) {
 	var background = _elm_lang$html$Html_Attributes$style(
 		_elm_lang$core$Native_List.fromArray(
 			[
 				{ctor: '_Tuple2', _0: 'background-color', _1: '#fcfcfc'}
 			]));
-	var _p19 = model.presentation;
-	switch (_p19.ctor) {
+	var _p25 = model.presentation;
+	switch (_p25.ctor) {
 		case 'Form':
 			var focused = _user$project$Tab$focused_row(model);
 			return A2(
@@ -12163,7 +12319,7 @@ var _user$project$Tab$view = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_user$project$Tab$tab_controls(model),
-						_user$project$Tab$toolbar,
+						_user$project$Tab$toolbar(model),
 						A2(
 						_elm_lang$html$Html$div,
 						_elm_lang$core$Native_List.fromArray(
@@ -12174,13 +12330,13 @@ var _user$project$Tab$view = function (model) {
 						_elm_lang$core$Native_List.fromArray(
 							[
 								function () {
-								var _p20 = focused;
-								if (_p20.ctor === 'Just') {
-									var _p21 = _p20._0;
+								var _p26 = focused;
+								if (_p26.ctor === 'Just') {
+									var _p27 = _p26._0;
 									return A2(
 										_elm_lang$html$Html_App$map,
-										_user$project$Tab$UpdateRow(_p21.row_id),
-										_user$project$Row$view(_p21));
+										_user$project$Tab$UpdateRow(_p27.row_id),
+										_user$project$Row$view(_p27));
 								} else {
 									return A2(
 										_elm_lang$html$Html$div,
@@ -12202,7 +12358,7 @@ var _user$project$Tab$view = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_user$project$Tab$tab_controls(model),
-						_user$project$Tab$toolbar,
+						_user$project$Tab$toolbar(model),
 						A2(
 						_elm_lang$html$Html$table,
 						_elm_lang$core$Native_List.fromArray(
@@ -12234,7 +12390,7 @@ var _user$project$Tab$view = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_user$project$Tab$tab_controls(model),
-						_user$project$Tab$toolbar,
+						_user$project$Tab$toolbar(model),
 						A2(
 						_elm_lang$html$Html$div,
 						_elm_lang$core$Native_List.fromArray(

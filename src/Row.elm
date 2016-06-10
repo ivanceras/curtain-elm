@@ -7,6 +7,7 @@ import Html.Events exposing (..)
 import Html.Attributes exposing (..)
 import Dict
 import Json.Decode as Decode exposing ((:=))
+import Task
 
 type alias Model =
     { row_id: Int
@@ -44,6 +45,8 @@ type Msg
     | ChangeDensity Field.Density
     | DaoStateReceived DaoState
     | Selection Bool
+    | FocusRecord
+    | LooseFocusRecord
     | Close
 
 type alias Dao = Dict.Dict String Field.Value
@@ -78,7 +81,9 @@ view model =
                   (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| field_models)
                ]
         Field.Table ->
-            tr [onDoubleClick (ChangePresentation Field.Form)] 
+            tr [onDoubleClick (ChangePresentation Field.Form)
+               ,classList [("focused", model.is_focused), ("selected", model.is_selected)]
+               ] 
                ((tabular_record_controls model) ++
                 (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| field_models)
                )
@@ -117,9 +122,12 @@ row_controls model =
 
 tabular_record_controls model =
     let selection = 
+        let tooltip_text = if model.is_selected then "Click to unselect this record"
+            else "Click to select this record"
+        in
         td [class "tooltip"] 
                 [input [type' "checkbox", checked model.is_selected, onCheck Selection] []
-                ,span [class "tooltiptext"] [text "Click to (un)select this records"]
+                ,span [class "tooltiptext"] [text tooltip_text]
                 ]
 
         modification_controls = 
@@ -246,6 +254,11 @@ update msg model =
 
         Close -> --tab should tap on this event
             (model, Cmd.none)
+         
+        FocusRecord ->
+            ({model | is_focused = True}, Cmd.none)
+        LooseFocusRecord ->
+            ({model | is_focused = False}, Cmd.none)
 
 significant_fields: List Field.Model -> List Field.Model
 significant_fields field_models =
@@ -255,16 +268,16 @@ significant_fields field_models =
 most_significant: List Field.Model -> Maybe Field.Model
 most_significant field_models =
     let significants = significant_fields field_models
-        sorted = List.sortWith (\a b -> case a.field.significance_priority of
-                                Just a ->
-                                    case b.field.significance_priority of
-                                        Just b ->
-                                            compare a b
-                                        Nothing ->
-                                            EQ
-                                Nothing ->
-                                    EQ
-
+        sorted = List.sortWith (
+                    \a b -> case a.field.significance_priority of
+                            Just a ->
+                                case b.field.significance_priority of
+                                    Just b ->
+                                        compare a b
+                                    Nothing ->
+                                        EQ
+                            Nothing ->
+                                EQ
 
                      ) significants
     in List.head sorted

@@ -117,6 +117,7 @@ type Msg
     | ChangePresentation Presentation
     | ChangeDensity Density
     | SetValue Value
+    | FocusRecord
 
 
 
@@ -256,10 +257,14 @@ view model =
                 case model.mode of
                     -- edit table
                     Edit ->
-                        td [alignment model.field] [edit_field]
+                        td [alignment model.field
+                           ,onClick FocusRecord
+                           ] [edit_field]
                     --read table
                     Read ->
-                        td [(alignment model.field), container_style]
+                        td [onClick FocusRecord
+                           ,(alignment model.field), container_style
+                           ]
                            [(field_read model)
                            ]
             Grid ->
@@ -321,6 +326,8 @@ update msg model =
             ({model | density = density}, Cmd.none)
         SetValue value ->
             ({model | value = value}, Cmd.none)
+        FocusRecord ->
+            (model, Cmd.none)
 
 
 
@@ -374,7 +381,8 @@ field_entry model =
                   , field_check
                   , left_align
                   , checked b
-                  , onCheck ChangeValueBool] []
+                  , onCheck ChangeValueBool
+                  ] []
         I64 v -> 
             input [ type' "number"
                   , field_check
@@ -395,19 +403,22 @@ field_entry model =
                   , value d
                   , text_width
                   , right_align
-                  , onInput ChangeValue] []
+                  , onInput ChangeValue
+                  ] []
 
         DateTime d -> 
             input [ type' "datetime"
                   , value (simple_date d)
                   , text_width
                   , right_align
-                  , onInput ChangeValue] []
+                  , onInput ChangeValue
+                  ] []
         _ ->
             input [ type' "text"
                   , text_width
                   , left_align
                   , value (toString model.value)
+                  , onClick FocusRecord
                   ] []
             
 

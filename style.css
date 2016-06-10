@@ -48,7 +48,7 @@ td.record_control div{
 
 /* override the photon highlighting */
 tr:active{
-    background-color: #eee;
+    background-color: transparent;
     color: #333; 
  }
 
@@ -60,4 +60,12 @@ tr:active{
 
 .tab_filters th {
    border: 0px 
+}
+
+tr.focused{
+    background-color: #eee; /* no need to highlight */
+}
+
+tr.selected{
+    background-color: #eee;
 }
