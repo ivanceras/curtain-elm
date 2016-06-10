@@ -37,6 +37,7 @@ type Msg
     | WindowDetailReceived Window
     | WindowDataReceived (List TableDao)
     | LookupTabsReceived (List Tab.Tab)
+    | LookupDataReceived (List Field.LookupData)
     | ActivateWindow
     | DeactivateWindow
     
@@ -107,29 +108,21 @@ update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of 
         UpdateMainTab msg ->
-            let (mr,cmd) = Tab.update msg model.mainTab
-            in
-            ({model | mainTab = mr}, Cmd.none)
+            (updateTab msg model, Cmd.none)
         
         WindowDetailReceived window ->
-            let _ = Debug.log "Window got: " window.table
-                (mo, cmd) = Tab.update (Tab.TabReceived window.mainTab) 
-                                    model.mainTab 
-                -- include the extTabs, hasManyTabs, hasManyIndirectTabs
-            in
-            ({model | mainTab = mo}
+            -- TODO: include the extTabs, hasManyTabs, hasManyIndirectTabs
+            (updateTab (Tab.TabReceived window.mainTab) model 
             ,Cmd.none
             )
 
         WindowDataReceived listTableDao ->
-            let _ = Debug.log "Window data received" (List.length listTableDao)
-                mainTab = case (List.head listTableDao) of
+            (case (List.head listTableDao) of --TODO: get the main tab
                     Just tableDao -> 
-                        let (mo, cmd) = Tab.update (Tab.TabDataReceived tableDao.daoList) model.mainTab
-                        in mo
-                    Nothing -> model.mainTab 
-            in
-            ({model | mainTab = mainTab}, Cmd.none)
+                        updateTab (Tab.TabDataReceived tableDao.daoList) model
+                    Nothing -> model 
+            ,Cmd.none
+            )
 
         ChangeMode mode ->
             (model, Cmd.none)
@@ -144,5 +137,13 @@ update msg model =
             ({model | isActive = False}, Cmd.none)
 
         LookupTabsReceived tabList ->
-            (model, Cmd.none)
+            (updateTab (Tab.LookupTabsReceived tabList) model, Cmd.none)
+        LookupDataReceived lookupDataList ->
+            (updateTab (Tab.LookupDataReceived lookupDataList) model, Cmd.none)
 
+
+updateTab: Tab.Msg -> Model -> Model
+updateTab tab_msg model =
+    let (updatedMainTab, cmd) = Tab.update tab_msg model.mainTab
+    in
+    {model | mainTab = updatedMainTab}

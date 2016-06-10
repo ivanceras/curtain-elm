@@ -65,8 +65,6 @@ update msg model =
             , Cmd.none
             )
         LoadWindow table -> -- will be caught by the main app
-            let _ = Debug.log "did it opened" table
-            in
             (model, Cmd.none)
 
         UpdateActivated table ->

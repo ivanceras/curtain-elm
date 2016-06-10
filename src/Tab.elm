@@ -79,6 +79,8 @@ type Msg
     | TabReceived Tab
     | TabDataReceived (List Row.DaoState)
     | SelectionAll Bool
+    | LookupTabsReceived (List Tab)
+    | LookupDataReceived (List Field.LookupData)
 
 create: Tab -> Model
 create tab =
@@ -313,15 +315,6 @@ paging =
         ]
 
 
-updateRow: Int -> Row.Msg -> Model -> List Row.Model
-updateRow rowId rowMsg model =
-    List.map (\r -> 
-        if r.rowId == rowId then
-            let (mr,cmd) = Row.update rowMsg r 
-            in mr
-         else
-            r
-        ) model.rows 
 
 updatePresentation model presentation =
     ( {model | presentation = presentation
@@ -403,7 +396,7 @@ update msg model =
                         in ({mo2 | focusedRow = Just rowId
                                 , mode = Field.Edit },cmd2)
                     _ ->
-                        ( {model | rows = updateRow rowId rowMsg model }, Cmd.none)
+                        ( updateRow rowMsg rowId model, Cmd.none)
                         
             Row.Close ->
                 let (mo, cmd) =updatePresentation model Field.Table
@@ -415,16 +408,14 @@ update msg model =
             Row.Selection checked ->
                 let updatedModel = removeFocusedRecord model
                 in
-                ( {model | rows = updateRow rowId rowMsg updatedModel }, Cmd.none)
+                ( updateRow rowMsg rowId updatedModel , Cmd.none)
 
 
             Row.UpdateField column fieldMsg ->
-                let _ =Debug.log "TAB tapping row.update field" column
-                in
                 (updateFocusedRow model rowId, Cmd.none)
                 
             _ ->
-                ( {model | rows = updateRow rowId rowMsg model }, Cmd.none)
+                ( updateRow rowMsg rowId model , Cmd.none)
 
         ChangeMode mode ->
             updateMode model mode
@@ -444,8 +435,7 @@ update msg model =
             ( {model | fields = tab.fields}, Cmd.none )
 
         TabDataReceived listDaoState ->
-            let _ = Debug.log "tab data recieved" (List.length listDaoState)
-                firstRow = Maybe.withDefault Row.empty (List.head model.rows)
+            let firstRow = Maybe.withDefault Row.empty (List.head model.rows)
                 rows = 
                     List.indexedMap (
                     \index daoState ->
@@ -462,13 +452,57 @@ update msg model =
 
 
         SelectionAll checked ->
-           let rows = List.map (\r ->
-                let (mo, cmd) = Row.update (Row.Selection checked) r
-                in mo
-               ) model.rows
+            (updateAllRows (Row.Selection checked) model, Cmd.none)
+
+        LookupTabsReceived tabList ->
+            let listLookupFields = buildLookupField tabList
             in
-              ({model | rows = rows}, Cmd.none)
+            (updateAllRows (Row.LookupTabsReceived listLookupFields) model
+            , Cmd.none
+            )
 
- 
+        LookupDataReceived lookupDataList ->
+            (updateAllRows (Row.LookupDataReceived lookupDataList) model
+            , Cmd.none
+            )
 
+completeTableName: Tab -> String
+completeTableName tab =
+    case tab.schema of
+        Just schema ->
+            schema ++ "." ++ tab.table
+        Nothing ->
+            tab.table
+
+buildLookupField: List Tab -> List Field.LookupTab
+buildLookupField tabList =
+    List.map(
+        \t ->
+           Field.newLookupTab (completeTableName t) t.fields
+           
+    ) tabList
+
+updateRow: Row.Msg -> Int -> Model -> Model
+updateRow rowMsg rowId model =
+    let rows = 
+        List.map (\r -> 
+            if r.rowId == rowId then
+                let (mr,cmd) = Row.update rowMsg r 
+                in mr
+             else
+                r
+            ) model.rows 
+     in
+     { model | rows = rows }
+
+
+updateAllRows: Row.Msg -> Model -> Model
+updateAllRows rowMsg model =
+    let rows = 
+        List.map (\r -> 
+                let (mr,cmd) = Row.update rowMsg r 
+                in mr
+            ) model.rows 
+     in
+     { model | rows = rows }
 

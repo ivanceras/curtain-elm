@@ -187,7 +187,7 @@ update msg model =
             )
 
         LookupDataReceived windowId lookupData ->
-            (model, Cmd.none)
+            (updateWindow model (Window.LookupDataReceived lookupData) windowId, Cmd.none)
 
         FetchError e ->
             ( { model | error = (toString e)::model.error }, Cmd.none )

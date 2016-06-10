@@ -48,6 +48,8 @@ type Msg
     | ToggleSelect
     | FocusRecord
     | LooseFocusRecord
+    | LookupTabsReceived (List Field.LookupTab)
+    | LookupDataReceived (List Field.LookupData)
     | Close
 
 type alias DaoState =
@@ -229,33 +231,26 @@ update msg model =
             )
 
         UpdateField column fieldMsg ->
-            let _ = Debug.log "-->> ROW tapped signal ---->" column 
-            in
-               ({model | fieldModels = model.fieldModels
-                |> List.map (\f -> 
-                    if f.field.column == column then
-                        let (mr,cmd) = Field.update fieldMsg f
-                        in mr
-                    else
-                        f
-                  ) }, Cmd.none)
+           ({model | fieldModels = model.fieldModels
+            |> List.map (\f -> 
+                if f.field.column == column then
+                    let (mr,cmd) = Field.update fieldMsg f
+                    in mr
+                else
+                    f
+              ) }, Cmd.none)
 
         DaoStateReceived daoState ->
-            let _ = Debug.log "Row received daoState" daoState
-                fieldModels =
+            let fieldModels =
                 List.map(
                     \f ->
                         let value = Dict.get f.field.column daoState.dao
-                            _ = Debug.log "value" value
                         in
                         case value of
                             Just value ->
                                 let (mo, cmd) = Field.update (Field.SetValue value) f
                                 in mo
-                            Nothing -> 
-                                let _ = Debug.log "no value"
-                                in
-                                f
+                            Nothing -> f
                 ) model.fieldModels
             in
             ({model | isFocused = daoState.focused
@@ -277,6 +272,40 @@ update msg model =
             ({model | isFocused = True}, Cmd.none)
         LooseFocusRecord ->
             ({model | isFocused = False}, Cmd.none)
+
+        LookupTabsReceived lookupTabFields ->
+            (updateLookupFields (Field.LookupTabsReceived lookupTabFields) model
+            , Cmd.none
+            ) 
+        LookupDataReceived lookupDataList ->
+            (updateLookupFields (Field.LookupDataReceived lookupDataList) model
+            , Cmd.none
+            ) 
+
+--add lookup fields only to those which needed it
+updateLookupFields: Field.Msg -> Model -> Model
+updateLookupFields fieldMsg model =
+    let updatedFields = 
+           List.map (
+                \f ->
+                    if f.field.reference == "Table" then
+                        let (updatedField, cmd) = Field.update fieldMsg f
+                        in updatedField
+                    else f
+           ) model.fieldModels 
+    in
+    {model | fieldModels = updatedFields}
+
+updateFields: Field.Msg -> Model -> Model
+updateFields fieldMsg model =
+    let updatedFields = 
+           List.map (
+                \f ->
+                    let (updatedField, cmd) = Field.update fieldMsg f
+                    in updatedField
+           ) model.fieldModels 
+    in
+    {model | fieldModels = updatedFields}
 
 
 onCheckNoPropagate: (Bool -> msg ) -> Attribute msg

@@ -50,6 +50,11 @@ type alias LookupTab =
     , fields: List Field
     }
 
+newLookupTab table fields =
+    { table = table
+    , fields = fields
+    }
+
 type alias LookupData =
     { table: String
     , daoList: List Dao
@@ -134,6 +139,8 @@ type Msg
     | ChangePresentation Presentation
     | ChangeDensity Density
     | SetValue Value
+    | LookupTabsReceived (List LookupTab)
+    | LookupDataReceived (List LookupData)
 
 
 
@@ -338,6 +345,16 @@ update msg model =
         SetValue value ->
             ({model | value = value}, Cmd.none)
 
+        LookupTabsReceived lookupTabList ->
+            ({model | lookupTabs = lookupTabList}
+            , Cmd.none
+            )
+
+        LookupDataReceived lookupDataList ->
+            ({model | lookupData = lookupDataList}
+            , Cmd.none
+            )
+
 
 
 isEmptyValue: Value -> Bool
@@ -529,11 +546,91 @@ alignment field =
 
 lookupView: Model -> Html Msg
 lookupView model =
-    div [] [text ("lookup view of "++ model.field.name ++ "to table" ++ (toString model.field.referenceValue))
-           ,text (toString model.lookupData)
-           ,text (toString model.lookupTabs)
-           ]
+    let table = model.field.referenceValue
+    in
+    case table of
+        Just table ->
+            let daoList = tableLookupData model.lookupData table
+                fieldList = tableLookupTabFields model.lookupTabs table
+            in
+            div [] [createCompactListField fieldList daoList 
+                   ]
+        Nothing ->
+            div [] [text "no matching table"]
 
+
+toList: Maybe a -> List a
+toList arg =
+    case arg of
+        Just a -> [a]
+        Nothing -> []
+
+createCompactListField: List Field -> List Dao -> Html Msg
+createCompactListField fieldList daoList =
+    let fields = toList (mostSignificantField fieldList)
+        rows  = 
+            List.map(
+                \ dao ->
+                    createRow fields dao
+                ) daoList
+    in
+    select [] rows
+
+createRow: List Field -> Dao -> Html Msg 
+createRow fields dao =
+    option [] <|
+        List.map (
+            \f ->
+                let model = create f 
+                    updatedModel =
+                        case getValue f dao of
+                            Just value ->
+                                {model | value = value}
+                            Nothing -> model 
+
+                in
+                view updatedModel
+            ) fields
+
+getValue: Field -> Dao -> Maybe Value
+getValue field dao =
+    Dict.get field.column dao
+
+
+createFieldWithValue: Field -> Value -> Model
+createFieldWithValue field value =
+    let model = create field
+    in
+    { model | value = value }
+
+tableLookupData: List LookupData -> String -> List Dao 
+tableLookupData lookupDataList table =
+    let lookupData = 
+        List.filter (
+            \l -> 
+                l.table == table
+        ) lookupDataList
+        |> List.head
+    in
+    case lookupData of
+        Just lookupData ->
+            lookupData.daoList
+        Nothing -> []
+    
+tableLookupTabFields: List LookupTab -> String -> List Field 
+tableLookupTabFields lookupTabList table =
+    let lookupTab= 
+        List.filter (
+            \l -> 
+                l.table == table
+        ) lookupTabList
+        |> List.head
+    in
+    case lookupTab of
+        Just lookupTab ->
+            lookupTab.fields
+        Nothing -> []
+    
 
 significantModels: List Model -> List Model
 significantModels fieldModels =
