@@ -12,6 +12,8 @@ import String
 import ISO8601
 import Date.Format
 import Random
+import Dict
+import Json.Decode as Decode exposing (Decoder)
 
 type alias Model = 
     { field: Field
@@ -20,7 +22,8 @@ type alias Model =
     , presentation: Presentation
     , focused: Bool
     , density: Density
-    , lookups: List Lookup
+    , lookupTabs: List LookupTab
+    , lookupData: List LookupData
     }
 
 create field =
@@ -30,12 +33,26 @@ create field =
     , presentation = Table
     , focused = False
     , density = Expanded
-    , lookups = []
+    , lookupTabs = []
+    , lookupData = []
     }
 
-type alias Lookup =
+
+type alias Dao = Dict.Dict String Value
+
+daoDecoder: Decoder Dao
+daoDecoder =
+    Decode.dict valueDecoder
+
+
+type alias LookupTab =
     { table: String
     , fields: List Field
+    }
+
+type alias LookupData =
+    { table: String
+    , daoList: List Dao
     }
 
 type Mode = Edit | Read 
@@ -117,7 +134,6 @@ type Msg
     | ChangePresentation Presentation
     | ChangeDensity Density
     | SetValue Value
-    | FocusRecord
 
 
 
@@ -255,12 +271,10 @@ view model =
                     -- edit table
                     Edit ->
                         td [alignment model.field
-                           ,onClick FocusRecord
                            ] [editField]
                     --read table
                     Read ->
-                        td [onClick FocusRecord
-                           ,(alignment model.field), containerStyle
+                        td [(alignment model.field), containerStyle
                            ]
                            [(fieldRead model)
                            ]
@@ -323,8 +337,6 @@ update msg model =
             ({model | density = density}, Cmd.none)
         SetValue value ->
             ({model | value = value}, Cmd.none)
-        FocusRecord ->
-            (model, Cmd.none)
 
 
 
@@ -361,63 +373,74 @@ fieldEntry model =
                     ,("border-bottom", "1px solid #ccc")
                     ,("background-color", "#fff")
                     ]
-
     in
-    case model.value of
-        String s ->
-            input [ type' "text"
-                  , fieldCheck
-                  , leftAlign
-                  , textWidth
-                  , focusedField
-                  , value s
-                  , onInput ChangeValue
-                  ] []
-        Bool b -> 
-            input [ type' "checkbox"
-                  , fieldCheck
-                  , leftAlign
-                  , checked b
-                  , onCheck ChangeValueBool
-                  ] []
-        I64 v -> 
-            input [ type' "number"
-                  , fieldCheck
-                  , rightAlign
-                  , textWidth
-                  , value (toString v)
-                  ] []
-        F64 v -> 
-            input [ type' "number"
-                  , fieldCheck
-                  , rightAlign
-                  , textWidth
-                  , value (toString v)
-                  ] []
 
-        Date d -> 
-            input [ type' "date"
-                  , value d
-                  , textWidth
-                  , rightAlign
-                  , onInput ChangeValue
-                  ] []
-
-        DateTime d -> 
-            input [ type' "datetime"
-                  , value (simpleDate d)
-                  , textWidth
-                  , rightAlign
-                  , onInput ChangeValue
-                  ] []
+    case model.field.reference of
+        "Table" -> 
+            lookupView model
         _ ->
-            input [ type' "text"
-                  , textWidth
-                  , leftAlign
-                  , value (toString model.value)
-                  , onClick FocusRecord
-                  ] []
-            
+
+            case model.value of
+                String s ->
+                    input [ type' "text"
+                          , fieldCheck
+                          , leftAlign
+                          , textWidth
+                          , focusedField
+                          , value s
+                          , onInput ChangeValue
+                          ] []
+                Bool b -> 
+                    input [ type' "checkbox"
+                          , fieldCheck
+                          , leftAlign
+                          , checked b
+                          , onCheck ChangeValueBool
+                          ] []
+                I64 v -> 
+                    input [ type' "number"
+                          , fieldCheck
+                          , rightAlign
+                          , textWidth
+                          , value (toString v)
+                          ] []
+                I32 v -> 
+                    input [ type' "number"
+                          , fieldCheck
+                          , rightAlign
+                          , textWidth
+                          , value (toString v)
+                          ] []
+                F64 v -> 
+                    input [ type' "number"
+                          , fieldCheck
+                          , rightAlign
+                          , textWidth
+                          , value (toString v)
+                          ] []
+
+                Date d -> 
+                    input [ type' "date"
+                          , value d
+                          , textWidth
+                          , rightAlign
+                          , onInput ChangeValue
+                          ] []
+
+                DateTime d -> 
+                    input [ type' "datetime"
+                          , value (simpleDate d)
+                          , textWidth
+                          , rightAlign
+                          , onInput ChangeValue
+                          ] []
+                _ ->
+                    input [ type' "text"
+                          , textWidth
+                          , leftAlign
+                          , value (toString model.value)
+                          ] []
+                    
 
 simpleDate: String -> String
 simpleDate str =
@@ -502,3 +525,49 @@ alignment field =
         "Date" -> rightAlign
         "DateTime" -> rightAlign
         _ -> leftAlign
+ 
+
+lookupView: Model -> Html Msg
+lookupView model =
+    div [] [text ("lookup view of "++ model.field.name ++ "to table" ++ (toString model.field.referenceValue))
+           ,text (toString model.lookupData)
+           ,text (toString model.lookupTabs)
+           ]
+
+
+significantModels: List Model -> List Model
+significantModels fieldModels =
+    List.filter (\f -> f.field.isSignificant ) fieldModels 
+    
+significantFields: List Field -> List Field
+significantFields fields =
+    List.filter (\f -> f.isSignificant ) fields
+
+mostSignificantModel: List Model -> Maybe Model
+mostSignificantModel fieldModels =
+    let significants = significantModels fieldModels
+        sorted = List.sortWith (
+                    \a b -> case a.field.significancePriority of
+                            Just a ->
+                                case b.field.significancePriority of
+                                    Just b -> compare a b
+                                    Nothing -> EQ
+                            Nothing -> EQ
+
+                     ) significants
+    in List.head sorted
+
+
+mostSignificantField: List Field -> Maybe Field
+mostSignificantField fields =
+    let significants = significantFields fields
+        sorted = List.sortWith (
+                    \a b -> case a.significancePriority of
+                            Just a ->
+                                case b.significancePriority of
+                                    Just b -> compare a b
+                                    Nothing -> EQ
+                            Nothing -> EQ
+
+                     ) significants
+    in List.head sorted

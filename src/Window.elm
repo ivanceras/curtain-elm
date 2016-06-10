@@ -36,6 +36,7 @@ type Msg
     | UpdateMainTab Tab.Msg
     | WindowDetailReceived Window
     | WindowDataReceived (List TableDao)
+    | LookupTabsReceived (List Tab.Tab)
     | ActivateWindow
     | DeactivateWindow
     
@@ -141,4 +142,7 @@ update msg model =
 
         DeactivateWindow ->
             ({model | isActive = False}, Cmd.none)
+
+        LookupTabsReceived tabList ->
+            (model, Cmd.none)
 

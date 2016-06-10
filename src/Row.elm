@@ -45,23 +45,20 @@ type Msg
     | ChangeDensity Field.Density
     | DaoStateReceived DaoState
     | Selection Bool
+    | ToggleSelect
     | FocusRecord
     | LooseFocusRecord
     | Close
 
-type alias Dao = Dict.Dict String Field.Value
 type alias DaoState =
-    { dao: Dao
+    { dao: Field.Dao
     , focused: Bool
     }
 
 daoStateDecoder =
     Decode.object2 DaoState
-        ("dao" := daoDecoder)
+        ("dao" := Field.daoDecoder)
         ("focused" := Decode.bool)
-
-daoDecoder =
-    Decode.dict Field.valueDecoder
 
 
 
@@ -82,6 +79,7 @@ view model =
                ]
         Field.Table ->
             tr [onDoubleClick (ChangePresentation Field.Form)
+               ,onClick FocusRecord
                ,classList [("focused", model.isFocused), ("selected", model.isSelected)]
                ] 
                ((tabularRecordControls model) ++
@@ -119,14 +117,31 @@ rowControls model =
        ]
 
 
+onClickNoPropagate: msg -> Attribute msg
+onClickNoPropagate msg = 
+    Decode.succeed msg
+        |> onWithOptions "click" {defaultOptions | stopPropagation = True}
+
+onDoubleClickNoPropagate: msg -> Attribute msg
+onDoubleClickNoPropagate msg = 
+    Decode.succeed msg
+        |> onWithOptions "dblclick" {defaultOptions | stopPropagation = True}
 
 tabularRecordControls model =
     let selection = 
         let tooltipText = if model.isSelected then "Click to unselect this record"
             else "Click to select this record"
         in
-        td [class "tooltip"] 
-                [input [type' "checkbox", checked model.isSelected, onCheck Selection] []
+        td [class "tooltip"
+           , onClickNoPropagate ToggleSelect
+             -- prevent unexpected opening of record in form
+           , onDoubleClickNoPropagate ToggleSelect
+           ] 
+                [input [type' "checkbox"
+                       , checked model.isSelected
+                       , onCheckNoPropagate Selection
+                       , onDoubleCheckNoPropagate Selection
+                       ] []
                 ,span [class "tooltiptext"] [text tooltipText]
                 ]
 
@@ -252,6 +267,9 @@ update msg model =
         Selection checked ->
             ({model | isSelected = checked}, Cmd.none)
 
+        ToggleSelect ->
+            ({model | isSelected = not model.isSelected}, Cmd.none)
+
         Close -> --tab should tap on this event
             (model, Cmd.none)
          
@@ -260,28 +278,17 @@ update msg model =
         LooseFocusRecord ->
             ({model | isFocused = False}, Cmd.none)
 
-significantFields: List Field.Model -> List Field.Model
-significantFields fieldModels =
-    List.filter (\f -> f.field.isSignificant ) fieldModels 
-    
 
-mostSignificant: List Field.Model -> Maybe Field.Model
-mostSignificant fieldModels =
-    let significants = significantFields fieldModels
-        sorted = List.sortWith (
-                    \a b -> case a.field.significancePriority of
-                            Just a ->
-                                case b.field.significancePriority of
-                                    Just b ->
-                                        compare a b
-                                    Nothing ->
-                                        EQ
-                            Nothing ->
-                                EQ
+onCheckNoPropagate: (Bool -> msg ) -> Attribute msg
+onCheckNoPropagate msg =
+    Decode.map msg targetChecked
+        |> onWithOptions "click" {defaultOptions | stopPropagation = True}
 
-                     ) significants
-    in List.head sorted
-    
+
+onDoubleCheckNoPropagate: (Bool -> msg ) -> Attribute msg
+onDoubleCheckNoPropagate msg =
+    Decode.map msg targetChecked
+        |> onWithOptions "dblclick" {defaultOptions | stopPropagation = True}
 
 toList: Maybe a -> List a
 toList arg =
@@ -294,27 +301,17 @@ filterFieldModelsWithDensity: Model -> List Field.Model
 filterFieldModelsWithDensity model =
     case model.density of
         Field.Compact -> --only the most significant
-            toList (mostSignificant model.fieldModels)
+            toList (Field.mostSignificantModel model.fieldModels)
         Field.Medium -> -- all significant fields
-            significantFields model.fieldModels
+            Field.significantModels model.fieldModels
         Field.Expanded -> model.fieldModels -- all fields
  
 
 filterFieldsWithDensity: List Field.Field -> Field.Density -> List Field.Field
 filterFieldsWithDensity fields density =
-    let significantFields = List.filter (\f -> f.isSignificant) fields
-        sorted = List.sortWith( \a b -> case a.significancePriority of 
-            Just a ->
-                case b.significancePriority of
-                    Just b -> compare a b
-                    Nothing -> EQ
-            Nothing -> EQ
-        ) significantFields
-        mostSig = toList (List.head sorted)
-    in                    
     case density of
-        Field.Compact -> mostSig
-        Field.Medium -> significantFields
+        Field.Compact -> toList (Field.mostSignificantField fields)
+        Field.Medium -> Field.significantFields fields
         Field.Expanded -> fields
             
             

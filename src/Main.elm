@@ -9,6 +9,8 @@ import Http
 import Task
 import Html.Attributes exposing (..)
 import Json.Decode as Decode
+import Tab
+import Field
 
 
 type alias Model =
@@ -36,6 +38,8 @@ type Msg
     | WindowDetailReceived Window.Window
     | GetWindowData String
     | WindowDataReceived Int (List Window.TableDao) 
+    | LookupTabsReceived Int (List Tab.Tab)
+    | LookupDataReceived Int (List Field.LookupData)
     | FetchError Http.Error
 
 appModel =
@@ -52,6 +56,11 @@ appModel =
 
 init: (Model, Cmd Msg)
 init = (appModel, fetchWindowList appModel)
+
+onClickNoPropagate: msg -> Attribute msg
+onClickNoPropagate msg = 
+    Decode.succeed msg
+        |> onWithOptions "click" {defaultOptions | stopPropagation = True}
 
 view: Model -> Html Msg
 view model =
@@ -75,7 +84,7 @@ view model =
                                                             ]
                                                        ,onClick (ActivateWindow w.windowId)
                                                   ]
-                                                [ span [ onClick (CloseWindow w.windowId)
+                                                [ span [ onClickNoPropagate (CloseWindow w.windowId)
                                                         ,class "icon icon-cancel icon-close-tab"] []
                                                   ,text w.name
                                                 ]
@@ -170,7 +179,15 @@ update msg model =
                             windowModel
                 ) model.openedWindows
             in
-            ( {model | openedWindows = openedWindows} , Cmd.none)
+            ( {model | openedWindows = openedWindows} , fetchLookupTabs model windowId)
+        
+        LookupTabsReceived windowId tabList -> --update the window and propage the data down to the fields
+            (updateWindow model (Window.LookupTabsReceived tabList) windowId
+            , fetchLookupData model windowId
+            )
+
+        LookupDataReceived windowId lookupData ->
+            (model, Cmd.none)
 
         FetchError e ->
             ( { model | error = (toString e)::model.error }, Cmd.none )
@@ -209,12 +226,26 @@ closeWindow model windowId =
     }
 
 
+updateWindow: Model -> Window.Msg -> Int -> Model
+updateWindow model windowMsg windowId =
+    let updatedWindows = 
+        List.map(
+            \w ->
+                if w.windowId == windowId then
+                    let (mo, cmd) = Window.update windowMsg w
+                    in mo
+                else
+                    w
+        ) model.openedWindows
+    in
+    {model | openedWindows = updatedWindows}
+
 activateFirstWindow: Model -> Model
 activateFirstWindow model =
     case List.head model.openedWindows of
         Just window ->
-            let (updateWindow, cmd) = Window.update Window.ActivateWindow window
-                allWindows = updateWindow :: Maybe.withDefault [] (List.tail model.openedWindows)
+            let (updatedWindow, cmd) = Window.update Window.ActivateWindow window
+                allWindows = updatedWindow :: Maybe.withDefault [] (List.tail model.openedWindows)
             in
             {model | activeWindow = Just window.windowId
             ,openedWindows = allWindows
@@ -287,6 +318,18 @@ inOpenedWindows model windowId =
         |> List.isEmpty 
         |> not
 
+-- get the table name of this windowId
+getWindowTable: Model -> Int -> Maybe String
+getWindowTable model windowId =
+    let window = List.filter (\w -> w.windowId == windowId ) model.openedWindows
+        |> List.head
+    in
+    case window of
+        Just window ->
+            Just window.mainTab.table
+        Nothing -> Nothing
+
+
 httpGet model url =
     Http.send Http.defaultSettings
     { verb = "GET"
@@ -312,3 +355,28 @@ getWindowData model mainTable windowId =
     httpGet model ("/app/" ++ mainTable)
         |> Http.fromJson (Decode.list Window.tableDaoDecoder)
         |> Task.perform FetchError (WindowDataReceived windowId)
+
+fetchLookupTabs: Model -> Int -> Cmd Msg
+fetchLookupTabs model windowId =
+    let mainTable = getWindowTable model windowId
+    in
+    case mainTable of
+        Just mainTable ->
+            httpGet model ("/lookup_tabs/" ++ mainTable)
+                |> Http.fromJson (Decode.list Tab.tabDecoder)
+                |> Task.perform FetchError (LookupTabsReceived windowId)
+        Nothing ->
+           Debug.crash "Unable to get matching table" 
+
+fetchLookupData: Model -> Int -> Cmd Msg
+fetchLookupData model windowId =
+    let mainTable = getWindowTable model windowId
+    in
+    case mainTable of
+        Just mainTable ->
+            httpGet model ("/lookup_data/" ++ mainTable)
+               |> Http.fromJson (Decode.list Tab.lookupDataDecoder)
+               |> Task.perform FetchError (LookupDataReceived windowId)
+        Nothing ->
+           Debug.crash "Unable to get matching table" 
+

@@ -64,6 +64,11 @@ tabDecoder =
         |: (Decode.maybe ("icon" := Decode.string))
         |: (Decode.maybe ("page_size" := Decode.int))
         
+lookupDataDecoder: Decode.Decoder Field.LookupData
+lookupDataDecoder = 
+    Decode.succeed Field.LookupData
+        |: ("table" := Decode.string)
+        |: ("dao_list" := Decode.list Field.daoDecoder)
 
 
 type Msg
