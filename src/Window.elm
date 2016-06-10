@@ -12,22 +12,22 @@ import Row
 
 type alias Model =
     { name: String
-    , main_tab: Tab.Model
+    , mainTab: Tab.Model
     , presentation: Field.Presentation
     , mode: Field.Mode
-    , is_active: Bool
-    , ext_tabs: List Tab.Model
-    , has_many_tabs: List Tab.Model
-    , has_many_indirect_tabs: List Tab.Model
-    , window_id: Int
+    , isActive: Bool
+    , extTabs: List Tab.Model
+    , hasManyTabs: List Tab.Model
+    , hasManyIndirectTabs: List Tab.Model
+    , windowId: Int
     }
 
 
 create: Window -> Int -> Model
-create window window_id =
+create window windowId =
     { empty | name = window.name
-    , window_id = window_id
-    , main_tab = Tab.create window.main_tab
+    , windowId = windowId
+    , mainTab = Tab.create window.mainTab
     }
 
 type Msg
@@ -44,45 +44,45 @@ type alias Window =
     , description: Maybe String
     , table: String
     , schema: Maybe String
-    , main_tab: Tab.Tab
-    , ext_tabs: List Tab.Tab
-    , has_many_tabs: List Tab.Tab
-    , has_many_indirect_tabs: List Tab.Tab
+    , mainTab: Tab.Tab
+    , extTabs: List Tab.Tab
+    , hasManyTabs: List Tab.Tab
+    , hasManyIndirectTabs: List Tab.Tab
     }
 
 type alias TableDao =
     { table: String
-    , dao_list: List Row.DaoState
+    , daoList: List Row.DaoState
     }
 
-table_dao_decoder =
+tableDaoDecoder =
     Decode.object2 TableDao
         ("table" := Decode.string)
-        ("dao_list" := Decode.list Row.dao_state_decoder)
+        ("dao_list" := Decode.list Row.daoStateDecoder)
 
 
 
-window_decoder =
+windowDecoder =
     Decode.object8 Window
         ("name" := Decode.string)
         (Decode.maybe ("description" := Decode.string))
         ("table" := Decode.string)
         (Decode.maybe ("schema" := Decode.string))
-        ("main_tab":= Tab.tab_decoder)
-        ("ext_tabs" := Decode.list Tab.tab_decoder)
-        ("has_many_tabs" := Decode.list Tab.tab_decoder)
-        ("has_many_indirect_tabs" := Decode.list Tab.tab_decoder)
+        ("main_tab":= Tab.tabDecoder)
+        ("ext_tabs" := Decode.list Tab.tabDecoder)
+        ("has_many_tabs" := Decode.list Tab.tabDecoder)
+        ("has_many_indirect_tabs" := Decode.list Tab.tabDecoder)
 
 empty =
     { name = ""
-    , main_tab = Tab.empty
+    , mainTab = Tab.empty
     , presentation = Field.Table
     , mode = Field.Read
-    , is_active = True
-    , ext_tabs = []
-    , has_many_tabs = []
-    , has_many_indirect_tabs = []
-    , window_id = 0
+    , isActive = True
+    , extTabs = []
+    , hasManyTabs = []
+    , hasManyIndirectTabs = []
+    , windowId = 0
     }
 
 
@@ -91,9 +91,9 @@ init = (empty, Cmd.none)
 
 view: Model -> Html Msg
 view model = 
-    if model.is_active then
+    if model.isActive then
         div [] [
-                 App.map UpdateMainTab(Tab.view model.main_tab)
+                 App.map UpdateMainTab(Tab.view model.mainTab)
                , div [] [text "extension tab here.."]
                , div [] [text "has_many tabs here.. direct and indirect"]
                ]
@@ -106,29 +106,29 @@ update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of 
         UpdateMainTab msg ->
-            let (mr,cmd) = Tab.update msg model.main_tab
+            let (mr,cmd) = Tab.update msg model.mainTab
             in
-            ({model | main_tab = mr}, Cmd.none)
+            ({model | mainTab = mr}, Cmd.none)
         
         WindowDetailReceived window ->
             let _ = Debug.log "Window got: " window.table
-                (mo, cmd) = Tab.update (Tab.TabReceived window.main_tab) 
-                                    model.main_tab 
-                -- include the ext_tabs, has_many_tabs, has_many_indirect_tabs
+                (mo, cmd) = Tab.update (Tab.TabReceived window.mainTab) 
+                                    model.mainTab 
+                -- include the extTabs, hasManyTabs, hasManyIndirectTabs
             in
-            ({model | main_tab = mo}
+            ({model | mainTab = mo}
             ,Cmd.none
             )
 
-        WindowDataReceived list_table_dao ->
-            let _ = Debug.log "Window data received" (List.length list_table_dao)
-                main_tab = case (List.head list_table_dao) of
-                    Just table_dao -> 
-                        let (mo, cmd) = Tab.update (Tab.TabDataReceived table_dao.dao_list) model.main_tab
+        WindowDataReceived listTableDao ->
+            let _ = Debug.log "Window data received" (List.length listTableDao)
+                mainTab = case (List.head listTableDao) of
+                    Just tableDao -> 
+                        let (mo, cmd) = Tab.update (Tab.TabDataReceived tableDao.daoList) model.mainTab
                         in mo
-                    Nothing -> model.main_tab 
+                    Nothing -> model.mainTab 
             in
-            ({model | main_tab = main_tab}, Cmd.none)
+            ({model | mainTab = mainTab}, Cmd.none)
 
         ChangeMode mode ->
             (model, Cmd.none)
@@ -137,8 +137,8 @@ update msg model =
             (model, Cmd.none)
 
         ActivateWindow ->
-            ({model | is_active = True}, Cmd.none)
+            ({model | isActive = True}, Cmd.none)
 
         DeactivateWindow ->
-            ({model | is_active = False}, Cmd.none)
+            ({model | isActive = False}, Cmd.none)
 

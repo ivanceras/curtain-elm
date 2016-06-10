@@ -6,9 +6,9 @@ import Html.Events exposing (..)
 import Json.Decode as Decode exposing ((:=))
 
 type alias Model =
-    { window_list: List WindowName
-    , search_text: String
-    , active_window: Maybe String
+    { windowList: List WindowName
+    , searchText: String
+    , activeWindow: Maybe String
     }
     
 
@@ -27,9 +27,9 @@ type Msg
 
 
 empty =
-    { window_list = []
-    , search_text = ""
-    , active_window = Nothing
+    { windowList = []
+    , searchText = ""
+    , activeWindow = Nothing
     }
 
 
@@ -38,20 +38,20 @@ view model =
     nav [class "nav-group"]
         (h5 [class "nav-group-title"][text "Window"] ::
             (List.map(\w ->
-                let is_active =
-                    case model.active_window of
-                        Just active_window ->
-                            active_window == w.table
+                let isActive =
+                    case model.activeWindow of
+                        Just activeWindow ->
+                            activeWindow == w.table
                         Nothing -> False
                 in
-                a [classList [("nav-group-item", True),("active", is_active)]
+                a [classList [("nav-group-item", True),("active", isActive)]
                   , href ("#"++w.table)
                   , onClick (LoadWindow w.table)
                   ] 
                       [ span [class "icon icon-list"] []
                       , text w.name
                       ]
-                ) model.window_list
+                ) model.windowList
             )
         )
 
@@ -60,8 +60,8 @@ view model =
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
-        WindowListReceived window_list ->
-            ({model | window_list = window_list}
+        WindowListReceived windowList ->
+            ({model | windowList = windowList}
             , Cmd.none
             )
         LoadWindow table -> -- will be caught by the main app
@@ -70,15 +70,15 @@ update msg model =
             (model, Cmd.none)
 
         UpdateActivated table ->
-            ({model | active_window = Just table}, Cmd.none)
+            ({model | activeWindow = Just table}, Cmd.none)
  
 
-window_name_decoder =
+windowNameDecoder =
     Decode.object4 WindowName
     ("name" := Decode.string)
     (Decode.maybe ("description" := Decode.string))
     ("table" := Decode.string)
     (Decode.maybe ("schema" := Decode.string))
 
-window_list_decoder =
-    Decode.list window_name_decoder
+windowListDecoder =
+    Decode.list windowNameDecoder

@@ -18,21 +18,21 @@ type alias Model =
     , fields: List Field.Field -- just the field without the dao
     , presentation: Field.Presentation
     , density: Field.Density
-    , is_open: Bool
+    , isOpen: Bool
     , page: Int
-    , page_size: Int
+    , pageSize: Int
     , uid: Int -- used for tracking row number
-    , focused_row: Maybe Int
+    , focusedRow: Maybe Int
     }
 
 type alias Tab =
     { name: String
-    , is_owned: Bool
-    , is_extension: Bool
-    , is_has_one: Bool
-    , is_has_many: Bool
-    , is_direct: Bool
-    , linker_table: Maybe String
+    , isOwned: Bool
+    , isExtension: Bool
+    , isHasOne: Bool
+    , isHasMany: Bool
+    , isDirect: Bool
+    , linkerTable: Maybe String
     , description: Maybe String
     , info: Maybe String
     , table: String
@@ -40,13 +40,13 @@ type alias Tab =
     , fields: List Field.Field
     , logo: Maybe String
     , icon: Maybe String
-    , page_size: Maybe Int
+    , pageSize: Maybe Int
     }
 
 
 
-tab_decoder: Decode.Decoder Tab
-tab_decoder = 
+tabDecoder: Decode.Decoder Tab
+tabDecoder = 
     Decode.succeed Tab
         |: ("name" := Decode.string)
         |: ("is_owned" := Decode.bool)
@@ -59,7 +59,7 @@ tab_decoder =
         |: (Decode.maybe ("info" := Decode.string))
         |: ("table" := Decode.string)
         |: (Decode.maybe ("schema" := Decode.string))
-        |: ("fields" := Decode.list Field.field_decoder)
+        |: ("fields" := Decode.list Field.fieldDecoder)
         |: (Decode.maybe ("logo" := Decode.string))
         |: (Decode.maybe ("icon" := Decode.string))
         |: (Decode.maybe ("page_size" := Decode.int))
@@ -90,11 +90,11 @@ empty =
     , fields = [] 
     , presentation= Field.Table
     , density = Field.Expanded
-    , is_open = True
+    , isOpen = True
     , page = 0
-    , page_size = 15
+    , pageSize = 15
     , uid = 0 --will be incremented every row added
-    , focused_row = Nothing
+    , focusedRow = Nothing
     }
  
 
@@ -104,15 +104,15 @@ view model =
     in
     case model.presentation of
         Field.Form ->
-            let focused = focused_row model
+            let focused = focusedRow model
             in
              div []
-                 [tab_controls model
+                 [tabControls model
                  ,toolbar model
                  ,div [class "form", background] 
                     [case focused of
                         Just focused ->
-                           Row.view focused |> App.map (UpdateRow focused.row_id)
+                           Row.view focused |> App.map (UpdateRow focused.rowId)
                         Nothing ->
                             div[] [text "No record selected"]
                     ]
@@ -120,13 +120,13 @@ view model =
 
         Field.Table ->
             div []
-                [tab_controls model
+                [tabControls model
                 ,toolbar model
                 ,table [background] 
-                    [thead_view model 
+                    [theadView model 
                     ,tbody []
                     (model.rows
-                        |> List.map (\r -> Row.view r |> App.map (UpdateRow r.row_id))
+                        |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
 
                     )
                     ]
@@ -135,27 +135,27 @@ view model =
 
         Field.Grid ->
             div []
-                [tab_controls model
+                [tabControls model
                 ,toolbar model
                 ,div [class "grid"]
                     (model.rows
-                        |> List.map (\r -> Row.view r |> App.map (UpdateRow r.row_id))
+                        |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
 
                     )
                 ,paging
                 ]
         Field.List ->
            div []
-               [tab_controls model
+               [tabControls model
                ,select [class "list"]
                     (model.rows
-                        |> List.map (\r -> Row.view r |> App.map (UpdateRow r.row_id))
+                        |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
 
                     )
                ]
                 
 
-tab_controls model =
+tabControls model =
     div [] [ button [onClick (ChangeMode Field.Edit)] [text "Edit All rows"]
            , button [onClick (ChangeMode Field.Read)] [text "Read All rows"]
            , button [onClick (ChangePresentation Field.Table)] [text "Table All rows"]
@@ -167,34 +167,34 @@ tab_controls model =
            , button [onClick (ChangeDensity Field.Expanded)] [text "Expanded All"]
            ]
 
-thead_view: Model -> Html Msg
-thead_view model =
-    let filtered_fields = Row.filter_fields_with_density model.fields model.density
+theadView: Model -> Html Msg
+theadView model =
+    let filteredFields = Row.filterFieldsWithDensity model.fields model.density
     in
     thead []
-        [tab_filters model filtered_fields
+        [tabFilters model filteredFields
         ,tr []
-            ((record_controls_head model) ++
-             (List.map (\f -> th [Field.alignment f] [text f.name]) filtered_fields
+            ((recordControlsHead model) ++
+             (List.map (\f -> th [Field.alignment f] [text f.name]) filteredFields
             )
             )
         ]
 
 numberOfSelectedRecords model = 
-    List.filter (\r -> r.is_selected) model.rows |> List.length
+    List.filter (\r -> r.isSelected) model.rows |> List.length
 
-tab_filters: Model ->List Field.Field -> Html Msg
-tab_filters model filtered_fields =
+tabFilters: Model ->List Field.Field -> Html Msg
+tabFilters model filteredFields =
     let rows = List.length model.rows
         selected = numberOfSelectedRecords model
-        selected_str = 
+        selectedStr = 
             if selected > 0 then
                 (toString selected)
             else ""
     in
     tr [class "tab_filters", style [("background-color", "#fefefe")]]
         (
-            [th [] [text selected_str]
+            [th [] [text selectedStr]
             ,th [] [text (toString rows)
                    ,span [class "tooltip"]
                         [i [style [("margin-left", "10px")]
@@ -212,20 +212,20 @@ tab_filters model filtered_fields =
                                 ,Field.alignment f
                                ] []
                         ]
-                ) filtered_fields
+                ) filteredFields
             )
         )
 
-record_controls_head model =
+recordControlsHead model =
     let rows = List.length model.rows
-        all_selected = areAllRecordSelected model
-        unselect = if all_selected then "unselect" else "select"
-        tooltip_text = 
+        allSelected = areAllRecordSelected model
+        unselect = if allSelected then "unselect" else "select"
+        tooltipText = 
             "Click to "++unselect++" "++(toString rows)++" record(s)"
     in
     [th [class "tooltip"] 
-        [input [type' "checkbox", onCheck SelectionAll, checked all_selected] []
-        ,span[class "tooltiptext"] [text tooltip_text]
+        [input [type' "checkbox", onCheck SelectionAll, checked allSelected] []
+        ,span[class "tooltiptext"] [text tooltipText]
         ]
     ,th [] []
     ]
@@ -239,7 +239,7 @@ areAllRecordSelected model =
 
 toolbar: Model ->Html Msg
 toolbar model= 
-    let delete_tooltip = 
+    let deleteTooltip = 
         case model.presentation of
             Field.Table ->
                 "Click to delete "++toString (numberOfSelectedRecords model)++" record(s) from the database"
@@ -275,7 +275,7 @@ toolbar model=
             ,button [class "btn btn-large btn-default tooltip"]
                 [span [class "icon icon-trash icon-text"] []
                 ,text "Delete"
-                ,span [class "tooltiptext"] [text delete_tooltip] 
+                ,span [class "tooltiptext"] [text deleteTooltip] 
                 ]
             ,button [class "btn btn-large btn-default tooltip"]
                 [span [class "icon icon-arrows-ccw icon-text"] []
@@ -308,17 +308,17 @@ paging =
         ]
 
 
-update_row: Int -> Row.Msg -> Model -> List Row.Model
-update_row row_id row_msg model =
+updateRow: Int -> Row.Msg -> Model -> List Row.Model
+updateRow rowId rowMsg model =
     List.map (\r -> 
-        if r.row_id == row_id then
-            let (mr,cmd) = Row.update row_msg r 
+        if r.rowId == rowId then
+            let (mr,cmd) = Row.update rowMsg r 
             in mr
          else
             r
         ) model.rows 
 
-update_presentation model presentation =
+updatePresentation model presentation =
     ( {model | presentation = presentation
              , rows = 
                 (List.map (\r ->
@@ -327,7 +327,7 @@ update_presentation model presentation =
                 )model.rows)}, Cmd.none)
 
 
-update_mode model mode =
+updateMode model mode =
     ( {model | mode = mode
             , rows = 
             (List.map (\r -> 
@@ -336,12 +336,12 @@ update_mode model mode =
                 ) model.rows) }, Cmd.none)
 
 
-focused_row: Model -> Maybe Row.Model
-focused_row model =
-    case model.focused_row of
+focusedRow: Model -> Maybe Row.Model
+focusedRow model =
+    case model.focusedRow of
         Nothing -> Nothing 
         Just row ->
-            List.filter (\r -> r.row_id == row) model.rows
+            List.filter (\r -> r.rowId == row) model.rows
                         |> List.head
 
 updateSelectionAllRecords: Model -> Bool -> Model
@@ -354,13 +354,13 @@ updateSelectionAllRecords model checked =
     {model | rows = rows}
     
 
-update_focused_row: Model -> Int -> Model
-update_focused_row model row_id=
+updateFocusedRow: Model -> Int -> Model
+updateFocusedRow model rowId=
     let model = updateSelectionAllRecords model False
-        updated_rows = 
+        updatedRows = 
             List.map (
                 \r -> 
-                    if r.row_id == row_id then
+                    if r.rowId == rowId then
                         let (mo,cmd) = Row.update Row.FocusRecord r
                         in mo
                     else
@@ -368,64 +368,64 @@ update_focused_row model row_id=
                         in mo
             ) model.rows
     in
-    {model | rows = updated_rows
-    ,focused_row = Just row_id
+    {model | rows = updatedRows
+    ,focusedRow = Just rowId
     }
         
 removeFocusedRecord model =
-    let updated_rows = 
+    let updatedRows = 
         List.map(
             \r ->
                 let (mo, cmd) = Row.update Row.LooseFocusRecord r
                 in mo
         ) model.rows
     in
-    { model | rows = updated_rows
-    , focused_row = Nothing
+    { model | rows = updatedRows
+    , focusedRow = Nothing
     }
 
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
-        UpdateRow row_id row_msg ->
-            case row_msg of
+        UpdateRow rowId rowMsg ->
+            case rowMsg of
             Row.ChangePresentation presentation ->
                 case presentation of
                     Field.Form ->
-                        let (mo, cmd) = update_presentation model presentation
-                            (mo2, cmd2) = update_mode mo Field.Edit 
-                        in ({mo2 | focused_row = Just row_id
+                        let (mo, cmd) = updatePresentation model presentation
+                            (mo2, cmd2) = updateMode mo Field.Edit 
+                        in ({mo2 | focusedRow = Just rowId
                                 , mode = Field.Edit },cmd2)
                     _ ->
-                        ( {model | rows = update_row row_id row_msg model }, Cmd.none)
+                        ( {model | rows = updateRow rowId rowMsg model }, Cmd.none)
                         
             Row.Close ->
-                let (mo, cmd) =update_presentation model Field.Table
+                let (mo, cmd) =updatePresentation model Field.Table
                 in
-                update_mode mo Field.Read
+                updateMode mo Field.Read
             Row.FocusRecord ->
-                (update_focused_row model row_id, Cmd.none)
+                (updateFocusedRow model rowId, Cmd.none)
 
             Row.Selection checked ->
-                let updated_model = removeFocusedRecord model
+                let updatedModel = removeFocusedRecord model
                 in
-                ( {model | rows = update_row row_id row_msg updated_model }, Cmd.none)
+                ( {model | rows = updateRow rowId rowMsg updatedModel }, Cmd.none)
 
 
-            Row.UpdateField column field_msg ->
+            Row.UpdateField column fieldMsg ->
                 let _ =Debug.log "TAB tapping row.update field" column
                 in
-                (update_focused_row model row_id, Cmd.none)
+                (updateFocusedRow model rowId, Cmd.none)
                 
             _ ->
-                ( {model | rows = update_row row_id row_msg model }, Cmd.none)
+                ( {model | rows = updateRow rowId rowMsg model }, Cmd.none)
 
         ChangeMode mode ->
-            update_mode model mode
+            updateMode model mode
 
         ChangePresentation presentation ->
-            update_presentation model presentation
+            updatePresentation model presentation
 
         ChangeDensity density ->
             ( {model | density = density
@@ -438,16 +438,16 @@ update msg model =
         TabReceived tab ->
             ( {model | fields = tab.fields}, Cmd.none )
 
-        TabDataReceived list_dao_state ->
-            let _ = Debug.log "tab data recieved" (List.length list_dao_state)
-                first_row = Maybe.withDefault Row.empty (List.head model.rows)
+        TabDataReceived listDaoState ->
+            let _ = Debug.log "tab data recieved" (List.length listDaoState)
+                firstRow = Maybe.withDefault Row.empty (List.head model.rows)
                 rows = 
                     List.indexedMap (
-                    \index dao_state ->
-                        let new_row = Row.create model.fields (model.uid + index)
-                            (mo, cmd) = Row.update (Row.DaoStateReceived dao_state) new_row 
+                    \index daoState ->
+                        let newRow = Row.create model.fields (model.uid + index)
+                            (mo, cmd) = Row.update (Row.DaoStateReceived daoState) newRow 
                         in mo
-                    ) list_dao_state 
+                    ) listDaoState 
             in
             ( {model | rows = rows
               , uid = model.uid + List.length rows

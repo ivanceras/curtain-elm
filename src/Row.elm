@@ -10,32 +10,32 @@ import Json.Decode as Decode exposing ((:=))
 import Task
 
 type alias Model =
-    { row_id: Int
-    , field_models: List Field.Model
+    { rowId: Int
+    , fieldModels: List Field.Model
     , mode: Field.Mode
     , presentation: Field.Presentation
     , density: Field.Density
-    , is_focused: Bool --determine by dao state
-    , is_selected: Bool
+    , isFocused: Bool --determine by dao state
+    , isSelected: Bool
     }
 
 empty =
-    { row_id = 0 
-    , field_models = []
+    { rowId = 0 
+    , fieldModels = []
     , mode = Field.Read
     , presentation = Field.Table
     , density = Field.Expanded
-    , is_focused = False
-    , is_selected = False
+    , isFocused = False
+    , isSelected = False
     }
 
 
-create list_fields row_id =
-     let field_models = 
-        List.map (\f -> Field.create f) list_fields
+create listFields rowId =
+     let fieldModels = 
+        List.map (\f -> Field.create f) listFields
      in
-     {empty | field_models = field_models
-            , row_id = row_id
+     {empty | fieldModels = fieldModels
+            , rowId = rowId
      }
 
 type Msg
@@ -55,13 +55,13 @@ type alias DaoState =
     , focused: Bool
     }
 
-dao_state_decoder =
+daoStateDecoder =
     Decode.object2 DaoState
-        ("dao" := dao_decoder)
+        ("dao" := daoDecoder)
         ("focused" := Decode.bool)
 
-dao_decoder =
-    Decode.dict Field.value_decoder
+daoDecoder =
+    Decode.dict Field.valueDecoder
 
 
 
@@ -70,30 +70,30 @@ dao_decoder =
 
 view: Model -> Html Msg
 view model = 
-    let field_models = filter_field_models_with_density model
+    let fieldModels = filterFieldModelsWithDensity model
     in
     case model.presentation of
         Field.Form ->
             div []
-                [ --row_controls model,
-                  form_record_controls model
+                [ --rowControls model,
+                  formRecordControls model
                 , Html.form [style [("display", "flex"), ("flex-wrap", "wrap"), ("align-items", "flex-end")]] 
-                  (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| field_models)
+                  (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| fieldModels)
                ]
         Field.Table ->
             tr [onDoubleClick (ChangePresentation Field.Form)
-               ,classList [("focused", model.is_focused), ("selected", model.is_selected)]
+               ,classList [("focused", model.isFocused), ("selected", model.isSelected)]
                ] 
-               ((tabular_record_controls model) ++
-                (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| field_models)
+               ((tabularRecordControls model) ++
+                (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| fieldModels)
                )
         Field.Grid ->
             div []
-                [ row_controls model
+                [ rowControls model
                 , div [style [("border", "1px solid green"), ("width", "200px")]] 
                   (List.map (\f -> 
                         App.map (UpdateField f.field.name) <| Field.view f 
-                     ) <| field_models
+                     ) <| fieldModels
                   )
                ]
 
@@ -101,12 +101,12 @@ view model =
             option []
               (List.map (\f -> 
                     App.map (UpdateField f.field.name) <| Field.view f 
-               ) <| field_models
+               ) <| fieldModels
               )
 
-row_controls model =  
+rowControls model =  
     div [] 
-      [text (toString model.row_id)
+      [text (toString model.rowId)
       ,button [onClick (ChangeMode Field.Edit)] [text "Edit"]
       ,button [onClick (ChangeMode Field.Read)] [text "Read"]
       ,button [onClick (ChangePresentation Field.Table)] [text "Table"]
@@ -120,17 +120,17 @@ row_controls model =
 
 
 
-tabular_record_controls model =
+tabularRecordControls model =
     let selection = 
-        let tooltip_text = if model.is_selected then "Click to unselect this record"
+        let tooltipText = if model.isSelected then "Click to unselect this record"
             else "Click to select this record"
         in
         td [class "tooltip"] 
-                [input [type' "checkbox", checked model.is_selected, onCheck Selection] []
-                ,span [class "tooltiptext"] [text tooltip_text]
+                [input [type' "checkbox", checked model.isSelected, onCheck Selection] []
+                ,span [class "tooltiptext"] [text tooltipText]
                 ]
 
-        modification_controls = 
+        modificationControls = 
             case model.mode of
                 Field.Read ->
                     td [class "record_control"] 
@@ -153,10 +153,10 @@ tabular_record_controls model =
                   
 
     in
-        selection :: [modification_controls]
+        selection :: [modificationControls]
 
 
-form_record_controls model =
+formRecordControls model =
     div []
         [button [class "btn btn-mini btn-default"]
             [text "Prev"
@@ -182,21 +182,21 @@ update msg model =
     case msg of
         ChangeMode mode ->
             ({model | mode = mode 
-                    , field_models = 
+                    , fieldModels = 
                  List.map (\f -> 
                     let (mr,cmd) = Field.update (Field.ChangeMode mode) f
                     in mr
-                  ) <| model.field_models
+                  ) <| model.fieldModels
               }, Cmd.none)
  
 
         ChangePresentation presentation ->
             ({ model | presentation = presentation
-                     , field_models = 
+                     , fieldModels = 
                            List.map (\f ->
                                      let (mr,cmd) = Field.update (Field.ChangePresentation presentation) f
                                      in mr
-                                    ) <| model.field_models
+                                    ) <| model.fieldModels
                                  
              }
              , Cmd.none
@@ -204,33 +204,33 @@ update msg model =
 
         ChangeDensity density ->
             ({model | density = density
-                , field_models =
+                , fieldModels =
                     List.map (
                         \f -> let (mr, cmd) = Field.update (Field.ChangeDensity density) f
                         in mr
-                    ) <| model.field_models
+                    ) <| model.fieldModels
              }
              , Cmd.none
             )
 
-        UpdateField column field_msg ->
+        UpdateField column fieldMsg ->
             let _ = Debug.log "-->> ROW tapped signal ---->" column 
             in
-               ({model | field_models = model.field_models
+               ({model | fieldModels = model.fieldModels
                 |> List.map (\f -> 
                     if f.field.column == column then
-                        let (mr,cmd) = Field.update field_msg f
+                        let (mr,cmd) = Field.update fieldMsg f
                         in mr
                     else
                         f
                   ) }, Cmd.none)
 
-        DaoStateReceived dao_state ->
-            let _ = Debug.log "Row received dao_state" dao_state
-                field_models =
+        DaoStateReceived daoState ->
+            let _ = Debug.log "Row received daoState" daoState
+                fieldModels =
                 List.map(
                     \f ->
-                        let value = Dict.get f.field.column dao_state.dao
+                        let value = Dict.get f.field.column daoState.dao
                             _ = Debug.log "value" value
                         in
                         case value of
@@ -241,37 +241,37 @@ update msg model =
                                 let _ = Debug.log "no value"
                                 in
                                 f
-                ) model.field_models
+                ) model.fieldModels
             in
-            ({model | is_focused = dao_state.focused
-                    , field_models = field_models
+            ({model | isFocused = daoState.focused
+                    , fieldModels = fieldModels
               }
             , Cmd.none
             )
 
         Selection checked ->
-            ({model | is_selected = checked}, Cmd.none)
+            ({model | isSelected = checked}, Cmd.none)
 
         Close -> --tab should tap on this event
             (model, Cmd.none)
          
         FocusRecord ->
-            ({model | is_focused = True}, Cmd.none)
+            ({model | isFocused = True}, Cmd.none)
         LooseFocusRecord ->
-            ({model | is_focused = False}, Cmd.none)
+            ({model | isFocused = False}, Cmd.none)
 
-significant_fields: List Field.Model -> List Field.Model
-significant_fields field_models =
-    List.filter (\f -> f.field.is_significant ) field_models 
+significantFields: List Field.Model -> List Field.Model
+significantFields fieldModels =
+    List.filter (\f -> f.field.isSignificant ) fieldModels 
     
 
-most_significant: List Field.Model -> Maybe Field.Model
-most_significant field_models =
-    let significants = significant_fields field_models
+mostSignificant: List Field.Model -> Maybe Field.Model
+mostSignificant fieldModels =
+    let significants = significantFields fieldModels
         sorted = List.sortWith (
-                    \a b -> case a.field.significance_priority of
+                    \a b -> case a.field.significancePriority of
                             Just a ->
-                                case b.field.significance_priority of
+                                case b.field.significancePriority of
                                     Just b ->
                                         compare a b
                                     Nothing ->
@@ -283,38 +283,38 @@ most_significant field_models =
     in List.head sorted
     
 
-to_list: Maybe a -> List a
-to_list arg =
+toList: Maybe a -> List a
+toList arg =
     case arg of
         Just a -> [a]
         Nothing -> []
 
 
-filter_field_models_with_density: Model -> List Field.Model
-filter_field_models_with_density model =
+filterFieldModelsWithDensity: Model -> List Field.Model
+filterFieldModelsWithDensity model =
     case model.density of
         Field.Compact -> --only the most significant
-            to_list (most_significant model.field_models)
+            toList (mostSignificant model.fieldModels)
         Field.Medium -> -- all significant fields
-            significant_fields model.field_models
-        Field.Expanded -> model.field_models -- all fields
+            significantFields model.fieldModels
+        Field.Expanded -> model.fieldModels -- all fields
  
 
-filter_fields_with_density: List Field.Field -> Field.Density -> List Field.Field
-filter_fields_with_density fields density =
-    let significant_fields = List.filter (\f -> f.is_significant) fields
-        sorted = List.sortWith( \a b -> case a.significance_priority of 
+filterFieldsWithDensity: List Field.Field -> Field.Density -> List Field.Field
+filterFieldsWithDensity fields density =
+    let significantFields = List.filter (\f -> f.isSignificant) fields
+        sorted = List.sortWith( \a b -> case a.significancePriority of 
             Just a ->
-                case b.significance_priority of
+                case b.significancePriority of
                     Just b -> compare a b
                     Nothing -> EQ
             Nothing -> EQ
-        ) significant_fields
-        most_sig = to_list (List.head sorted)
+        ) significantFields
+        mostSig = toList (List.head sorted)
     in                    
     case density of
-        Field.Compact -> most_sig
-        Field.Medium -> significant_fields
+        Field.Compact -> mostSig
+        Field.Medium -> significantFields
         Field.Expanded -> fields
             
             

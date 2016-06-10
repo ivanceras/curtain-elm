@@ -25,7 +25,7 @@ type alias Model =
 
 create field =
     { field = field
-    , value = default_value
+    , value = defaultValue
     , mode = Read
     , presentation = Table
     , focused = False
@@ -70,25 +70,25 @@ type Density = Compact | Medium | Expanded
 type alias Field =
     { name: String
     , column: String
-    , complete_name: String
-    , is_keyfield: Bool
-    , data_type: String
+    , completeName: String
+    , isKeyfield: Bool
+    , dataType: String
     , reference: String
-    , reference_value: Maybe String
+    , referenceValue: Maybe String
     , description: Maybe String
     , info: Maybe String
-    , is_significant: Bool
-    , significance_priority: Maybe Int
-    , include_in_search: Bool
-    , is_mandatory: Bool
-    , seq_no: Int
-    , is_same_line: Bool
-    , is_displayed: Bool
-    , is_readonly: Bool
-    , is_autocomplete: Bool
-    , display_logic: Maybe String
-    , display_length: Maybe Int
-    , display_value: Maybe String
+    , isSignificant: Bool
+    , significancePriority: Maybe Int
+    , includeInSearch: Bool
+    , isMandatory: Bool
+    , seqNo: Int
+    , isSameLine: Bool
+    , isDisplayed: Bool
+    , isReadonly: Bool
+    , isAutocomplete: Bool
+    , displayLogic: Maybe String
+    , displayLength: Maybe Int
+    , displayValue: Maybe String
     }
  
 
@@ -108,7 +108,7 @@ type Value
     | Date String
     | DateTime String
 
-default_value = String "" 
+defaultValue = String "" 
 
 type Msg
     = ChangeValue String
@@ -122,50 +122,50 @@ type Msg
 
 
 
-value_decoder: Decode.Decoder Value
-value_decoder = 
-    ("variant" := Decode.string) `Decode.andThen` value_variant
+valueDecoder: Decode.Decoder Value
+valueDecoder = 
+    ("variant" := Decode.string) `Decode.andThen` valueVariant
 
-value_variant: String -> Decode.Decoder Value
-value_variant tag =
+valueVariant: String -> Decode.Decoder Value
+valueVariant tag =
     case tag of 
         "String" ->
             Decode.map String 
                 (("fields" := Decode.list Decode.string)
-                    `Decode.andThen` first_value "")
+                    `Decode.andThen` firstValue "")
         "Bool" ->
             Decode.map Bool
                 (("fields" := Decode.list Decode.bool)
-                    `Decode.andThen` first_value False)
+                    `Decode.andThen` firstValue False)
         "F64" ->
             Decode.map F64 
                 (("fields" := Decode.list Decode.float)
-                    `Decode.andThen` first_value 0)
+                    `Decode.andThen` firstValue 0)
         "I32" ->
             Decode.map I32 
                 (("fields" := Decode.list Decode.int)
-                    `Decode.andThen` first_value 0)
+                    `Decode.andThen` firstValue 0)
         "Date" ->
             Decode.map Date 
                 (("fields" := Decode.list Decode.string)
-                    `Decode.andThen` first_value "")
+                    `Decode.andThen` firstValue "")
         "DateTime" ->
             Decode.map DateTime 
                 (("fields" := Decode.list Decode.string)
-                    `Decode.andThen` first_value "")
+                    `Decode.andThen` firstValue "")
         _ ->
             Decode.map String 
                 (("fields" := Decode.list Decode.string)
-                    `Decode.andThen` first_value "")
+                    `Decode.andThen` firstValue "")
 
-first_value: a -> List a -> Decode.Decoder a
-first_value default args =
+firstValue: a -> List a -> Decode.Decoder a
+firstValue default args =
     Decode.succeed (Maybe.withDefault default (List.head args))
 
 
 
-field_decoder: Decode.Decoder Field
-field_decoder = 
+fieldDecoder: Decode.Decoder Field
+fieldDecoder = 
    Decode.succeed Field
          |: ("name" := Decode.string)
          |: ("column" :=  Decode.string)
@@ -193,63 +193,60 @@ field_decoder =
 
 view : Model -> Html Msg
 view model = 
-     let label_style = style [ ("width", "200px") 
+     let labelStyle = style [ ("width", "200px") 
                              , ("text-align", "left")
                              , ("padding-top", "5px")
                              , ("display", "block")
                              , ("margin-bottom", "0px")
-                             , ("font-weight", "bold")
+                             , ("font-size", "0.8em")
                              ]
-         edit_field = field_entry model
-         label_check = if is_mandatory_ok model then
+         editField = fieldEntry model
+         labelCheck = if isMandatoryOk model then
                 style []
              else
                 style [("color", "red")]
 
-         label_html = label [label_check, label_style] [text (model.field.name)]
+         labelHtml = label [labelCheck, labelStyle] [text (model.field.name)]
 
      in
      case model.presentation of
             Form ->
-                let form_container_style = style [("width","350px"),("padding", "2px")]
+                let formContainerStyle = style [("width","350px"),("padding", "2px")]
+                    labelBool = label [style [("margin-left","10px"),("margin-bottom", "0px")]] [text (model.field.name)]
                 in
                 case model.mode of
                     -- edit form
                     Edit ->
-                        case model.field.data_type of
+                        case model.field.dataType of
                             "Bool" -> -- checkbox before label
-                                let label_bool = label [style [("margin-left","10px"),("margin-bottom", "0px"),("font-weight","bold")]] [text (model.field.name)]
-                                in
-                                div [form_container_style]
+                                div [formContainerStyle]
                                     [div [style [("margin-top", "2em")]]
-                                        [edit_field
-                                        ,label_bool
+                                        [editField
+                                        ,labelBool
                                         ]
                                     ]
 
                             _ ->
-                                div [form_container_style]
-                                    [label_html
-                                    ,edit_field
+                                div [formContainerStyle]
+                                    [labelHtml
+                                    ,editField
                                     ]
                     --read form
                     Read ->
-                        case model.field.data_type of
+                        case model.field.dataType of
                             "Bool" ->
-                                let label_bool = label [style [("margin-left","10px"),("margin-bottom", "0px"),("font-weight","bold")]] [text (model.field.name)]
-                                in
-                                div [form_container_style]
-                                    [div [style [("padding", "2px"), ("display", "inline-block")]] [(field_read model)]
-                                    ,label_bool
+                                div [formContainerStyle]
+                                    [div [style [("padding", "2px"), ("display", "inline-block")]] [(fieldRead model)]
+                                    ,labelBool
                                     ]
                             _ ->
-                                div [form_container_style]
-                                    [label_html
-                                    ,div [style [("padding", "2px")], alignment model.field] [(field_read model)]
+                                div [formContainerStyle]
+                                    [labelHtml
+                                    ,div [style [("padding", "2px")], alignment model.field] [(fieldRead model)]
                                     ]
 
             Table ->
-                let container_style = if is_mandatory_ok model then
+                let containerStyle = if isMandatoryOk model then
                         style []
                      else
                         style [("border", "1px solid red")]
@@ -259,52 +256,52 @@ view model =
                     Edit ->
                         td [alignment model.field
                            ,onClick FocusRecord
-                           ] [edit_field]
+                           ] [editField]
                     --read table
                     Read ->
                         td [onClick FocusRecord
-                           ,(alignment model.field), container_style
+                           ,(alignment model.field), containerStyle
                            ]
-                           [(field_read model)
+                           [(fieldRead model)
                            ]
             Grid ->
                 case model.mode of
                     -- edit grid
                     Edit ->
-                        edit_field
+                        editField
 
                     -- read grid
                     Read ->
                         case model.density of
                             Compact -> -- the most significant field without bold
-                                if model.field.is_significant then
+                                if model.field.isSignificant then
                                     div [] 
-                                        [(field_read model)
+                                        [(fieldRead model)
                                         ]
                                 else
                                     div[] []
                             Medium -> --only significant fields
-                                if model.field.is_significant then
-                                    let text_style = style [("font-weight", "bold")]
+                                if model.field.isSignificant then
+                                    let textStyle = style [("font-weight", "bold")]
                                     in
-                                    div [ text_style] 
-                                        [(field_read model)
+                                    div [ textStyle] 
+                                        [(fieldRead model)
                                         ]
                                 else
                                     div[] []
 
                             Expanded -> --all fields are displayed
-                                let text_style = if model.field.is_significant then
+                                let textStyle = if model.field.isSignificant then
                                         style [("font-weight", "bold")]
                                     else
                                         style []
                                 in
-                                div [ text_style] 
-                                    [(field_read model)
+                                div [ textStyle] 
+                                    [(fieldRead model)
                                     ]
             List -> 
                 -- edit or read  the same
-                field_read_list model
+                fieldReadList model
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -331,8 +328,8 @@ update msg model =
 
 
 
-is_empty_value: Value -> Bool
-is_empty_value value =
+isEmptyValue: Value -> Bool
+isEmptyValue value =
     case value of
         String v ->
             String.isEmpty v
@@ -341,23 +338,23 @@ is_empty_value value =
         _ ->
             False 
 
-is_mandatory_ok model =
-     if is_empty_value model.value && model.field.is_mandatory then
+isMandatoryOk model =
+     if isEmptyValue model.value && model.field.isMandatory then
         False
      else
         True
 
-field_entry: Model -> Html Msg
-field_entry model =
-    let focused_field = case model.focused of
+fieldEntry: Model -> Html Msg
+fieldEntry model =
+    let focusedField = case model.focused of
             True -> class "focused_field"
             False -> class ""
         
-        field_check = if is_mandatory_ok model then
+        fieldCheck = if isMandatoryOk model then
             style []
         else
             style [("border", "1px solid red")]
-        text_width = 
+        textWidth = 
               style [("width", "300px")
                     ,("border","0")
                     ,("outline", "0")
@@ -369,61 +366,61 @@ field_entry model =
     case model.value of
         String s ->
             input [ type' "text"
-                  , field_check
-                  , left_align
-                  , text_width
-                  , focused_field
+                  , fieldCheck
+                  , leftAlign
+                  , textWidth
+                  , focusedField
                   , value s
                   , onInput ChangeValue
                   ] []
         Bool b -> 
             input [ type' "checkbox"
-                  , field_check
-                  , left_align
+                  , fieldCheck
+                  , leftAlign
                   , checked b
                   , onCheck ChangeValueBool
                   ] []
         I64 v -> 
             input [ type' "number"
-                  , field_check
-                  , right_align
-                  , text_width
+                  , fieldCheck
+                  , rightAlign
+                  , textWidth
                   , value (toString v)
                   ] []
         F64 v -> 
             input [ type' "number"
-                  , field_check
-                  , right_align
-                  , text_width
+                  , fieldCheck
+                  , rightAlign
+                  , textWidth
                   , value (toString v)
                   ] []
 
         Date d -> 
             input [ type' "date"
                   , value d
-                  , text_width
-                  , right_align
+                  , textWidth
+                  , rightAlign
                   , onInput ChangeValue
                   ] []
 
         DateTime d -> 
             input [ type' "datetime"
-                  , value (simple_date d)
-                  , text_width
-                  , right_align
+                  , value (simpleDate d)
+                  , textWidth
+                  , rightAlign
                   , onInput ChangeValue
                   ] []
         _ ->
             input [ type' "text"
-                  , text_width
-                  , left_align
+                  , textWidth
+                  , leftAlign
                   , value (toString model.value)
                   , onClick FocusRecord
                   ] []
             
 
-simple_date: String -> String
-simple_date str =
+simpleDate: String -> String
+simpleDate str =
     let time = ISO8601.fromString str 
                 |> Result.withDefault (ISO8601.fromTime 0)
                 |> ISO8601.toTime
@@ -433,17 +430,17 @@ simple_date str =
     in
     simple
 
-field_read: Model -> Html Msg 
-field_read model =
+fieldRead: Model -> Html Msg 
+fieldRead model =
     case model.value of
         String s -> 
-            let field_style = style [("width", "300px"), ("height", "20px")]
-                empty_style = style [("border-bottom", "1px solid #eee")]
+            let fieldStyle = style [("width", "300px"), ("height", "20px")]
+                emptyStyle = style [("border-bottom", "1px solid #eee")]
             in
             if String.isEmpty s then
-                div [field_style, empty_style] []
+                div [fieldStyle, emptyStyle] []
             else
-                div [field_style] [text s]
+                div [fieldStyle] [text s]
         Bool b ->
             case b of
                 True ->
@@ -460,14 +457,14 @@ field_read model =
         Date d ->
             text d
         DateTime d ->
-            text (simple_date d)
+            text (simpleDate d)
 
         _  ->
             text (toString value)
             
 
-field_read_list: Model -> Html Msg
-field_read_list model = 
+fieldReadList: Model -> Html Msg
+fieldReadList model = 
     case model.value of
         String s ->
             text (" "++s)
@@ -490,18 +487,18 @@ field_read_list model =
             text (" "++(toString model.value))
 
 
-left_align = style [("text-align", "left")]
-right_align = style [("text-align", "right")]
+leftAlign = style [("text-align", "left")]
+rightAlign = style [("text-align", "right")]
 
 alignment: Field -> Attribute msg
 alignment field =
-    case field.data_type of
-        "Bool" -> left_align
-        "String" -> left_align
-        "F32" -> right_align
-        "F64" -> right_align
-        "I32" -> right_align
-        "I64" -> right_align
-        "Date" -> right_align
-        "DateTime" -> right_align
-        _ -> left_align
+    case field.dataType of
+        "Bool" -> leftAlign
+        "String" -> leftAlign
+        "F32" -> rightAlign
+        "F64" -> rightAlign
+        "I32" -> rightAlign
+        "I64" -> rightAlign
+        "Date" -> rightAlign
+        "DateTime" -> rightAlign
+        _ -> leftAlign

@@ -13,13 +13,13 @@ import Json.Decode as Decode
 
 type alias Model =
     { title: String
-    , db_url: String
-    , api_server: String
-    , window_list: WindowList.Model
-    , opened_windows: List Window.Model
+    , dbUrl: String
+    , apiServer: String
+    , windowList: WindowList.Model
+    , openedWindows: List Window.Model
     , error: List String
     , uid: Int -- id for the opened windows
-    , active_window: Maybe Int
+    , activeWindow: Maybe Int
     }
 
 
@@ -38,20 +38,20 @@ type Msg
     | WindowDataReceived Int (List Window.TableDao) 
     | FetchError Http.Error
 
-app_model =
+appModel =
     { title = "Curtain UI"
-    , db_url = "postgres://postgres:p0stgr3s@localhost:5432/bazaar_v8"
-    , api_server = "http://localhost:8181"
-    , window_list = WindowList.empty 
-    , opened_windows = []
+    , dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/bazaar_v8"
+    , apiServer = "http://localhost:8181"
+    , windowList = WindowList.empty 
+    , openedWindows = []
     , error = []
     , uid = 0
-    , active_window = Nothing
+    , activeWindow = Nothing
     }
 
 
 init: (Model, Cmd Msg)
-init = (app_model, fetch_window_list app_model)
+init = (appModel, fetchWindowList appModel)
 
 view: Model -> Html Msg
 view model =
@@ -63,30 +63,30 @@ view model =
                [div [class "pane-group"] 
                    [ div [class "pane pane-sm sidebar"]
                          [ settings
-                         , (App.map UpdateWindowList (WindowList.view model.window_list))
+                         , (App.map UpdateWindowList (WindowList.view model.windowList))
                          ]
                    , div [class "pane"] 
                          [ div [class "tab-group"] 
-                                (model.opened_windows 
+                                (model.openedWindows 
                                     |> List.map(
                                         \w ->
                                             div [ classList [("tab-item", True)
-                                                            ,("active", w.is_active)
+                                                            ,("active", w.isActive)
                                                             ]
-                                                       ,onClick (ActivateWindow w.window_id)
+                                                       ,onClick (ActivateWindow w.windowId)
                                                   ]
-                                                [ span [ onClick (CloseWindow w.window_id)
+                                                [ span [ onClick (CloseWindow w.windowId)
                                                         ,class "icon icon-cancel icon-close-tab"] []
                                                   ,text w.name
                                                 ]
                                     )
                                 )
                          , div []
-                         (model.opened_windows
+                         (model.openedWindows
                               |> List.map (
                                         \w -> 
                                             Window.view w
-                                                |> App.map (UpdateWindow w.window_id)
+                                                |> App.map (UpdateWindow w.windowId)
                                      ) 
                          )
                          ]
@@ -108,69 +108,69 @@ settings =
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
-        UpdateWindow window_id msg -> 
-            let window_updates = List.map(\w ->
-                        if w.window_id == window_id then
+        UpdateWindow windowId msg -> 
+            let windowUpdates = List.map(\w ->
+                        if w.windowId == windowId then
                            let (mr,cmd) = Window.update msg w in mr
                         else
                             w
-                    ) model.opened_windows
+                    ) model.openedWindows
             in
-            ({model | opened_windows = window_updates}, Cmd.none)
+            ({model | openedWindows = windowUpdates}, Cmd.none)
 
-        CloseWindow window_id ->
-            (close_window model window_id 
-                |> update_activated_windows 
+        CloseWindow windowId ->
+            (closeWindow model windowId 
+                |> updateActivatedWindows 
                 |> updateActivatedWindowList
             , Cmd.none)
 
-        ActivateWindow window_id -> --set focus to the window
-             ( {model | active_window = Just window_id}
-                |> update_activated_windows
+        ActivateWindow windowId -> --set focus to the window
+             ( {model | activeWindow = Just windowId}
+                |> updateActivatedWindows
                 |> updateActivatedWindowList
              , Cmd.none)
         
         UpdateWindowList msg ->
             case msg of
                 WindowList.LoadWindow table ->
-                    (model, fetch_window_detail model table)
+                    (model, fetchWindowDetail model table)
                 _ ->
                     (model, Cmd.none)
         
         GetWindowList ->
-            ( model, fetch_window_list model)
+            ( model, fetchWindowList model)
 
-        WindowListReceived window_list ->
-            let (wm, cmd) = WindowList.update (WindowList.WindowListReceived window_list) model.window_list 
+        WindowListReceived windowList ->
+            let (wm, cmd) = WindowList.update (WindowList.WindowListReceived windowList) model.windowList 
             in
-            ({model | window_list = wm}
+            ({model | windowList = wm}
             , Cmd.none
             )
        
         WindowDetailReceived window ->
-            ( display_window_detail model window
+            ( displayWindowDetail model window
                 |> updateActivatedWindowList
-            , get_window_data model window.table model.uid
+            , getWindowData model window.table model.uid
             )
 
         LoadWindow table ->
-            (model, fetch_window_detail model table)
+            (model, fetchWindowDetail model table)
 
         GetWindowData table ->
             ( model, Cmd.none)
 
-        WindowDataReceived window_id table_dao_list ->
-            let opened_windows =
+        WindowDataReceived windowId tableDaoList ->
+            let openedWindows =
                 List.map(
-                    \window_model ->
-                        if window_model.window_id == window_id then
-                            let (mo, cmd) = Window.update (Window.WindowDataReceived table_dao_list) window_model
+                    \windowModel ->
+                        if windowModel.windowId == windowId then
+                            let (mo, cmd) = Window.update (Window.WindowDataReceived tableDaoList) windowModel
                             in mo
                         else
-                            window_model
-                ) model.opened_windows
+                            windowModel
+                ) model.openedWindows
             in
-            ( {model | opened_windows = opened_windows} , Cmd.none)
+            ( {model | openedWindows = openedWindows} , Cmd.none)
 
         FetchError e ->
             ( { model | error = (toString e)::model.error }, Cmd.none )
@@ -183,41 +183,41 @@ main =
         , subscriptions= (\_ -> Sub.none)
         }
 
-add_window: Model -> Window.Window -> Model
-add_window model window =
-    let new_window = Window.create window model.uid
-        (mo, cmd) = Window.update (Window.WindowDetailReceived window) new_window 
-        all_windows = mo :: model.opened_windows
+addWindow: Model -> Window.Window -> Model
+addWindow model window =
+    let newWindow = Window.create window model.uid
+        (mo, cmd) = Window.update (Window.WindowDetailReceived window) newWindow 
+        allWindows = mo :: model.openedWindows
     in
-    { model | opened_windows = all_windows 
-    , active_window = Just mo.window_id
+    { model | openedWindows = allWindows 
+    , activeWindow = Just mo.windowId
     , uid = model.uid + 1
     } 
         
 
-display_window_detail: Model -> Window.Window -> Model
-display_window_detail model window =
-    add_window model window
-        |> update_activated_windows
+displayWindowDetail: Model -> Window.Window -> Model
+displayWindowDetail model window =
+    addWindow model window
+        |> updateActivatedWindows
         
 
-close_window: Model -> Int -> Model
-close_window model window_id =
-    let opened_windows = List.filter (\w -> w.window_id /= window_id ) model.opened_windows
+closeWindow: Model -> Int -> Model
+closeWindow model windowId =
+    let openedWindows = List.filter (\w -> w.windowId /= windowId ) model.openedWindows
     in
-    {model | opened_windows =  opened_windows
+    {model | openedWindows =  openedWindows
     }
 
 
-activate_first_window: Model -> Model
-activate_first_window model =
-    case List.head model.opened_windows of
+activateFirstWindow: Model -> Model
+activateFirstWindow model =
+    case List.head model.openedWindows of
         Just window ->
-            let (update_window, cmd) = Window.update Window.ActivateWindow window
-                all_windows = update_window :: Maybe.withDefault [] (List.tail model.opened_windows)
+            let (updateWindow, cmd) = Window.update Window.ActivateWindow window
+                allWindows = updateWindow :: Maybe.withDefault [] (List.tail model.openedWindows)
             in
-            {model | active_window = Just window.window_id
-            ,opened_windows = all_windows
+            {model | activeWindow = Just window.windowId
+            ,openedWindows = allWindows
             }
         Nothing -> 
             model
@@ -226,89 +226,89 @@ activate_first_window model =
 -- Note: closing a window activates it first since the click on the close button 
 -- propagates to the the tabm thereby activating that window
 
-update_activated_windows: Model -> Model
-update_activated_windows model =
+updateActivatedWindows: Model -> Model
+updateActivatedWindows model =
     let model = deactivateOpenedWindows model
     in
-    case model.active_window of
-        Just active_window ->
-            if in_opened_windows model active_window then
-                let updated_windows = 
-                    model.opened_windows
+    case model.activeWindow of
+        Just activeWindow ->
+            if inOpenedWindows model activeWindow then
+                let updatedWindows = 
+                    model.openedWindows
                         |> List.map(
                             \w ->
-                                if w.window_id == active_window then
+                                if w.windowId == activeWindow then
                                     let (mo, cmd) = Window.update Window.ActivateWindow w
                                     in mo
                                 else
                                     w
                         )
                 in
-                {model | opened_windows = updated_windows}
+                {model | openedWindows = updatedWindows}
             else
-                activate_first_window model
+                activateFirstWindow model
         Nothing -> model
 
 
 deactivateOpenedWindows: Model -> Model
 deactivateOpenedWindows model =
-    let updated_windows = 
+    let updatedWindows = 
         List.map(
             \w ->
                 let (mo, cmd) = Window.update Window.DeactivateWindow w
                 in mo
-        ) model.opened_windows
+        ) model.openedWindows
     in
-    {model | opened_windows = updated_windows}
+    {model | openedWindows = updatedWindows}
     
 getActiveWindow: Model -> Maybe Window.Model
 getActiveWindow model =
-    case model.active_window of
-        Just active_window ->
-            List.filter (\w -> w.window_id == active_window) model.opened_windows
+    case model.activeWindow of
+        Just activeWindow ->
+            List.filter (\w -> w.windowId == activeWindow) model.openedWindows
             |> List.head
         Nothing -> Nothing
 
 updateActivatedWindowList: Model -> Model
 updateActivatedWindowList model =
-    let window_list =
+    let windowList =
         case getActiveWindow model of
             Just window ->
-                let (mo, cmd) = WindowList.update (WindowList.UpdateActivated window.main_tab.table) model.window_list
+                let (mo, cmd) = WindowList.update (WindowList.UpdateActivated window.mainTab.table) model.windowList
                 in mo
             Nothing ->
-                model.window_list
+                model.windowList
     in
-    {model | window_list = window_list}
+    {model | windowList = windowList}
 
--- check to see if the window_id is in opened_windows
-in_opened_windows model window_id =
-    List.filter (\w -> w.window_id == window_id ) model.opened_windows
+-- check to see if the windowId is in openedWindows
+inOpenedWindows model windowId =
+    List.filter (\w -> w.windowId == windowId ) model.openedWindows
         |> List.isEmpty 
         |> not
 
-http_get model url =
+httpGet model url =
     Http.send Http.defaultSettings
     { verb = "GET"
-    , headers = [("db_url", model.db_url)]
-    , url = model.api_server ++ url
+    , headers = [("db_url", model.dbUrl)]
+    , url = model.apiServer ++ url
     , body = Http.empty
     }
 
-fetch_window_list: Model -> Cmd Msg
-fetch_window_list model = 
-    http_get model "/window"
-        |> Http.fromJson WindowList.window_list_decoder
+fetchWindowList: Model -> Cmd Msg
+fetchWindowList model = 
+    httpGet model "/window"
+        |> Http.fromJson WindowList.windowListDecoder
         |> Task.perform FetchError WindowListReceived
 
-fetch_window_detail: Model -> String -> Cmd Msg
-fetch_window_detail model table =
-    http_get model ("/window/"++table)
-        |> Http.fromJson Window.window_decoder
+fetchWindowDetail: Model -> String -> Cmd Msg
+fetchWindowDetail model table =
+    httpGet model ("/window/"++table)
+        |> Http.fromJson Window.windowDecoder
         |> Task.perform FetchError WindowDetailReceived
 
-get_window_data: Model -> String -> Int -> Cmd Msg
-get_window_data model main_table window_id =
-    http_get model ("/app/" ++ main_table)
-        |> Http.fromJson (Decode.list Window.table_dao_decoder)
-        |> Task.perform FetchError (WindowDataReceived window_id)
+getWindowData: Model -> String -> Int -> Cmd Msg
+getWindowData model mainTable windowId =
+    httpGet model ("/app/" ++ mainTable)
+        |> Http.fromJson (Decode.list Window.tableDaoDecoder)
+        |> Task.perform FetchError (WindowDataReceived windowId)
