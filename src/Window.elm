@@ -96,19 +96,49 @@ view model =
     if model.isActive then
         div [] [
                  App.map UpdateMainTab(Tab.view model.mainTab)
-               , div [] [text "extension tab here.."]
-               , div [] [text "has_many tabs here.. direct and indirect"]
+                 ,extensionTabView model
+                 ,hasManyTabView model
                ]
     else div[] []
 
- 
+extensionTabView: Model -> Html Msg
+extensionTabView model =
+    if model.presentation == Field.Form then
+        div [] [text "extension tab here.."]
+    else
+        div [] [text "extenstion not displayed"]
 
+
+hasManyTabView: Model -> Html Msg
+hasManyTabView model =
+    if model.presentation == Field.Form then
+        (div [] [text "has_many tabs here.. direct and indirect"])
+    else
+        div [] [text "extenstion not displayed"]
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of 
-        UpdateMainTab msg ->
-            (updateTab msg model, Cmd.none)
+        UpdateMainTab tab_msg ->
+            let _ = Debug.log "tab_msg" tab_msg
+            in
+            case tab_msg of
+                Tab.ChangePresentation presentation ->
+                    let model = {model | presentation = presentation}
+                    in
+                    (updateTab tab_msg model, Cmd.none)
+
+                Tab.UpdateRow rowId rowMsg ->
+                    case rowMsg of
+                        Row.ChangePresentation presentation ->
+                            let model = {model | presentation = presentation}
+                            in
+                            (updateTab tab_msg model, Cmd.none)
+                        _ ->
+                            (updateTab tab_msg model, Cmd.none)
+                
+                _ ->
+                    (updateTab tab_msg model, Cmd.none)
         
         WindowDetailReceived window ->
             -- TODO: include the extTabs, hasManyTabs, hasManyIndirectTabs
@@ -125,10 +155,10 @@ update msg model =
             )
 
         ChangeMode mode ->
-            (model, Cmd.none)
+            ({model | mode = mode}, Cmd.none)
 
         ChangePresentation presentation ->
-            (model, Cmd.none)
+            ({model | presentation = presentation}, Cmd.none)
 
         ActivateWindow ->
             ({model | isActive = True}, Cmd.none)

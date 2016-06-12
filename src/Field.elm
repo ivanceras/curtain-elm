@@ -472,36 +472,52 @@ simpleDate str =
 
 fieldRead: Model -> Html Msg 
 fieldRead model =
-    case model.value of
-        String s -> 
-            let fieldStyle = style [("width", "300px"), ("height", "20px")]
-                emptyStyle = style [("border-bottom", "1px solid #eee")]
-            in
-            if String.isEmpty s then
-                div [fieldStyle, emptyStyle] []
-            else
-                div [fieldStyle] [text s]
-        Bool b ->
-            case b of
-                True ->
-                    span [class "icon icon-check text-center", style [("color", "green")]] []
-                False ->
-                    span [class "icon icon-cancel text-center", style [("color", "red")]] []
-        I32 v ->
-            text (toString v)
-        I64 v ->
-            text (toString v)
-        F64 v ->
-            text (toString v)
+    case model.field.reference of
+        "Table" ->
+            lookupView model
+        _ ->
+            case model.value of
+                String s -> 
+                    let fieldStyle = style [("width", "300px"), ("height", "20px")]
+                        emptyStyle = style [("border-bottom", "1px solid #eee")]
+                    in
+                    if String.isEmpty s then
+                        div [fieldStyle, emptyStyle] []
+                    else
+                        div [fieldStyle] [text s]
+                Bool b ->
+                    case b of
+                        True ->
+                            span [class "icon icon-check text-center", style [("color", "green")]] []
+                        False ->
+                            span [class "icon icon-cancel text-center", style [("color", "red")]] []
+                I32 v ->
+                    text (toString v)
+                I64 v ->
+                    text (toString v)
+                F64 v ->
+                    text (toString v)
 
-        Date d ->
-            text d
-        DateTime d ->
-            text (simpleDate d)
+                Date d ->
+                    text d
+                DateTime d ->
+                    text (simpleDate d)
 
-        _  ->
-            text (toString value)
+                _  ->
+                    text (toString value)
             
+stringValue: Value -> String
+stringValue value =
+    case  value of
+        String s -> s
+        Bool b -> toString b
+        I32 v -> toString v
+        I64 v -> toString v
+        F64 v -> toString v
+        Date d -> toString d
+        DateTime d -> toString d
+        _ -> toString value
+
 
 fieldReadList: Model -> Html Msg
 fieldReadList model = 
@@ -553,8 +569,13 @@ lookupView model =
             let daoList = tableLookupData model.lookupData table
                 fieldList = tableLookupTabFields model.lookupTabs table
             in
-            div [] [createCompactListField fieldList daoList 
-                   ]
+            case model.mode of
+                Edit ->
+                    div [] [createCompactListField fieldList daoList model
+                           ]
+                Read ->
+                    div [] [createSelectedLookupValue fieldList daoList model
+                           ]
         Nothing ->
             div [] [text "no matching table"]
 
@@ -565,32 +586,111 @@ toList arg =
         Just a -> [a]
         Nothing -> []
 
-createCompactListField: List Field -> List Dao -> Html Msg
-createCompactListField fieldList daoList =
+getKeyField: List Field -> Maybe Field
+getKeyField fieldList =
+    List.filter (
+        \f -> f.isKeyfield
+    ) fieldList
+    |> List.head
+
+onSelectionChange msg =
+    Decode.map msg targetValue
+        |> on "change"
+
+createCompactListField: List Field -> List Dao -> Model ->Html Msg
+createCompactListField fieldList daoList model =
     let fields = toList (mostSignificantField fieldList)
+        keyField = getKeyField fieldList
         rows  = 
             List.map(
                 \ dao ->
-                    createRow fields dao
+                    createRow fields keyField dao model
+                ) daoList
+        blankOption = option [] []
+    in
+    select [] (blankOption :: rows)
+
+
+-- in read mode
+createSelectedLookupValue: List Field -> List Dao -> Model -> Html Msg
+createSelectedLookupValue fieldList daoList model =
+    let fields = toList (mostSignificantField fieldList)
+        keyField: Maybe Field
+        keyField = getKeyField fieldList
+        selectedRowView = 
+            List.map(
+                \ dao ->
+                    createSelectedReadRow fields keyField dao model
                 ) daoList
     in
-    select [] rows
+    div [] selectedRowView
+    
 
-createRow: List Field -> Dao -> Html Msg 
-createRow fields dao =
-    option [] <|
-        List.map (
-            \f ->
-                let model = create f 
-                    updatedModel =
-                        case getValue f dao of
-                            Just value ->
-                                {model | value = value}
-                            Nothing -> model 
+createSelectedReadRow: List Field -> Maybe Field -> Dao -> Model ->Html Msg 
+createSelectedReadRow fields keyField dao model =
+    div [] <|
+    List.map (
+        \f ->
+            case keyField of
+                Just keyField ->
+                    case getValue keyField dao of
+                        Just pkValue ->
+                                let fieldModel = create f 
+                                    updatedModel =
+                                        case getValue f dao of
+                                            Just sigValue ->
+                                                {fieldModel | value = sigValue
+                                                , presentation = List
+                                                , mode = Read
+                                                }
+                                            Nothing -> model 
 
-                in
-                view updatedModel
-            ) fields
+                                in
+                                if pkValue == model.value then
+                                    view updatedModel
+                                else
+                                    text ""
+
+                        Nothing ->
+                            text "No pk value"
+                Nothing ->
+                    text "no pk"
+        ) fields
+        
+
+createRow: List Field -> Maybe Field -> Dao -> Model ->Html Msg 
+createRow fields keyField dao model =
+    let attributes = 
+        case keyField of 
+            Just keyField ->
+               case getValue keyField dao of
+                Just pkValue ->
+                    [value (stringValue pkValue)
+                    ,selected (model.value == pkValue)
+                    ]
+                Nothing -> []
+
+            Nothing -> []
+
+        rowView = 
+            List.map (
+                \f ->
+                    let fieldModel = create f 
+                        updatedModel =
+                            case getValue f dao of
+                                Just sigValue ->
+                                    { fieldModel | value = sigValue
+                                    , presentation = List
+                                    , mode = Edit
+                                    }
+                                Nothing -> fieldModel 
+
+                    in
+                    view updatedModel
+                ) fields
+        
+    in
+    option attributes rowView
 
 getValue: Field -> Dao -> Maybe Value
 getValue field dao =

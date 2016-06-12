@@ -331,6 +331,8 @@ getWindowTable model windowId =
 
 
 httpGet model url =
+    let _ = Debug.log "Requesting" url
+    in
     Http.send Http.defaultSettings
     { verb = "GET"
     , headers = [("db_url", model.dbUrl)]

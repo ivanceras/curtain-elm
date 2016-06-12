@@ -411,9 +411,6 @@ update msg model =
                 ( updateRow rowMsg rowId updatedModel , Cmd.none)
 
 
-            Row.UpdateField column fieldMsg ->
-                (updateFocusedRow model rowId, Cmd.none)
-                
             _ ->
                 ( updateRow rowMsg rowId model , Cmd.none)
 
