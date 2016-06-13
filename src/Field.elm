@@ -213,6 +213,15 @@ fieldDecoder =
          |: (Decode.maybe ("default_value" := Decode.string))
 
 
+tooltipText: Field -> Html msg
+tooltipText field = 
+    case field.description of
+        Just desc ->
+            if not <| String.isEmpty <| String.trim desc then
+                span [class "tooltiptext"] [text desc]
+            else text ""
+        Nothing -> text ""
+
 
 view : Model -> Html Msg
 view model = 
@@ -229,7 +238,14 @@ view model =
              else
                 style [("color", "red")]
 
-         labelHtml = label [labelCheck, labelStyle] [text (model.field.name)]
+            
+         labelHtml = 
+            span [class "tooltip"] 
+                [label [labelCheck, labelStyle] 
+                    [text (model.field.name)
+                    ,tooltipText model.field
+                    ]
+                ]
 
      in
      case model.presentation of
@@ -362,8 +378,6 @@ isEmptyValue value =
     case value of
         String v ->
             String.isEmpty v
-        Bool b ->
-            False
         _ ->
             False 
 
@@ -478,7 +492,12 @@ fieldRead model =
         _ ->
             case model.value of
                 String s -> 
-                    let fieldStyle = style [("width", "300px"), ("height", "20px")]
+                    let fieldStyle = 
+                            style [("width", "300px")
+                                  ,("height", "20px")
+                                  ,("overflow", "hidden")
+                                  ,("text-overflow", "ellipsis")
+                                  ]
                         emptyStyle = style [("border-bottom", "1px solid #eee")]
                     in
                     if String.isEmpty s then

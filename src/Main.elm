@@ -11,6 +11,7 @@ import Html.Attributes exposing (..)
 import Json.Decode as Decode
 import Tab
 import Field
+import Settings
 
 
 type alias Model =
@@ -22,6 +23,7 @@ type alias Model =
     , error: List String
     , uid: Int -- id for the opened windows
     , activeWindow: Maybe Int
+    , isSettingsOpened: Bool
     }
 
 
@@ -35,6 +37,8 @@ type Msg
     | ActivateWindow Int
     | UpdateWindow Int Window.Msg
     | UpdateWindowList WindowList.Msg
+    | UpdateSettings Settings.Msg
+    | ToggleSettingsWindow
     | WindowDetailReceived Window.Window
     | GetWindowData String
     | WindowDataReceived Int (List Window.TableDao) 
@@ -45,12 +49,14 @@ type Msg
 appModel =
     { title = "Curtain UI"
     , dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/bazaar_v8"
+    --, dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/gda"
     , apiServer = "http://localhost:8181"
     , windowList = WindowList.empty 
     , openedWindows = []
     , error = []
     , uid = 0
     , activeWindow = Nothing
+    , isSettingsOpened = False
     }
 
 
@@ -71,33 +77,37 @@ view model =
           ,div [class "window-content"]
                [div [class "pane-group"] 
                    [ div [class "pane pane-sm sidebar"]
-                         [ settings
+                         [ settingsButton
                          , (App.map UpdateWindowList (WindowList.view model.windowList))
                          ]
-                   , div [class "pane"] 
-                         [ div [class "tab-group"] 
-                                (model.openedWindows 
-                                    |> List.map(
-                                        \w ->
-                                            div [ classList [("tab-item", True)
-                                                            ,("active", w.isActive)
-                                                            ]
-                                                       ,onClick (ActivateWindow w.windowId)
-                                                  ]
-                                                [ span [ onClickNoPropagate (CloseWindow w.windowId)
-                                                        ,class "icon icon-cancel icon-close-tab"] []
-                                                  ,text w.name
-                                                ]
-                                    )
-                                )
-                         , div []
-                         (model.openedWindows
-                              |> List.map (
-                                        \w -> 
-                                            Window.view w
-                                                |> App.map (UpdateWindow w.windowId)
-                                     ) 
-                         )
+                   , if model.isSettingsOpened then
+                         Settings.view (Settings.create model.dbUrl model.apiServer)
+                            |> App.map UpdateSettings
+                     else
+                        div [class "pane"] 
+                             [ div [class "tab-group"] 
+                                        (model.openedWindows 
+                                            |> List.map(
+                                                \w ->
+                                                    div [classList [("tab-item", True)
+                                                                    ,("active", w.isActive)
+                                                                    ]
+                                                        ,onClick (ActivateWindow w.windowId)
+                                                        ]
+                                                        [ span [ onClickNoPropagate (CloseWindow w.windowId)
+                                                                ,class "icon icon-cancel icon-close-tab"] []
+                                                          ,text w.name
+                                                        ]
+                                            )
+                                        )
+                             , div []
+                             (model.openedWindows
+                                  |> List.map (
+                                            \w -> 
+                                                Window.view w
+                                                    |> App.map (UpdateWindow w.windowId)
+                                         ) 
+                             )
                          ]
                    ]
                 ]
@@ -105,10 +115,13 @@ view model =
                 [span [class "pull-right"] [text (toString model.error)]]
           ]
 
-settings: Html Msg
-settings = 
+settingsButton: Html Msg
+settingsButton = 
     div [class "toolbar-actions"]
-         [ button [class "btn btn-default"]
+         [ button 
+            [class "btn btn-default"
+            ,onClick ToggleSettingsWindow
+            ]
             [ span [class "icon icon-cancel icon-cog"] []
             , text " Settings"
             ]
@@ -191,6 +204,23 @@ update msg model =
 
         FetchError e ->
             ( { model | error = (toString e)::model.error }, Cmd.none )
+
+        UpdateSettings settingsMsg ->
+            case settingsMsg of
+                Settings.OpenWindow ->
+                    ({model | isSettingsOpened = True}, Cmd.none)
+                Settings.CloseWindow ->
+                    ({model | isSettingsOpened = False}, Cmd.none)
+                Settings.ChangeDbUrl dbUrl ->
+                    ({model | dbUrl = dbUrl}, Cmd.none)
+                Settings.ApplySettings ->
+                    let _ = Debug.log "settings applied" model
+                    in
+                    (model, fetchWindowList model)
+
+        ToggleSettingsWindow ->
+            ({model | isSettingsOpened = not model.isSettingsOpened}, Cmd.none)
+
 
 main = 
     App.program
@@ -305,7 +335,7 @@ updateActivatedWindowList model =
     let windowList =
         case getActiveWindow model of
             Just window ->
-                let (mo, cmd) = WindowList.update (WindowList.UpdateActivated window.mainTab.table) model.windowList
+                let (mo, cmd) = WindowList.update (WindowList.UpdateActivated window.mainTab.tab.table) model.windowList
                 in mo
             Nothing ->
                 model.windowList
@@ -326,7 +356,7 @@ getWindowTable model windowId =
     in
     case window of
         Just window ->
-            Just window.mainTab.table
+            Just window.mainTab.tab.table
         Nothing -> Nothing
 
 

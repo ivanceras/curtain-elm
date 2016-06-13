@@ -41,6 +41,10 @@
     visibility: visible;
 }
 
+table thead{
+    /*position: fixed*/
+}
+
 td.record_control div{
     padding: 4px;
     font-size: 1.2em;
@@ -68,4 +72,17 @@ tr.focused{
 
 tr.selected{
     background-color: #eee;
+}
+
+tr,th,td{
+  -webkit-user-select: text;
+}
+
+td * {
+  -webkit-user-select: text;
+}
+
+
+form * {
+  -webkit-user-select: text;
 }

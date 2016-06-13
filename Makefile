@@ -1,6 +1,8 @@
 .PHONY: clean all default
 
-main.js : src/Main.elm src/WindowList.elm src/Window.elm src/Tab.elm src/Field.elm src/Row.elm
+ELM_FILES := $(wildcard src/*.elm)
+
+main.js : $(ELM_FILES)
 	elm make src/Main.elm --output main.js
 
 all: main.js

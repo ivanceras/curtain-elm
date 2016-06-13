@@ -64,12 +64,19 @@ daoStateDecoder =
 
 
 
+excludeKeyfields: List Field.Field -> List Field.Field
+excludeKeyfields fieldList =
+    List.filter (\f -> not f.isKeyfield) fieldList
 
 
+excludeKeyfieldModels: List Field.Model -> List Field.Model
+excludeKeyfieldModels fieldModels =
+    List.filter (\f -> not f.field.isKeyfield) fieldModels 
 
 view: Model -> Html Msg
 view model = 
     let fieldModels = filterFieldModelsWithDensity model
+                        |> excludeKeyfieldModels
     in
     case model.presentation of
         Field.Form ->

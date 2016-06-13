@@ -4,6 +4,7 @@ import Html.App as App
 import Html exposing (..)
 import Json.Decode as Decode exposing ((:=))
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 
 import Tab
 import Field
@@ -17,29 +18,35 @@ type alias Model =
     , mode: Field.Mode
     , isActive: Bool
     , extTabs: List Tab.Model
-    , hasManyTabs: List Tab.Model
-    , hasManyIndirectTabs: List Tab.Model
+    , hasManyMergedTabs: List Tab.Model
     , windowId: Int
+    , includeRelatedData: Bool -- whether to include /exclude related data
     }
-
 
 create: Window -> Int -> Model
 create window windowId =
-    { empty | name = window.name
+    { presentation = Field.Table
+    , mode = Field.Read
+    , isActive = True
+    , extTabs = []
+    , hasManyMergedTabs = []
+    , name = window.name
     , windowId = windowId
     , mainTab = Tab.create window.mainTab
+    , includeRelatedData = True
     }
 
 type Msg
     = ChangeMode Field.Mode
     | ChangePresentation Field.Presentation
-    | UpdateMainTab Tab.Msg
+    | UpdateTab Tab.Msg
     | WindowDetailReceived Window
     | WindowDataReceived (List TableDao)
     | LookupTabsReceived (List Tab.Tab)
     | LookupDataReceived (List Field.LookupData)
     | ActivateWindow
     | DeactivateWindow
+    | OpenHasManyTab String
     
 type alias Window =
     { name: String
@@ -75,36 +82,39 @@ windowDecoder =
         ("has_many_tabs" := Decode.list Tab.tabDecoder)
         ("has_many_indirect_tabs" := Decode.list Tab.tabDecoder)
 
-empty =
-    { name = ""
-    , mainTab = Tab.empty
-    , presentation = Field.Table
-    , mode = Field.Read
-    , isActive = True
-    , extTabs = []
-    , hasManyTabs = []
-    , hasManyIndirectTabs = []
-    , windowId = 0
-    }
-
-
-init: (Model, Cmd Msg)
-init = (empty, Cmd.none)
 
 view: Model -> Html Msg
 view model = 
     if model.isActive then
-        div [] [
-                 App.map UpdateMainTab(Tab.view model.mainTab)
-                 ,extensionTabView model
-                 ,hasManyTabView model
-               ]
+        div [] 
+                (App.map UpdateTab(Tab.view model.mainTab)
+                 :: 
+                 if model.includeRelatedData then
+                    [extensionTabView model
+                    ,hasManyTabView model
+                    ]
+                 else
+                    []
+                )               
     else div[] []
 
 extensionTabView: Model -> Html Msg
 extensionTabView model =
     if model.presentation == Field.Form then
-        div [] [text "extension tab here.."]
+        div [] 
+            <| 
+            [text "extension tab here.."
+             ,hr [] []
+            ]
+             ++
+             List.map (
+                    \ext ->
+                        div [] 
+                            [text ext.tab.name
+                            ,App.map UpdateTab (Tab.view ext)
+                            ]
+                ) model.extTabs
+            
     else
         div [] [text "extenstion not displayed"]
 
@@ -112,44 +122,63 @@ extensionTabView model =
 hasManyTabView: Model -> Html Msg
 hasManyTabView model =
     if model.presentation == Field.Form then
-        (div [] [text "has_many tabs here.. direct and indirect"])
+        div [] 
+            [text "has many tabs here.."
+            ,div [class "tab-group"] 
+                 <| List.map (
+                    \tab ->
+                        div [classList [("tab-item",True)
+                                       ,("active", tab.isOpen)
+                                       ]
+                            ,onClick (OpenHasManyTab tab.tab.table)
+                            ][text tab.tab.name]
+                 ) model.hasManyMergedTabs
+
+            ,div []
+             <| List.map (
+                    \tab ->
+                        div [] 
+                            [text tab.tab.name
+                            ,App.map UpdateTab (Tab.view tab)
+                            ]
+                 ) model.hasManyMergedTabs
+            ]
     else
-        div [] [text "extenstion not displayed"]
+        div [] [text "has many tabs not displayed"]
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of 
-        UpdateMainTab tab_msg ->
+        UpdateTab tab_msg ->
             let _ = Debug.log "tab_msg" tab_msg
             in
             case tab_msg of
                 Tab.ChangePresentation presentation ->
                     let model = {model | presentation = presentation}
                     in
-                    (updateTab tab_msg model, Cmd.none)
+                    (updateMainTab tab_msg model, Cmd.none)
 
                 Tab.UpdateRow rowId rowMsg ->
                     case rowMsg of
                         Row.ChangePresentation presentation ->
                             let model = {model | presentation = presentation}
                             in
-                            (updateTab tab_msg model, Cmd.none)
+                            (updateMainTab tab_msg model, Cmd.none)
                         _ ->
-                            (updateTab tab_msg model, Cmd.none)
+                            (updateMainTab tab_msg model, Cmd.none)
                 
                 _ ->
-                    (updateTab tab_msg model, Cmd.none)
+                    (updateMainTab tab_msg model, Cmd.none)
         
         WindowDetailReceived window ->
-            -- TODO: include the extTabs, hasManyTabs, hasManyIndirectTabs
-            (updateTab (Tab.TabReceived window.mainTab) model 
+            (updateWindow window model
             ,Cmd.none
             )
 
         WindowDataReceived listTableDao ->
             (case (List.head listTableDao) of --TODO: get the main tab
                     Just tableDao -> 
-                        updateTab (Tab.TabDataReceived tableDao.daoList) model
+                        updateMainTab (Tab.TabDataReceived tableDao.daoList) model
                     Nothing -> model 
             ,Cmd.none
             )
@@ -167,13 +196,60 @@ update msg model =
             ({model | isActive = False}, Cmd.none)
 
         LookupTabsReceived tabList ->
-            (updateTab (Tab.LookupTabsReceived tabList) model, Cmd.none)
+            (updateMainTab (Tab.LookupTabsReceived tabList) model, Cmd.none)
         LookupDataReceived lookupDataList ->
-            (updateTab (Tab.LookupDataReceived lookupDataList) model, Cmd.none)
+            (updateMainTab (Tab.LookupDataReceived lookupDataList) model, Cmd.none)
+
+        OpenHasManyTab table ->
+            (updateAllMergedTab Tab.Close model
+                |> updateHasManyMergedTab Tab.Open table
+            , Cmd.none)
+
+--direct and indirect, whereever table matches
+updateHasManyMergedTab: Tab.Msg -> String -> Model -> Model
+updateHasManyMergedTab tabMsg  table model =
+    {model | hasManyMergedTabs =
+        List.map (\tab ->
+            if tab.tab.table == table then
+                let (updatedTab,_) = Tab.update tabMsg tab
+                in updatedTab
+            else
+                tab
+        ) model.hasManyMergedTabs
+    }
+
+updateAllMergedTab: Tab.Msg -> Model -> Model
+updateAllMergedTab tabMsg model =
+    { model | hasManyMergedTabs =
+        List.map (
+            \tab ->
+                let (updatedTab, _) = Tab.update tabMsg tab
+                in updatedTab
+        ) model.hasManyMergedTabs
+    }
 
 
-updateTab: Tab.Msg -> Model -> Model
-updateTab tab_msg model =
-    let (updatedMainTab, cmd) = Tab.update tab_msg model.mainTab
+
+updateMainTab: Tab.Msg -> Model -> Model
+updateMainTab tabMsg model =
+    let (updatedMainTab, cmd) = Tab.update tabMsg model.mainTab
     in
     {model | mainTab = updatedMainTab}
+
+
+updateWindow: Window -> Model -> Model
+updateWindow window model =
+    {model | mainTab = Tab.create window.mainTab
+    ,extTabs = 
+        List.map(
+            \ext ->
+               Tab.create ext 
+        ) window.extTabs
+    ,hasManyMergedTabs =
+        List.map(
+            \tab -> 
+                let tabModel = Tab.create tab
+                in {tabModel | isOpen = False}
+        ) (window.hasManyTabs ++ window.hasManyIndirectTabs)
+    }
+    

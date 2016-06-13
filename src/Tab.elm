@@ -11,11 +11,9 @@ import Json.Decode.Extra as Extra exposing ((|:))
 
 
 type alias Model =
-    { name: String 
-    , table: String
+    { tab: Tab
     , rows: List Row.Model -- this contains the dao
     , mode: Field.Mode
-    , fields: List Field.Field -- just the field without the dao
     , presentation: Field.Presentation
     , density: Field.Density
     , isOpen: Bool
@@ -40,7 +38,7 @@ type alias Tab =
     , fields: List Field.Field
     , logo: Maybe String
     , icon: Maybe String
-    , pageSize: Maybe Int
+    , estimatedRowCount: Maybe Int
     }
 
 
@@ -62,7 +60,7 @@ tabDecoder =
         |: ("fields" := Decode.list Field.fieldDecoder)
         |: (Decode.maybe ("logo" := Decode.string))
         |: (Decode.maybe ("icon" := Decode.string))
-        |: (Decode.maybe ("page_size" := Decode.int))
+        |: (Decode.maybe ("estimated_row_count" := Decode.int))
         
 lookupDataDecoder: Decode.Decoder Field.LookupData
 lookupDataDecoder = 
@@ -81,21 +79,15 @@ type Msg
     | SelectionAll Bool
     | LookupTabsReceived (List Tab)
     | LookupDataReceived (List Field.LookupData)
+    | Open
+    | Close
 
 create: Tab -> Model
 create tab =
-    { empty | fields = tab.fields
-    , name = tab.name
-    , table = tab.table
-    }
-
-empty = 
-    { name= ""
-    , table = ""
+    { tab = tab
     , rows= []
     , mode= Field.Read
-    , fields = [] 
-    , presentation= Field.Table
+    , presentation= if tab.isExtension then Field.Table else Field.Table -- extension will be in form mode
     , density = Field.Expanded
     , isOpen = True
     , page = 0
@@ -103,63 +95,70 @@ empty =
     , uid = 0 --will be incremented every row added
     , focusedRow = Nothing
     }
+
  
 
 view: Model -> Html Msg
 view model =
     let background = style[("background-color", "#fcfcfc")]
+        toolbarView = 
+            if model.tab.isExtension then
+                span [] [text "no toolbar for extension"]
+            else
+                toolbar model
+        tabView =
+            case model.presentation of
+            Field.Form ->
+                let focused = focusedRow model
+                in
+                     div [class "form", background] 
+                        [case focused of
+                            Just focused ->
+                               Row.view focused |> App.map (UpdateRow focused.rowId)
+                            Nothing ->
+                               div[] [text "No record selected"]
+                                {--
+                                let blankRow = 
+                                    Row.create model.tab.fields 0
+                                    (updatedRow, cmd) = Row.update (Row.ChangePresentation Field.Form) blankRow
+                                    
+                                in
+                                Row.view {updatedRow | presentation = Field.Form}
+                                       |> App.map (UpdateRow 0)
+                                 --}
+                        ]
+
+            Field.Table ->
+                    table [background] 
+                        [theadView model 
+                        ,tbody []
+                        (model.rows
+                            |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
+
+                        )
+                        ]
+
+            Field.Grid ->
+                    div [class "grid"]
+                        (model.rows
+                            |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
+
+                        )
+            Field.List ->
+                   select [class "list"]
+                        (model.rows
+                            |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
+
+                        )
     in
-    case model.presentation of
-        Field.Form ->
-            let focused = focusedRow model
-            in
-             div []
-                 [tabControls model
-                 ,toolbar model
-                 ,div [class "form", background] 
-                    [case focused of
-                        Just focused ->
-                           Row.view focused |> App.map (UpdateRow focused.rowId)
-                        Nothing ->
-                            div[] [text "No record selected"]
-                    ]
-                 ]
-
-        Field.Table ->
-            div []
-                [tabControls model
-                ,toolbar model
-                ,table [background] 
-                    [theadView model 
-                    ,tbody []
-                    (model.rows
-                        |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
-
-                    )
-                    ]
-                ,paging
-                ]
-
-        Field.Grid ->
-            div []
-                [tabControls model
-                ,toolbar model
-                ,div [class "grid"]
-                    (model.rows
-                        |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
-
-                    )
-                ,paging
-                ]
-        Field.List ->
-           div []
-               [tabControls model
-               ,select [class "list"]
-                    (model.rows
-                        |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
-
-                    )
-               ]
+    if model.isOpen then
+        div []
+            [tabControls model
+            ,toolbarView
+            ,tabView
+            ]
+    else 
+        div [] [text "closed"]
                 
 
 tabControls model =
@@ -176,13 +175,25 @@ tabControls model =
 
 theadView: Model -> Html Msg
 theadView model =
-    let filteredFields = Row.filterFieldsWithDensity model.fields model.density
+    let filteredFields = Row.filterFieldsWithDensity model.tab.fields model.density
+                            |> Row.excludeKeyfields
     in
     thead []
-        [tabFilters model filteredFields
+        [if model.tab.isExtension then
+            span [] [text "no filter for extension tabs"]
+         else
+            tabFilters model filteredFields
         ,tr []
             ((recordControlsHead model) ++
-             (List.map (\f -> th [Field.alignment f] [text f.name]) filteredFields
+             (List.map (
+                \f -> 
+                    th [Field.alignment f] 
+                        [div [class "tooltip"]
+                            [text f.name
+                            ,Field.tooltipText f
+                            ]
+                        ]
+                    ) filteredFields
             )
             )
         ]
@@ -194,6 +205,13 @@ tabFilters: Model ->List Field.Field -> Html Msg
 tabFilters model filteredFields =
     let rows = List.length model.rows
         selected = numberOfSelectedRecords model
+        rowCountText = 
+            case model.tab.estimatedRowCount of
+                Just estimate ->
+                    text (toString estimate)
+                Nothing ->
+                    text (toString rows)
+
         selectedStr = 
             if selected > 0 then
                 (toString selected)
@@ -202,7 +220,7 @@ tabFilters model filteredFields =
     tr [class "tab_filters", style [("background-color", "#fefefe")]]
         (
             [th [] [text selectedStr]
-            ,th [] [text (toString rows)
+            ,th [] [rowCountText
                    ,span [class "tooltip"]
                         [i [style [("margin-left", "10px")]
                             ,class "icon ion-funnel"
@@ -333,11 +351,14 @@ updateMode model mode =
                     in mr
                 ) model.rows) }, Cmd.none)
 
+focusFirstRecord: Model -> Maybe Row.Model
+focusFirstRecord model =
+    List.head model.rows
 
 focusedRow: Model -> Maybe Row.Model
 focusedRow model =
     case model.focusedRow of
-        Nothing -> Nothing 
+        Nothing -> focusFirstRecord model
         Just row ->
             List.filter (\r -> r.rowId == row) model.rows
                         |> List.head
@@ -421,31 +442,15 @@ update msg model =
             updatePresentation model presentation
 
         ChangeDensity density ->
-            ( {model | density = density
-                     , rows =
-                        (List.map (\r ->
-                            let (mr, cmd) = Row.update (Row.ChangeDensity density) r
-                            in mr
-                        ) model.rows)}, Cmd.none)
-
+            ({model | density = density }
+                |> updateAllRows (Row.ChangeDensity density)
+            , Cmd.none
+            )
         TabReceived tab ->
-            ( {model | fields = tab.fields}, Cmd.none )
+            ( {model | tab = tab}, Cmd.none )
 
         TabDataReceived listDaoState ->
-            let firstRow = Maybe.withDefault Row.empty (List.head model.rows)
-                rows = 
-                    List.indexedMap (
-                    \index daoState ->
-                        let newRow = Row.create model.fields (model.uid + index)
-                            (mo, cmd) = Row.update (Row.DaoStateReceived daoState) newRow 
-                        in mo
-                    ) listDaoState 
-            in
-            ( {model | rows = rows
-              , uid = model.uid + List.length rows
-              }
-             , Cmd.none
-            )
+            (createRows model listDaoState, Cmd.none)
 
 
         SelectionAll checked ->
@@ -462,6 +467,27 @@ update msg model =
             (updateAllRows (Row.LookupDataReceived lookupDataList) model
             , Cmd.none
             )
+
+        Open ->
+            ({model | isOpen = True}, Cmd.none)
+
+        Close ->
+            ({model | isOpen = False}, Cmd.none)
+
+createRows: Model -> List Row.DaoState -> Model
+createRows model listDaoState =
+    let rows = 
+            List.indexedMap (
+            \index daoState ->
+                let newRow = Row.create model.tab.fields (model.uid + index)
+                    (mo, cmd) = Row.update (Row.DaoStateReceived daoState) newRow 
+                in mo
+            ) listDaoState 
+    in
+    {model | rows = rows
+    ,uid = model.uid + List.length rows
+    }
+    
 
 completeTableName: Tab -> String
 completeTableName tab =
