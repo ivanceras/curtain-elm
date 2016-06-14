@@ -12,6 +12,7 @@ import Json.Decode as Decode
 import Tab
 import Field
 import Settings
+import Row
 
 
 type alias Model =
@@ -27,24 +28,27 @@ type alias Model =
     }
 
 
+type alias WindowId = Int
+type alias RowId = Int
 
 
 type Msg
     = GetWindowList
     | WindowListReceived (List WindowList.WindowName) 
     | LoadWindow String
-    | CloseWindow Int
-    | ActivateWindow Int
-    | UpdateWindow Int Window.Msg
+    | CloseWindow WindowId
+    | ActivateWindow WindowId
+    | UpdateWindow WindowId Window.Msg
     | UpdateWindowList WindowList.Msg
     | UpdateSettings Settings.Msg
     | ToggleSettingsWindow
     | WindowDetailReceived Window.Window
     | GetWindowData String
-    | WindowDataReceived Int (List Window.TableDao) 
-    | LookupTabsReceived Int (List Tab.Tab)
-    | LookupDataReceived Int (List Field.LookupData)
+    | WindowDataReceived WindowId (List Window.TableDao) 
+    | LookupTabsReceived WindowId (List Tab.Tab)
+    | LookupDataReceived WindowId (List Field.LookupData)
     | FetchError Http.Error
+    | FocusedRecordDataReceived WindowId RowId (List Window.TableDao)
 
 appModel =
     { title = "Curtain UI"
@@ -129,16 +133,26 @@ settingsButton =
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
+    let _ = Debug.log "main msg" msg
+    in
     case msg of
-        UpdateWindow windowId msg -> 
-            let windowUpdates = List.map(\w ->
-                        if w.windowId == windowId then
-                           let (mr,cmd) = Window.update msg w in mr
-                        else
-                            w
-                    ) model.openedWindows
-            in
-            ({model | openedWindows = windowUpdates}, Cmd.none)
+        UpdateWindow windowId windowMsg -> 
+              case msg of 
+                    -- TODO: a hacky long TAP? lazy
+                    UpdateWindow windowId (Window.UpdateTab (Tab.UpdateRow rowId Row.FocusRecord)) ->
+                        let _ = Debug.log ("this is it windowId:"++ (toString windowId)) (toString rowId)
+                        in 
+                        ( model, fetchFocusedRecordDetail model windowId rowId)
+
+                    _ -> 
+                        let windowUpdates = List.map(\w ->
+                                if w.windowId == windowId then
+                                   let (mr,cmd) = Window.update windowMsg w in mr
+                                else
+                                    w
+                            ) model.openedWindows
+                        in
+                        ({model | openedWindows = windowUpdates}, Cmd.none)
 
         CloseWindow windowId ->
             (closeWindow model windowId 
@@ -221,6 +235,9 @@ update msg model =
         ToggleSettingsWindow ->
             ({model | isSettingsOpened = not model.isSettingsOpened}, Cmd.none)
 
+        FocusedRecordDataReceived windowId rowId tableDaoList ->
+            (updateWindow model (Window.FocusedRecordDataReceived rowId tableDaoList) windowId, Cmd.none)
+
 
 main = 
     App.program
@@ -248,7 +265,7 @@ displayWindowDetail model window =
         |> updateActivatedWindows
         
 
-closeWindow: Model -> Int -> Model
+closeWindow: Model -> WindowId -> Model
 closeWindow model windowId =
     let openedWindows = List.filter (\w -> w.windowId /= windowId ) model.openedWindows
     in
@@ -256,7 +273,7 @@ closeWindow model windowId =
     }
 
 
-updateWindow: Model -> Window.Msg -> Int -> Model
+updateWindow: Model -> Window.Msg -> WindowId -> Model
 updateWindow model windowMsg windowId =
     let updatedWindows = 
         List.map(
@@ -348,13 +365,16 @@ inOpenedWindows model windowId =
         |> List.isEmpty 
         |> not
 
--- get the table name of this windowId
-getWindowTable: Model -> Int -> Maybe String
-getWindowTable model windowId =
-    let window = List.filter (\w -> w.windowId == windowId ) model.openedWindows
+getWindow: Model -> WindowId -> Maybe Window.Model
+getWindow model windowId =
+    List.filter (\w -> w.windowId == windowId ) model.openedWindows
         |> List.head
-    in
-    case window of
+
+
+-- get the table name of this windowId
+getWindowTable: Model -> WindowId -> Maybe String
+getWindowTable model windowId =
+    case getWindow model windowId of
         Just window ->
             Just window.mainTab.tab.table
         Nothing -> Nothing
@@ -382,13 +402,13 @@ fetchWindowDetail model table =
         |> Http.fromJson Window.windowDecoder
         |> Task.perform FetchError WindowDetailReceived
 
-getWindowData: Model -> String -> Int -> Cmd Msg
+getWindowData: Model -> String -> WindowId -> Cmd Msg
 getWindowData model mainTable windowId =
     httpGet model ("/app/" ++ mainTable)
         |> Http.fromJson (Decode.list Window.tableDaoDecoder)
         |> Task.perform FetchError (WindowDataReceived windowId)
 
-fetchLookupTabs: Model -> Int -> Cmd Msg
+fetchLookupTabs: Model -> WindowId -> Cmd Msg
 fetchLookupTabs model windowId =
     let mainTable = getWindowTable model windowId
     in
@@ -400,7 +420,7 @@ fetchLookupTabs model windowId =
         Nothing ->
            Debug.crash "Unable to get matching table" 
 
-fetchLookupData: Model -> Int -> Cmd Msg
+fetchLookupData: Model -> WindowId -> Cmd Msg
 fetchLookupData model windowId =
     let mainTable = getWindowTable model windowId
     in
@@ -412,3 +432,25 @@ fetchLookupData model windowId =
         Nothing ->
            Debug.crash "Unable to get matching table" 
 
+fetchFocusedRecordDetail: Model -> WindowId -> RowId ->  Cmd Msg
+fetchFocusedRecordDetail model windowId rowId =
+    let mainTable = getWindowTable model windowId
+    in
+    case mainTable of
+        Just mainTable ->
+            case getWindow model windowId of
+                Just window ->
+                    case Tab.getRow window.mainTab rowId of
+                        Just row ->
+                            let focusedParam =  "[" ++ Row.focusedRecordParam row ++ "]"
+                            in
+                            httpGet model ("/app/focus/" ++ mainTable ++ "?focused_record=" ++ focusedParam )
+                                |> Http.fromJson (Decode.list Window.tableDaoDecoder)
+                                |> Task.perform FetchError (FocusedRecordDataReceived windowId rowId)
+                        Nothing ->
+                            Debug.crash "No such row"
+                Nothing ->
+                    Debug.crash "No such window"
+
+        Nothing ->
+            Debug.crash "No matching table for focused record"

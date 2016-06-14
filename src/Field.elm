@@ -537,6 +537,10 @@ stringValue value =
         DateTime d -> toString d
         _ -> toString value
 
+stringifyValue: Model -> String
+stringifyValue model =
+    stringValue model.value
+
 
 fieldReadList: Model -> Html Msg
 fieldReadList model = 

@@ -8,6 +8,7 @@ import Html.Attributes exposing (..)
 import Dict
 import Json.Decode as Decode exposing ((:=))
 import Task
+import String
 
 type alias Model =
     { rowId: Int
@@ -72,6 +73,21 @@ excludeKeyfields fieldList =
 excludeKeyfieldModels: List Field.Model -> List Field.Model
 excludeKeyfieldModels fieldModels =
     List.filter (\f -> not f.field.isKeyfield) fieldModels 
+
+keyFieldModels: List Field.Model -> List Field.Model
+keyFieldModels fieldModels =
+    List.filter (\f -> f.field.isKeyfield) fieldModels
+
+
+-- get the focused record param expressed in [pk_value1, pk_value2]
+focusedRecordParam: Model -> String
+focusedRecordParam model =
+    keyFieldModels model.fieldModels
+        |> List.map(
+            \f ->
+              Field.stringifyValue f 
+        )
+        |> String.join ","
 
 view: Model -> Html Msg
 view model = 

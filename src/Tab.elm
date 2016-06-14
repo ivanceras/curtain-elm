@@ -8,6 +8,7 @@ import Html.Attributes exposing (..)
 import Html.App as App
 import Json.Decode as Decode exposing ((:=))
 import Json.Decode.Extra as Extra exposing ((|:))
+import Update.Extra.Infix exposing ((:>))
 
 
 type alias Model =
@@ -158,7 +159,7 @@ view model =
             ,tabView
             ]
     else 
-        div [] [text "closed"]
+       text "" 
                 
 
 tabControls model =
@@ -333,27 +334,32 @@ paging =
         ]
 
 
-
-updatePresentation model presentation =
-    ( {model | presentation = presentation
+updatePresentation: Field.Presentation -> Model -> Model
+updatePresentation presentation model =
+    {model | presentation = presentation
              , rows = 
                 (List.map (\r ->
                     let (mr, cmd) = Row.update (Row.ChangePresentation presentation ) r
                     in mr
-                )model.rows)}, Cmd.none)
+                )model.rows)}
 
 
-updateMode model mode =
-    ( {model | mode = mode
+updateMode: Field.Mode -> Model -> Model
+updateMode mode model =
+     {model | mode = mode
             , rows = 
             (List.map (\r -> 
                     let (mr,cmd) = Row.update (Row.ChangeMode mode) r 
                     in mr
-                ) model.rows) }, Cmd.none)
+                ) model.rows) }
 
 focusFirstRecord: Model -> Maybe Row.Model
 focusFirstRecord model =
     List.head model.rows
+
+setFocusedRow: Int -> Model -> Model
+setFocusedRow rowId model =
+    {model | focusedRow = Just rowId}
 
 focusedRow: Model -> Maybe Row.Model
 focusedRow model =
@@ -412,17 +418,19 @@ update msg model =
             Row.ChangePresentation presentation ->
                 case presentation of
                     Field.Form ->
-                        let (mo, cmd) = updatePresentation model presentation
-                            (mo2, cmd2) = updateMode mo Field.Edit 
-                        in ({mo2 | focusedRow = Just rowId
-                                , mode = Field.Edit },cmd2)
+                        (updatePresentation presentation model
+                            |> updateRow (Row.ChangeMode Field.Edit) rowId
+                            |> setFocusedRow rowId
+                        , Cmd.none
+                        )
                     _ ->
                         ( updateRow rowMsg rowId model, Cmd.none)
                         
             Row.Close ->
-                let (mo, cmd) =updatePresentation model Field.Table
-                in
-                updateMode mo Field.Read
+                (updatePresentation Field.Table model
+                    |> updateRow (Row.ChangeMode Field.Read) rowId
+                    |> updateMode Field.Read, Cmd.none)
+
             Row.FocusRecord ->
                 (updateFocusedRow model rowId, Cmd.none)
 
@@ -436,10 +444,10 @@ update msg model =
                 ( updateRow rowMsg rowId model , Cmd.none)
 
         ChangeMode mode ->
-            updateMode model mode
+            (updateMode mode model, Cmd.none)
 
         ChangePresentation presentation ->
-            updatePresentation model presentation
+            (updatePresentation presentation model, Cmd.none)
 
         ChangeDensity density ->
             ({model | density = density }
@@ -518,6 +526,13 @@ updateRow rowMsg rowId model =
      in
      { model | rows = rows }
 
+getRow: Model -> Int -> Maybe Row.Model
+getRow model rowId =
+    List.filter(
+        \r ->
+            r.rowId == rowId
+        ) model.rows
+        |> List.head
 
 updateAllRows: Row.Msg -> Model -> Model
 updateAllRows rowMsg model =

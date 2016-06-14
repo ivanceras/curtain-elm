@@ -9,6 +9,7 @@ import Html.Events exposing (..)
 import Tab
 import Field
 import Row
+import Update.Extra.Infix exposing ((:>))
 
 
 type alias Model =
@@ -47,6 +48,7 @@ type Msg
     | ActivateWindow
     | DeactivateWindow
     | OpenHasManyTab String
+    | FocusedRecordDataReceived Int (List TableDao)
     
 type alias Window =
     { name: String
@@ -138,8 +140,7 @@ hasManyTabView model =
              <| List.map (
                     \tab ->
                         div [] 
-                            [text tab.tab.name
-                            ,App.map UpdateTab (Tab.view tab)
+                            [App.map UpdateTab (Tab.view tab)
                             ]
                  ) model.hasManyMergedTabs
             ]
@@ -148,22 +149,32 @@ hasManyTabView model =
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
+    let _ = Debug.log "window_msg" msg
+    in
     case msg of 
         UpdateTab tab_msg ->
             let _ = Debug.log "tab_msg" tab_msg
             in
             case tab_msg of
                 Tab.ChangePresentation presentation ->
-                    let model = {model | presentation = presentation}
-                    in
-                    (updateMainTab tab_msg model, Cmd.none)
+                    ({model | presentation = presentation}
+                        |> updateMainTab tab_msg
+                        |> updateAllMergedTab tab_msg
+                    , Cmd.none
+                    ) 
 
                 Tab.UpdateRow rowId rowMsg ->
                     case rowMsg of
                         Row.ChangePresentation presentation ->
-                            let model = {model | presentation = presentation}
+                            let _ = Debug.log "Window: Changing presentation to " presentation
                             in
-                            (updateMainTab tab_msg model, Cmd.none)
+                            ({model | presentation = presentation}
+                               |> updateMainTab tab_msg
+                            , Cmd.none)
+                        Row.Close ->
+                            ({model | presentation = Field.Table}
+                                |> updateMainTab tab_msg
+                            , Cmd.none)
                         _ ->
                             (updateMainTab tab_msg model, Cmd.none)
                 
@@ -204,6 +215,33 @@ update msg model =
             (updateAllMergedTab Tab.Close model
                 |> updateHasManyMergedTab Tab.Open table
             , Cmd.none)
+
+        FocusedRecordDataReceived rowId tableDaoList ->
+           (hydrateAllMergedTab tableDaoList model, Cmd.none)
+
+
+getTableDao: List TableDao -> Tab.Tab -> Maybe TableDao
+getTableDao tableDaoList tab =
+    List.filter (
+        \tableDao ->
+           Tab.completeTableName tab == tableDao.table
+            
+    )tableDaoList
+        |> List.head
+
+hydrateAllMergedTab: List TableDao -> Model -> Model
+hydrateAllMergedTab tableDaoList model =
+    {model | hasManyMergedTabs =
+        List.map(
+            \tab ->
+               case getTableDao tableDaoList tab.tab of
+                    Just tableDao ->
+                        let (updatedTab, _) = Tab.update (Tab.TabDataReceived tableDao.daoList) tab
+                        in updatedTab
+                    Nothing -> 
+                        tab
+        ) model.hasManyMergedTabs
+    }
 
 --direct and indirect, whereever table matches
 updateHasManyMergedTab: Tab.Msg -> String -> Model -> Model
@@ -252,4 +290,10 @@ updateWindow window model =
                 in {tabModel | isOpen = False}
         ) (window.hasManyTabs ++ window.hasManyIndirectTabs)
     }
+
+
+getMainTabFocusedRow: Model -> Int -> Maybe Row.Model
+getMainTabFocusedRow model rowId =
+    Tab.getRow model.mainTab rowId
+    
     
