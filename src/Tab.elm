@@ -22,6 +22,8 @@ type alias Model =
     , pageSize: Int
     , uid: Int -- used for tracking row number
     , focusedRow: Maybe Int
+    , tabId: Int
+    , allocatedHeight: Int
     }
 
 type alias Tab =
@@ -82,9 +84,10 @@ type Msg
     | LookupDataReceived (List Field.LookupData)
     | Open
     | Close
+    | TableScrolled Decode.Value 
 
-create: Tab -> Model
-create tab =
+create: Tab -> Int -> Int -> Model
+create tab tabId height =
     { tab = tab
     , rows= []
     , mode= Field.Read
@@ -95,14 +98,15 @@ create tab =
     , pageSize = 15
     , uid = 0 --will be incremented every row added
     , focusedRow = Nothing
+    , tabId = tabId
+    , allocatedHeight = height
     }
 
  
 
 view: Model -> Html Msg
 view model =
-    let background = style[("background-color", "#fcfcfc")]
-        toolbarView = 
+    let toolbarView = 
             if model.tab.isExtension then
                 span [] [text "no toolbar for extension"]
             else
@@ -112,7 +116,13 @@ view model =
             Field.Form ->
                 let focused = focusedRow model
                 in
-                     div [class "form", background] 
+                     div [class "form"
+                         ,style [("height", (toString model.allocatedHeight)++"px")
+                                ,("overflow", "auto")
+                                ,("display", "block")
+                                ]
+
+                         ] 
                         [case focused of
                             Just focused ->
                                Row.view focused |> App.map (UpdateRow focused.rowId)
@@ -130,14 +140,22 @@ view model =
                         ]
 
             Field.Table ->
-                    table [background] 
+                div [style [("height", (toString model.allocatedHeight)++"px")
+                          ,("overflow", "auto")
+                          ,("display", "block")
+                          ]
+                    ,attribute "onscroll" "scrollListener(event)"
+                    ]
+                    [table [
+                           ] 
                         [theadView model 
-                        ,tbody []
+                        ,tbody [                               ]
                         (model.rows
                             |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
 
                         )
                         ]
+                    ]
 
             Field.Grid ->
                     div [class "grid"]
@@ -146,7 +164,7 @@ view model =
 
                         )
             Field.List ->
-                   select [class "list"]
+                   select [class "list", style [("text-overflow", "ellipsis")]]
                         (model.rows
                             |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
 
@@ -156,11 +174,19 @@ view model =
         div []
             [tabControls model
             ,toolbarView
-            ,tabView
+            ,div []
+                 [tabView
+                 ]
             ]
     else 
        text "" 
                 
+onTableScroll msg =
+    let _ = Debug.log "scrolling..." msg
+        _ = Debug.log "targetValue" targetValue
+    in
+    --on "scroll" (Decode.map msg Decode.value)
+    on "scroll" (Decode.map msg Decode.value)
 
 tabControls model =
     div [] [ button [onClick (ChangeMode Field.Edit)] [text "Edit All rows"]
@@ -481,6 +507,11 @@ update msg model =
 
         Close ->
             ({model | isOpen = False}, Cmd.none)
+
+        TableScrolled target ->
+            let _ = Debug.log "help, im scrolled" "hi..."
+            in
+            ( model, Cmd.none)
 
 createRows: Model -> List Row.DaoState -> Model
 createRows model listDaoState =

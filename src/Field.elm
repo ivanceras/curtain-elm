@@ -141,6 +141,7 @@ type Msg
     | SetValue Value
     | LookupTabsReceived (List LookupTab)
     | LookupDataReceived (List LookupData)
+    | ListScrolled Decode.Value 
 
 
 
@@ -370,6 +371,11 @@ update msg model =
             ({model | lookupData = lookupDataList}
             , Cmd.none
             )
+
+        ListScrolled target ->
+            let _ = Debug.log "list scrolled" target
+            in
+            ( model, Cmd.none)
 
 
 
@@ -620,6 +626,7 @@ onSelectionChange msg =
     Decode.map msg targetValue
         |> on "change"
 
+
 createCompactListField: List Field -> List Dao -> Model ->Html Msg
 createCompactListField fieldList daoList model =
     let fields = toList (mostSignificantField fieldList)
@@ -631,7 +638,11 @@ createCompactListField fieldList daoList model =
                 ) daoList
         blankOption = option [] []
     in
-    select [] (blankOption :: rows)
+    select [style [("width", "300px")
+                  ,("text-overflow","ellipsis")
+                  ]
+            ,attribute "onscroll" "scrollListener(event)"
+            ] (blankOption :: rows)
 
 
 -- in read mode
@@ -690,6 +701,9 @@ createRow fields keyField dao model =
                 Just pkValue ->
                     [value (stringValue pkValue)
                     ,selected (model.value == pkValue)
+                    ,style [("width","300px")
+                           ,("text-overflow", "ellipsis")
+                           ]
                     ]
                 Nothing -> []
 

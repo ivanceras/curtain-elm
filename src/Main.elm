@@ -1,6 +1,6 @@
 module Main exposing (..)
 
-import Window
+import DataWindow
 import Html.App as App
 import Html exposing (..)
 import Html.Events exposing (..)
@@ -13,6 +13,7 @@ import Tab
 import Field
 import Settings
 import Row
+import Window as BrowserWindow
 
 
 type alias Model =
@@ -20,11 +21,12 @@ type alias Model =
     , dbUrl: String
     , apiServer: String
     , windowList: WindowList.Model
-    , openedWindows: List Window.Model
+    , openedWindows: List DataWindow.Model
     , error: List String
     , uid: Int -- id for the opened windows
     , activeWindow: Maybe Int
     , isSettingsOpened: Bool
+    , windowSize: BrowserWindow.Size
     }
 
 
@@ -38,22 +40,23 @@ type Msg
     | LoadWindow String
     | CloseWindow WindowId
     | ActivateWindow WindowId
-    | UpdateWindow WindowId Window.Msg
+    | UpdateWindow WindowId DataWindow.Msg
     | UpdateWindowList WindowList.Msg
     | UpdateSettings Settings.Msg
     | ToggleSettingsWindow
-    | WindowDetailReceived Window.Window
+    | WindowDetailReceived DataWindow.Window
     | GetWindowData String
-    | WindowDataReceived WindowId (List Window.TableDao) 
+    | WindowDataReceived WindowId (List DataWindow.TableDao) 
     | LookupTabsReceived WindowId (List Tab.Tab)
     | LookupDataReceived WindowId (List Field.LookupData)
     | FetchError Http.Error
-    | FocusedRecordDataReceived WindowId RowId (List Window.TableDao)
+    | FocusedRecordDataReceived WindowId RowId (List DataWindow.TableDao)
+    | WindowResize BrowserWindow.Size
 
 appModel =
     { title = "Curtain UI"
-    , dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/bazaar_v8"
-    --, dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/gda"
+    --, dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/bazaar_v8"
+    , dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/gda"
     , apiServer = "http://localhost:8181"
     , windowList = WindowList.empty 
     , openedWindows = []
@@ -61,6 +64,7 @@ appModel =
     , uid = 0
     , activeWindow = Nothing
     , isSettingsOpened = False
+    , windowSize = {width=0, height=0}
     }
 
 
@@ -88,7 +92,7 @@ view model =
                          Settings.view (Settings.create model.dbUrl model.apiServer)
                             |> App.map UpdateSettings
                      else
-                        div [class "pane"] 
+                        div [class "pane main_container"] 
                              [ div [class "tab-group"] 
                                         (model.openedWindows 
                                             |> List.map(
@@ -108,7 +112,7 @@ view model =
                              (model.openedWindows
                                   |> List.map (
                                             \w -> 
-                                                Window.view w
+                                                DataWindow.view w
                                                     |> App.map (UpdateWindow w.windowId)
                                          ) 
                              )
@@ -131,6 +135,7 @@ settingsButton =
             ]
          ]
 
+
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     let _ = Debug.log "main msg" msg
@@ -139,20 +144,14 @@ update msg model =
         UpdateWindow windowId windowMsg -> 
               case msg of 
                     -- TODO: a hacky long TAP? lazy
-                    UpdateWindow windowId (Window.UpdateTab (Tab.UpdateRow rowId Row.FocusRecord)) ->
+                    UpdateWindow windowId (DataWindow.UpdateTab (Tab.UpdateRow rowId Row.FocusRecord)) ->
                         let _ = Debug.log ("this is it windowId:"++ (toString windowId)) (toString rowId)
                         in 
-                        ( model, fetchFocusedRecordDetail model windowId rowId)
+                        (updateWindow model windowMsg windowId
+                        ,fetchFocusedRecordDetail model windowId rowId)
 
                     _ -> 
-                        let windowUpdates = List.map(\w ->
-                                if w.windowId == windowId then
-                                   let (mr,cmd) = Window.update windowMsg w in mr
-                                else
-                                    w
-                            ) model.openedWindows
-                        in
-                        ({model | openedWindows = windowUpdates}, Cmd.none)
+                        (updateWindow model windowMsg windowId, Cmd.none)
 
         CloseWindow windowId ->
             (closeWindow model windowId 
@@ -200,7 +199,7 @@ update msg model =
                 List.map(
                     \windowModel ->
                         if windowModel.windowId == windowId then
-                            let (mo, cmd) = Window.update (Window.WindowDataReceived tableDaoList) windowModel
+                            let (mo, cmd) = DataWindow.update (DataWindow.WindowDataReceived tableDaoList) windowModel
                             in mo
                         else
                             windowModel
@@ -209,12 +208,12 @@ update msg model =
             ( {model | openedWindows = openedWindows} , fetchLookupTabs model windowId)
         
         LookupTabsReceived windowId tabList -> --update the window and propage the data down to the fields
-            (updateWindow model (Window.LookupTabsReceived tabList) windowId
+            (updateWindow model (DataWindow.LookupTabsReceived tabList) windowId
             , fetchLookupData model windowId
             )
 
         LookupDataReceived windowId lookupData ->
-            (updateWindow model (Window.LookupDataReceived lookupData) windowId, Cmd.none)
+            (updateWindow model (DataWindow.LookupDataReceived lookupData) windowId, Cmd.none)
 
         FetchError e ->
             ( { model | error = (toString e)::model.error }, Cmd.none )
@@ -236,7 +235,12 @@ update msg model =
             ({model | isSettingsOpened = not model.isSettingsOpened}, Cmd.none)
 
         FocusedRecordDataReceived windowId rowId tableDaoList ->
-            (updateWindow model (Window.FocusedRecordDataReceived rowId tableDaoList) windowId, Cmd.none)
+            (updateWindow model (DataWindow.FocusedRecordDataReceived rowId tableDaoList) windowId, Cmd.none)
+
+        WindowResize size ->
+            let _ = Debug.log "window resized" size
+            in
+            ({model | windowSize = size}, Cmd.none)
 
 
 main = 
@@ -244,13 +248,17 @@ main =
         { init = init
         , update = update
         , view = view
-        , subscriptions= (\_ -> Sub.none)
+        , subscriptions= (\_ -> BrowserWindow.resizes sizeToMsg)
         }
 
-addWindow: Model -> Window.Window -> Model
+sizeToMsg: BrowserWindow.Size -> Msg
+sizeToMsg size = 
+    WindowResize size
+
+addWindow: Model -> DataWindow.Window -> Model
 addWindow model window =
-    let newWindow = Window.create window model.uid
-        (mo, cmd) = Window.update (Window.WindowDetailReceived window) newWindow 
+    let newWindow = DataWindow.create window model.uid
+        (mo, cmd) = DataWindow.update (DataWindow.WindowDetailReceived window) newWindow 
         allWindows = mo :: model.openedWindows
     in
     { model | openedWindows = allWindows 
@@ -259,7 +267,7 @@ addWindow model window =
     } 
         
 
-displayWindowDetail: Model -> Window.Window -> Model
+displayWindowDetail: Model -> DataWindow.Window -> Model
 displayWindowDetail model window =
     addWindow model window
         |> updateActivatedWindows
@@ -273,13 +281,13 @@ closeWindow model windowId =
     }
 
 
-updateWindow: Model -> Window.Msg -> WindowId -> Model
+updateWindow: Model -> DataWindow.Msg -> WindowId -> Model
 updateWindow model windowMsg windowId =
     let updatedWindows = 
         List.map(
             \w ->
                 if w.windowId == windowId then
-                    let (mo, cmd) = Window.update windowMsg w
+                    let (mo, cmd) = DataWindow.update windowMsg w
                     in mo
                 else
                     w
@@ -291,7 +299,7 @@ activateFirstWindow: Model -> Model
 activateFirstWindow model =
     case List.head model.openedWindows of
         Just window ->
-            let (updatedWindow, cmd) = Window.update Window.ActivateWindow window
+            let (updatedWindow, cmd) = DataWindow.update DataWindow.ActivateWindow window
                 allWindows = updatedWindow :: Maybe.withDefault [] (List.tail model.openedWindows)
             in
             {model | activeWindow = Just window.windowId
@@ -316,7 +324,7 @@ updateActivatedWindows model =
                         |> List.map(
                             \w ->
                                 if w.windowId == activeWindow then
-                                    let (mo, cmd) = Window.update Window.ActivateWindow w
+                                    let (mo, cmd) = DataWindow.update DataWindow.ActivateWindow w
                                     in mo
                                 else
                                     w
@@ -333,13 +341,13 @@ deactivateOpenedWindows model =
     let updatedWindows = 
         List.map(
             \w ->
-                let (mo, cmd) = Window.update Window.DeactivateWindow w
+                let (mo, cmd) = DataWindow.update DataWindow.DeactivateWindow w
                 in mo
         ) model.openedWindows
     in
     {model | openedWindows = updatedWindows}
     
-getActiveWindow: Model -> Maybe Window.Model
+getActiveWindow: Model -> Maybe DataWindow.Model
 getActiveWindow model =
     case model.activeWindow of
         Just activeWindow ->
@@ -365,7 +373,7 @@ inOpenedWindows model windowId =
         |> List.isEmpty 
         |> not
 
-getWindow: Model -> WindowId -> Maybe Window.Model
+getWindow: Model -> WindowId -> Maybe DataWindow.Model
 getWindow model windowId =
     List.filter (\w -> w.windowId == windowId ) model.openedWindows
         |> List.head
@@ -399,13 +407,13 @@ fetchWindowList model =
 fetchWindowDetail: Model -> String -> Cmd Msg
 fetchWindowDetail model table =
     httpGet model ("/window/"++table)
-        |> Http.fromJson Window.windowDecoder
+        |> Http.fromJson DataWindow.windowDecoder
         |> Task.perform FetchError WindowDetailReceived
 
 getWindowData: Model -> String -> WindowId -> Cmd Msg
 getWindowData model mainTable windowId =
     httpGet model ("/app/" ++ mainTable)
-        |> Http.fromJson (Decode.list Window.tableDaoDecoder)
+        |> Http.fromJson (Decode.list DataWindow.tableDaoDecoder)
         |> Task.perform FetchError (WindowDataReceived windowId)
 
 fetchLookupTabs: Model -> WindowId -> Cmd Msg
@@ -445,7 +453,7 @@ fetchFocusedRecordDetail model windowId rowId =
                             let focusedParam =  "[" ++ Row.focusedRecordParam row ++ "]"
                             in
                             httpGet model ("/app/focus/" ++ mainTable ++ "?focused_record=" ++ focusedParam )
-                                |> Http.fromJson (Decode.list Window.tableDaoDecoder)
+                                |> Http.fromJson (Decode.list DataWindow.tableDaoDecoder)
                                 |> Task.perform FetchError (FocusedRecordDataReceived windowId rowId)
                         Nothing ->
                             Debug.crash "No such row"

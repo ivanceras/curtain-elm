@@ -41,9 +41,7 @@
     visibility: visible;
 }
 
-table thead{
-    /*position: fixed*/
-}
+
 
 td.record_control div{
     padding: 4px;
@@ -86,3 +84,24 @@ td * {
 form * {
   -webkit-user-select: text;
 }
+
+.tab-group{
+    background-color:#b8b6b8;
+}
+.tab-item{
+    flex:none;
+    width: 300px;
+}
+
+.tab-item.has-many{
+    flex:none;
+    width:150px;
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.main_container{
+    overflow:hidden;
+}
+

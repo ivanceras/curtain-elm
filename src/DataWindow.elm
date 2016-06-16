@@ -1,4 +1,4 @@
-module Window exposing (..)
+module DataWindow exposing (..)
 
 import Html.App as App
 import Html exposing (..)
@@ -22,7 +22,13 @@ type alias Model =
     , hasManyMergedTabs: List Tab.Model
     , windowId: Int
     , includeRelatedData: Bool -- whether to include /exclude related data
+    , nextTabId: Int
+    , masterHeight: Int
+    , detailHeight: Int
     }
+
+defaultMasterHeight = 500
+defaultDetailHeight = 300
 
 create: Window -> Int -> Model
 create window windowId =
@@ -33,8 +39,11 @@ create window windowId =
     , hasManyMergedTabs = []
     , name = window.name
     , windowId = windowId
-    , mainTab = Tab.create window.mainTab
+    , mainTab = Tab.create window.mainTab 0 defaultMasterHeight
     , includeRelatedData = True
+    , nextTabId = 0
+    , masterHeight = defaultMasterHeight
+    , detailHeight = defaultDetailHeight
     }
 
 type Msg
@@ -88,17 +97,28 @@ windowDecoder =
 view: Model -> Html Msg
 view model = 
     if model.isActive then
-        div [] 
-                (App.map UpdateTab(Tab.view model.mainTab)
-                 :: 
-                 if model.includeRelatedData then
-                    [extensionTabView model
-                    ,hasManyTabView model
+        div [style [("height", "800px")
+                   ]
+            ] 
+               [div [class "master-container"
                     ]
-                 else
-                    []
-                )               
-    else div[] []
+                    [App.map UpdateTab(Tab.view model.mainTab)
+                    ,(if model.includeRelatedData then
+                        extensionTabView model
+                     else
+                        text ""
+                     )
+                    ]
+                 ,div [class "related-container"
+                      ]
+                     (if model.includeRelatedData then
+                        [hasManyTabView model]
+                     else
+                        []
+                     )
+               ]
+                              
+    else text ""
 
 extensionTabView: Model -> Html Msg
 extensionTabView model =
@@ -106,7 +126,6 @@ extensionTabView model =
         div [] 
             <| 
             [text "extension tab here.."
-             ,hr [] []
             ]
              ++
              List.map (
@@ -126,10 +145,10 @@ hasManyTabView model =
     if model.presentation == Field.Form then
         div [] 
             [text "has many tabs here.."
-            ,div [class "tab-group"] 
+            ,div [class "tab-group has-many"] 
                  <| List.map (
                     \tab ->
-                        div [classList [("tab-item",True)
+                        div [classList [("tab-item has-many",True)
                                        ,("active", tab.isOpen)
                                        ]
                             ,onClick (OpenHasManyTab tab.tab.table)
@@ -217,7 +236,9 @@ update msg model =
             , Cmd.none)
 
         FocusedRecordDataReceived rowId tableDaoList ->
-           (hydrateAllMergedTab tableDaoList model, Cmd.none)
+           (hydrateAllMergedTab tableDaoList model
+                |> openFirstMergedTab
+           , Cmd.none)
 
 
 getTableDao: List TableDao -> Tab.Tab -> Maybe TableDao
@@ -241,6 +262,22 @@ hydrateAllMergedTab tableDaoList model =
                     Nothing -> 
                         tab
         ) model.hasManyMergedTabs
+    }
+
+openFirstMergedTab: Model -> Model
+openFirstMergedTab model =
+    { model | hasManyMergedTabs =
+        case List.head model.hasManyMergedTabs of
+            Just head ->
+                let (updatedTab,_) = Tab.update Tab.Open head
+                in updatedTab :: 
+                    case List.tail model.hasManyMergedTabs of
+                        Just tail -> tail
+                        Nothing -> []
+
+            Nothing ->
+                model.hasManyMergedTabs 
+            
     }
 
 --direct and indirect, whereever table matches
@@ -277,16 +314,16 @@ updateMainTab tabMsg model =
 
 updateWindow: Window -> Model -> Model
 updateWindow window model =
-    {model | mainTab = Tab.create window.mainTab
+    {model | mainTab = Tab.create window.mainTab model.nextTabId model.masterHeight
     ,extTabs = 
         List.map(
             \ext ->
-               Tab.create ext 
+               Tab.create ext model.nextTabId model.masterHeight
         ) window.extTabs
     ,hasManyMergedTabs =
         List.map(
             \tab -> 
-                let tabModel = Tab.create tab
+                let tabModel = Tab.create tab model.nextTabId model.detailHeight
                 in {tabModel | isOpen = False}
         ) (window.hasManyTabs ++ window.hasManyIndirectTabs)
     }
