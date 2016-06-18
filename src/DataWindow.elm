@@ -23,12 +23,13 @@ type alias Model =
     , windowId: Int
     , includeRelatedData: Bool -- whether to include /exclude related data
     , nextTabId: Int
-    , masterHeight: Int
-    , detailHeight: Int
+    , mainTableHeight: Int
+    , detailTableHeight: Int
     }
 
-defaultMasterHeight = 500
-defaultDetailHeight = 300
+defaultMainTableHeight = 600
+defaultFormRecordHeight = 200
+defaultDetailTableHeight = 200
 
 create: Window -> Int -> Model
 create window windowId =
@@ -39,11 +40,11 @@ create window windowId =
     , hasManyMergedTabs = []
     , name = window.name
     , windowId = windowId
-    , mainTab = Tab.create window.mainTab 0 defaultMasterHeight
+    , mainTab = Tab.create window.mainTab 0 defaultMainTableHeight
     , includeRelatedData = True
     , nextTabId = 0
-    , masterHeight = defaultMasterHeight
-    , detailHeight = defaultDetailHeight
+    , mainTableHeight = defaultMainTableHeight
+    , detailTableHeight = defaultDetailTableHeight
     }
 
 type Msg
@@ -179,6 +180,7 @@ update msg model =
                     ({model | presentation = presentation}
                         |> updateMainTab tab_msg
                         |> updateAllMergedTab tab_msg
+                        |> updateAllocatedHeight
                     , Cmd.none
                     ) 
 
@@ -189,14 +191,17 @@ update msg model =
                             in
                             ({model | presentation = presentation}
                                |> updateMainTab tab_msg
+                               |> updateAllocatedHeight
                             , Cmd.none)
-                        Row.Close ->
-                            ({model | presentation = Field.Table}
-                                |> updateMainTab tab_msg
-                            , Cmd.none)
+
                         _ ->
                             (updateMainTab tab_msg model, Cmd.none)
                 
+                Tab.FormRecordClose ->
+                    ({model | presentation = Field.Table}
+                        |> updateMainTab tab_msg
+                        |> updateAllocatedHeight
+                    , Cmd.none)
                 _ ->
                     (updateMainTab tab_msg model, Cmd.none)
         
@@ -217,7 +222,12 @@ update msg model =
             ({model | mode = mode}, Cmd.none)
 
         ChangePresentation presentation ->
-            ({model | presentation = presentation}, Cmd.none)
+            let _ = Debug.log "Window presentation chaned to" presentation
+            in
+            ({model | presentation = presentation}
+                |> updateAllocatedHeight
+            , Cmd.none
+            )
 
         ActivateWindow ->
             ({model | isActive = True}, Cmd.none)
@@ -240,6 +250,18 @@ update msg model =
                 |> openFirstMergedTab
            , Cmd.none)
 
+
+updateAllocatedHeight: Model -> Model
+updateAllocatedHeight model =
+    case model.presentation of
+        Field.Form ->
+            let _ = Debug.log "Form change height" "hello"
+            in
+            updateMainTab (Tab.ChangeAllocatedHeight defaultFormRecordHeight) model
+        Field.Table ->
+            updateMainTab (Tab.ChangeAllocatedHeight defaultMainTableHeight) model
+
+        _ -> model
 
 getTableDao: List TableDao -> Tab.Tab -> Maybe TableDao
 getTableDao tableDaoList tab =
@@ -314,16 +336,16 @@ updateMainTab tabMsg model =
 
 updateWindow: Window -> Model -> Model
 updateWindow window model =
-    {model | mainTab = Tab.create window.mainTab model.nextTabId model.masterHeight
+    {model | mainTab = Tab.create window.mainTab model.nextTabId model.mainTableHeight
     ,extTabs = 
         List.map(
             \ext ->
-               Tab.create ext model.nextTabId model.masterHeight
+               Tab.create ext model.nextTabId model.mainTableHeight
         ) window.extTabs
     ,hasManyMergedTabs =
         List.map(
             \tab -> 
-                let tabModel = Tab.create tab model.nextTabId model.detailHeight
+                let tabModel = Tab.create tab model.nextTabId model.detailTableHeight
                 in {tabModel | isOpen = False}
         ) (window.hasManyTabs ++ window.hasManyIndirectTabs)
     }

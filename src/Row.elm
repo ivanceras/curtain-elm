@@ -51,7 +51,6 @@ type Msg
     | LooseFocusRecord
     | LookupTabsReceived (List Field.LookupTab)
     | LookupDataReceived (List Field.LookupData)
-    | Close
 
 type alias DaoState =
     { dao: Field.Dao
@@ -97,19 +96,16 @@ view model =
     case model.presentation of
         Field.Form ->
             div []
-                [ --rowControls model,
-                  formRecordControls model
-                , Html.form [style [("display", "flex"), ("flex-wrap", "wrap"), ("align-items", "flex-end")]] 
+                [Html.form [style [("display", "flex"), ("flex-wrap", "wrap"), ("align-items", "flex-end")]] 
                   (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| fieldModels)
-               ]
+                ]
         Field.Table ->
             tr [onDoubleClick (ChangePresentation Field.Form)
                ,onClick FocusRecord
                ,classList [("focused", model.isFocused), ("selected", model.isSelected)]
+               ,style [("height", "35px")]
                ] 
-               ((tabularRecordControls model) ++
-                (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| fieldModels)
-               )
+               (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| fieldModels)
         Field.Grid ->
             div []
                 [ rowControls model
@@ -152,6 +148,19 @@ onDoubleClickNoPropagate msg =
     Decode.succeed msg
         |> onWithOptions "dblclick" {defaultOptions | stopPropagation = True}
 
+
+
+rowShadowRecordControls: Model -> Html Msg
+rowShadowRecordControls model =
+    tr [onDoubleClick (ChangePresentation Field.Form)
+       ,onClick FocusRecord
+       ,classList [("focused", model.isFocused), ("selected", model.isSelected)]
+       ,style [("height", "35px")]
+       ] 
+       (tabularRecordControls model)
+
+
+tabularRecordControls: Model -> List (Html Msg)
 tabularRecordControls model =
     let selection = 
         let tooltipText = if model.isSelected then "Click to unselect this record"
@@ -195,26 +204,6 @@ tabularRecordControls model =
     in
         selection :: [modificationControls]
 
-
-formRecordControls model =
-    div []
-        [button [class "btn btn-mini btn-default"]
-            [text "Prev"
-            ,span [class "icon icon-left-open"] []
-            ]
-        ,button [class "btn btn-mini btn-default"]
-            [text "Next"
-            ,span [class "icon icon-right-open"] []
-            ]
-        ,button [class "btn btn-mini btn-default"]
-            [text "Maximize"
-            ,span [class "icon icon-resize-full"] []
-            ]
-        ,button [class "btn btn-mini btn-default", onClick Close]
-            [text "Close"
-            ,span [class "icon icon-cancel"] []
-            ]
-        ]
 
 
 update: Msg -> Model -> (Model, Cmd Msg)
@@ -288,9 +277,6 @@ update msg model =
         ToggleSelect ->
             ({model | isSelected = not model.isSelected}, Cmd.none)
 
-        Close -> --tab should tap on this event
-            (model, Cmd.none)
-         
         FocusRecord ->
             ({model | isFocused = True}, Cmd.none)
         LooseFocusRecord ->
