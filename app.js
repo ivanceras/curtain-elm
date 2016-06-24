@@ -26,15 +26,41 @@ function scrollListener(event){
 
 }
 
+function isScrolledBottom(event){
+    var el = event.target;
+    console.log("el scrolltop", el.scrollTop);
+    console.log("el Height", el.offsetHeight);
+    console.log("el.firstChild Height", el.firstChild.offsetHeight);
+    console.log("total el", el.scrollTop + el.offsetHeight);
+    if (el.scrollTop + el.offsetHeight >= el.firstChild.offsetHeight){
+        console.log("Reach bottom")
+    }
+}
 
-function alignScroll(event){
 
-    console.log("target", event.target);
-    console.log("scrollLeft", event.target.scrollLeft);
-    var head_shadow = document.getElementById('head_shadow');
-    head_shadow.scrollLeft = event.target.scrollLeft;
-    var row_shadow = document.getElementById('row_shadow');
-    row_shadow.scrollTop = event.target.scrollTop;
+function alignScroll(event, column_shadow_id, row_shadow_id){
+    // console.log("column_shadow_id", column_shadow_id);
+    // console.log("row_shadow_id", row_shadow_id);
+    isScrolledBottom(event);
+
+    if (column_shadow_id && row_shadow_id){
+        // console.log("target", event.target);
+        // console.log("scrollLeft", event.target.scrollLeft);
+        var column_shadow = document.getElementById(column_shadow_id);
+        var row_shadow = document.getElementById(row_shadow_id);
+        if (column_shadow){
+            column_shadow.scrollLeft = event.target.scrollLeft;
+        }else{
+            console.log("unable to find column_shadow", column_shadow_id);
+        }
+        if (row_shadow){
+            row_shadow.scrollTop = event.target.scrollTop;
+        }else{
+            console.log("unable to find row_shadow", row_shadow_id);
+        }
+    }else{
+        console.log("column_shadow and row_shadow id not specified");
+    }
 }
 
 //a hack to get scrollbar with for autoscrolling of row controls

@@ -65,6 +65,8 @@ type Msg
     | FocusedRecordDataReceived Int (List TableDao)
     | BrowserDimensionChanged Tab.BrowserDimension
     | ToggleExtTab Tab.Model
+    | LoadNextPage Tab.Model
+    | WindowDataNextPageReceived (List TableDao)
     
 type alias Window =
     { name: String
@@ -203,17 +205,20 @@ toolbar model=
                 ,text "New record" 
                 ,span [class "tooltiptext"] [text "Create a new record in a form"]
                 ]
-            ,button [class "btn btn-large btn-default tooltip", onClick (ChangeMode Read)]
+            ,button [class "btn btn-large btn-default tooltip"
+                    , onClick (ChangeMode Read)]
                 [span [class "icon icon-list-add icon-text"] []
                 ,text "Insert row"
                 ,span [class "tooltiptext"] [text "Insert row"]
                 ]
-            ,button [class "btn btn-large btn-default tooltip", onClick (ChangeMode Read)]
+            ,button [class "btn btn-large btn-default tooltip"
+                    , onClick (ChangeMode Read)]
                 [span [class "icon icon-floppy icon-text"] []
                 ,text "Save"
                 ,span [class "tooltiptext"] [text "Save record into the database"]
                 ]
-            ,button [class "btn btn-large btn-default tooltip", onClick (ChangePresentation Table)]
+            ,button [class "btn btn-large btn-default tooltip"
+                    , onClick (ChangePresentation Table)]
                 [span [class "icon icon-block icon-text"] []
                 ,text "Cancel" 
                 ,span [class "tooltiptext"] [text "Cancel changes and return to the last saved state"]
@@ -232,6 +237,12 @@ toolbar model=
                 [span [class "icon icon-export icon-text"] []
                 ,text "Export"
                 ,span [class "tooltiptext"] [text "Export to spreadsheet"]
+                ]
+            ,button [class "btn btn-large btn-default tooltip"
+                    , onClick (LoadNextPage model.mainTab)]
+                [span [class "icon icon-download icon-text"] []
+                ,text "Load More"
+                ,span [class "tooltiptext"] [text "Load Next Page"]
                 ]
             ]
  
@@ -351,6 +362,18 @@ update msg model =
         
         ToggleExtTab tab ->
             (updateExtTab Tab.Toggle tab model
+            ,Cmd.none
+            )
+
+        LoadNextPage tab-> -- main window tapped on this one
+            (model, Cmd.none)
+
+
+        WindowDataNextPageReceived listTableDao ->
+            (case (List.head listTableDao) of --TODO: get the main tab
+                    Just tableDao -> 
+                        updateMainTab (Tab.TabDataNextPageReceived tableDao.daoList) model
+                    Nothing -> model 
             ,Cmd.none
             )
 

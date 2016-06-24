@@ -54,7 +54,7 @@ type Msg
     | FocusedRecordDataReceived WindowId RowId (List DataWindow.TableDao)
     | WindowResize BrowserWindow.Size
     | ReceivedScrollBarWidth Int 
-    | GetScrollBarWidth
+    | WindowDataNextPageReceived WindowId (List DataWindow.TableDao)
 
 appModel =
     { title = "Curtain UI"
@@ -154,6 +154,10 @@ settingsButton =
             ]
          ]
 
+loadNextPage: WindowId -> Tab.Model -> Model -> Cmd Msg
+loadNextPage windowId tab model =
+    getWindowDataPage tab.tab.table windowId 1 20 model
+    
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -165,8 +169,17 @@ update msg model =
                         (updateWindow model windowMsg windowId
                         ,fetchFocusedRecordDetail model windowId rowId)
 
+
                     _ -> 
-                        (updateWindow model windowMsg windowId, Cmd.none)
+                        case windowMsg of
+                            DataWindow.LoadNextPage tab ->
+                                let _ = Debug.log "Loading next page" "page"
+                                in 
+                                (updateWindow model windowMsg windowId
+                                ,loadNextPage windowId tab model
+                                )
+                            _ -> 
+                                (updateWindow model windowMsg windowId, Cmd.none)
 
         CloseWindow windowId ->
             (closeWindow model windowId 
@@ -210,17 +223,9 @@ update msg model =
             ( model, Cmd.none)
 
         WindowDataReceived windowId tableDaoList ->
-            let openedWindows =
-                List.map(
-                    \windowModel ->
-                        if windowModel.windowId == windowId then
-                            let (mo, cmd) = DataWindow.update (DataWindow.WindowDataReceived tableDaoList) windowModel
-                            in mo
-                        else
-                            windowModel
-                ) model.openedWindows
-            in
-            ( {model | openedWindows = openedWindows} , fetchLookupTabs model windowId)
+            (updateWindow model (DataWindow.WindowDataReceived tableDaoList) windowId
+            ,fetchLookupTabs model windowId
+            )
         
         LookupTabsReceived windowId tabList -> --update the window and propage the data down to the fields
             (updateWindow model (DataWindow.LookupTabsReceived tabList) windowId
@@ -270,8 +275,12 @@ update msg model =
                 |> updateAllWindow (DataWindow.BrowserDimensionChanged updatedDimension) 
             , Cmd.none)
 
-        GetScrollBarWidth ->
-            (model, getScrollbarWidth () )
+        WindowDataNextPageReceived windowId tableDaoList ->
+            let _ = Debug.log "got next page for " windowId
+            in
+            (updateWindow model (DataWindow.WindowDataNextPageReceived tableDaoList) windowId
+            ,Cmd.none
+            )
 
 
 main = 
@@ -463,6 +472,27 @@ getWindowData model mainTable windowId =
     httpGet model ("/app/" ++ mainTable)
         |> Http.fromJson (Decode.list DataWindow.tableDaoDecoder)
         |> Task.perform FetchError (WindowDataReceived windowId)
+
+getWindowDataWithQuery: Model -> String -> WindowId -> String -> Cmd Msg
+getWindowDataWithQuery model mainTable windowId query =
+    httpGet model ("/app/" ++ mainTable ++ "?"++query)
+        |> Http.fromJson (Decode.list DataWindow.tableDaoDecoder)
+        |> Task.perform FetchError (WindowDataNextPageReceived windowId)
+ 
+getWindowDataPage: String -> WindowId -> Int -> Int -> Model -> Cmd Msg
+getWindowDataPage mainTable windowId page pageSize model =
+    getWindowDataWithQuery model mainTable windowId (pageSizeQuery page pageSize)
+
+page: Int -> String
+page p =
+    "page="++(toString p)
+
+pageSize: Int -> String
+pageSize size =
+    "page_size="++(toString size)
+
+pageSizeQuery p size = 
+    page p ++ "&" ++ pageSize size
 
 fetchLookupTabs: Model -> WindowId -> Cmd Msg
 fetchLookupTabs model windowId =

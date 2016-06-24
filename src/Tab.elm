@@ -100,6 +100,7 @@ type Msg
     | ChangeAllocatedHeight Int
     | FormRecordClose
     | BrowserDimensionChanged BrowserDimension
+    | TabDataNextPageReceived (List Row.DaoState)
 
 create: Tab -> Int -> Int -> Model
 create tab tabId height =
@@ -123,7 +124,7 @@ defaultBrowserDimension =
     { width = 0
     , height = 0 
     , scrollBarWidth = 13
-    } --chrome 15, firefox 17
+    } 
 
 
 emptyRowForm: Model -> Row.Model
@@ -139,8 +140,8 @@ emptyRowForm model =
 
 view: Model -> Html Msg
 view model =
-    let rowShadowWidth = 100
-        sidePaneWidth = 932
+    let columnShadowId = "column_shadow-"++(toString model.tabId)
+        rowShadowId = "row_shadow-"++(toString model.tabId)
 
         tabView =
             case model.presentation of
@@ -171,7 +172,7 @@ view model =
                               [frozenControlHead model]
 
                          ,div [class "row_shadow"
-                             ,id "row_shadow"
+                             ,id rowShadowId
                              ,style [("height", (toString (model.allocatedHeight-model.browserDimension.scrollBarWidth))++"px")
                                     ,("width", "100px")
                                     ,("overflow", "hidden")
@@ -183,8 +184,8 @@ view model =
                          ,style [
                                 ]
                          ]
-                        [div [class "head_shadow"
-                             ,id "head_shadow"
+                        [div [class "column_shadow"
+                             ,id columnShadowId
                              ,style [("width",(toString (calcMainTableWidth model - model.browserDimension.scrollBarWidth))++"px")
                                     ,("overflow", "hidden")
                                     ,("height", "70px")
@@ -197,7 +198,7 @@ view model =
                                   ,("overflow", "auto")
                                   ,("width",(toString (calcMainTableWidth model))++"px")
                                   ]
-                            ,attribute "onscroll" "alignScroll(event)"
+                            ,attribute "onscroll" ("alignScroll(event, '"++columnShadowId++"','"++rowShadowId++"')")
                             ]
                             [table [id "main_table"
                                    ] 
@@ -557,6 +558,10 @@ update msg model =
             ({ model | browserDimension = browserDimension}
             , Cmd.none)
 
+        TabDataNextPageReceived listDaoState ->
+            (addToRows model listDaoState, Cmd.none)
+
+
 createRows: Model -> List Row.DaoState -> Model
 createRows model listDaoState =
     let rows = 
@@ -571,6 +576,19 @@ createRows model listDaoState =
     ,uid = model.uid + List.length rows
     }
     
+addToRows: Model -> List Row.DaoState -> Model
+addToRows model listDaoState =
+    let rows = 
+            List.indexedMap (
+            \index daoState ->
+                let newRow = Row.create model.tab.fields (model.uid + index)
+                    (mo, cmd) = Row.update (Row.DaoStateReceived daoState) newRow 
+                in mo
+            ) listDaoState 
+    in
+    {model | rows = model.rows ++ rows
+    ,uid = model.uid + List.length rows
+    }
 
 completeTableName: Tab -> String
 completeTableName tab =
