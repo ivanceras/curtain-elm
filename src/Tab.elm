@@ -9,14 +9,18 @@ import Html.App as App
 import Json.Decode as Decode exposing ((:=))
 import Json.Decode.Extra as Extra exposing ((|:))
 import Update.Extra.Infix exposing ((:>))
+import Presentation exposing 
+    (Presentation (Table, Form, Grid)
+    ,Mode (Edit,Read)
+    ,Density(Compact, Medium, Expanded))
 
 
 type alias Model =
     { tab: Tab
     , rows: List Row.Model -- this contains the dao
-    , mode: Field.Mode
-    , presentation: Field.Presentation
-    , density: Field.Density
+    , mode: Mode
+    , presentation: Presentation
+    , density: Density
     , isOpen: Bool
     , page: Int
     , pageSize: Int
@@ -80,9 +84,9 @@ lookupDataDecoder =
 
 
 type Msg
-    = ChangeMode Field.Mode
-    | ChangePresentation Field.Presentation
-    | ChangeDensity Field.Density
+    = ChangeMode Mode
+    | ChangePresentation Presentation
+    | ChangeDensity Density
     | UpdateRow Int Row.Msg
     | TabReceived Tab
     | TabDataReceived (List Row.DaoState)
@@ -101,9 +105,9 @@ create: Tab -> Int -> Int -> Model
 create tab tabId height =
     { tab = tab
     , rows= []
-    , mode= Field.Read
-    , presentation= if tab.isExtension then Field.Form else Field.Table -- extension will be in form mode
-    , density = Field.Expanded
+    , mode= Read
+    , presentation= if tab.isExtension then Form else Table -- extension will be in form mode
+    , density = Expanded
     , isOpen = True
     , page = 0
     , pageSize = 15
@@ -126,8 +130,8 @@ emptyRowForm: Model -> Row.Model
 emptyRowForm model =
     let row = Row.create model.tab.fields model.uid
         _ = Debug.log "creating emptyRow in form using " model.tab.fields
-        (updatedRow,_) = Row.update (Row.ChangePresentation Field.Form) row
-        (updatedRow1,_) = Row.update (Row.ChangeMode Field.Edit) updatedRow
+        (updatedRow,_) = Row.update (Row.ChangePresentation Form) row
+        (updatedRow1,_) = Row.update (Row.ChangeMode Edit) updatedRow
      in
      updatedRow1
 
@@ -140,7 +144,7 @@ view model =
 
         tabView =
             case model.presentation of
-            Field.Form ->
+            Form ->
                 let focused = focusedRow model
                 in
                      div []
@@ -153,7 +157,7 @@ view model =
                             ]
                          ]
 
-            Field.Table ->
+            Table ->
                 div [class "all_table_hack"
                     ,style [("display","flex")
                            ,("white-space", "nowrap")
@@ -207,7 +211,7 @@ view model =
                          ]
                     ]
 
-            Field.Grid ->
+            Grid ->
                     div [class "grid"]
                         (model.rows
                             |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
@@ -236,14 +240,14 @@ onTableScroll msg =
     on "scroll" (Decode.map msg Decode.value)
 
 tabControls model =
-    div [] [ button [onClick (ChangeMode Field.Edit)] [text "Edit All rows"]
-           , button [onClick (ChangeMode Field.Read)] [text "Read All rows"]
-           , button [onClick (ChangePresentation Field.Table)] [text "Table All rows"]
-           , button [onClick (ChangePresentation Field.Form)] [text "Form All rows"]
-           , button [onClick (ChangePresentation Field.Grid)] [text "Grid All rows"]
-           , button [onClick (ChangeDensity Field.Compact)] [text "Compact All"]
-           , button [onClick (ChangeDensity Field.Medium)] [text "Medium All"]
-           , button [onClick (ChangeDensity Field.Expanded)] [text "Expanded All"]
+    div [] [ button [onClick (ChangeMode Edit)] [text "Edit All rows"]
+           , button [onClick (ChangeMode Read)] [text "Read All rows"]
+           , button [onClick (ChangePresentation Table)] [text "Table All rows"]
+           , button [onClick (ChangePresentation Form)] [text "Form All rows"]
+           , button [onClick (ChangePresentation Grid)] [text "Grid All rows"]
+           , button [onClick (ChangeDensity Compact)] [text "Compact All"]
+           , button [onClick (ChangeDensity Medium)] [text "Medium All"]
+           , button [onClick (ChangeDensity Expanded)] [text "Expanded All"]
            ]
 
 
@@ -384,7 +388,7 @@ areAllRecordSelected model =
 
 
 
-updatePresentation: Field.Presentation -> Model -> Model
+updatePresentation: Presentation -> Model -> Model
 updatePresentation presentation model =
     {model | presentation = presentation
              , rows = 
@@ -394,7 +398,7 @@ updatePresentation presentation model =
                 )model.rows)}
 
 
-updateMode: Field.Mode -> Model -> Model
+updateMode: Mode -> Model -> Model
 updateMode mode model =
      {model | mode = mode
             , rows = 
@@ -477,16 +481,16 @@ update msg model =
 
                 Row.EditRecordInForm ->
                     (updateFocusedRow rowId model
-                        |> updateRow (Row.ChangePresentation Field.Form) rowId
+                        |> updateRow (Row.ChangePresentation Form) rowId
                         |> updateRow rowMsg rowId
-                        |> updatePresentation Field.Form
-                        |> updateMode Field.Edit
+                        |> updatePresentation Form
+                        |> updateMode Edit
                     ,Cmd.none)
 
 
                 Row.EditRecordInPlace ->
                     (updateFocusedRow rowId model
-                        |> updateRow (Row.ChangeMode Field.Edit) rowId
+                        |> updateRow (Row.ChangeMode Edit) rowId
                         |> updateRow rowMsg rowId
                     ,Cmd.none)
 
@@ -546,8 +550,8 @@ update msg model =
             )
         
         FormRecordClose ->
-            (updatePresentation Field.Table model
-                |> updateMode Field.Read, Cmd.none)
+            (updatePresentation Table model
+                |> updateMode Read, Cmd.none)
 
         BrowserDimensionChanged browserDimension ->
             ({ model | browserDimension = browserDimension}

@@ -9712,6 +9712,38 @@ var _mgold$elm_date_format$Date_Format$format = F2(
 	});
 var _mgold$elm_date_format$Date_Format$formatISO8601 = _mgold$elm_date_format$Date_Format$format('%Y-%m-%dT%H:%M:%SZ');
 
+var _user$project$Presentation$Read = {ctor: 'Read'};
+var _user$project$Presentation$Edit = {ctor: 'Edit'};
+var _user$project$Presentation$Grid = {ctor: 'Grid'};
+var _user$project$Presentation$Form = {ctor: 'Form'};
+var _user$project$Presentation$Table = {ctor: 'Table'};
+var _user$project$Presentation$Expanded = {ctor: 'Expanded'};
+var _user$project$Presentation$Medium = {ctor: 'Medium'};
+var _user$project$Presentation$Compact = {ctor: 'Compact'};
+
+var _user$project$Utils$toList = function (arg) {
+	var _p0 = arg;
+	if (_p0.ctor === 'Just') {
+		return _elm_lang$core$Native_List.fromArray(
+			[_p0._0]);
+	} else {
+		return _elm_lang$core$Native_List.fromArray(
+			[]);
+	}
+};
+var _user$project$Utils$simpleDate = function (str) {
+	var time = _jweir$elm_iso8601$ISO8601$toTime(
+		A2(
+			_elm_lang$core$Result$withDefault,
+			_jweir$elm_iso8601$ISO8601$fromTime(0),
+			_jweir$elm_iso8601$ISO8601$fromString(str)));
+	var date = _elm_lang$core$Date$fromTime(
+		_elm_lang$core$Basics$toFloat(time));
+	var iso = _mgold$elm_date_format$Date_Format$formatISO8601(date);
+	var simple = A2(_mgold$elm_date_format$Date_Format$format, '%Y-%m-%d %H:%M', date);
+	return simple;
+};
+
 var _user$project$Field$significantFields = function (fields) {
 	return A2(
 		_elm_lang$core$List$filter,
@@ -9831,16 +9863,6 @@ var _user$project$Field$getKeyField = function (fieldList) {
 			},
 			fieldList));
 };
-var _user$project$Field$toList = function (arg) {
-	var _p6 = arg;
-	if (_p6.ctor === 'Just') {
-		return _elm_lang$core$Native_List.fromArray(
-			[_p6._0]);
-	} else {
-		return _elm_lang$core$Native_List.fromArray(
-			[]);
-	}
-};
 var _user$project$Field$rightAlign = _elm_lang$html$Html_Attributes$style(
 	_elm_lang$core$Native_List.fromArray(
 		[
@@ -9852,8 +9874,8 @@ var _user$project$Field$leftAlign = _elm_lang$html$Html_Attributes$style(
 			{ctor: '_Tuple2', _0: 'text-align', _1: 'left'}
 		]));
 var _user$project$Field$alignment = function (field) {
-	var _p7 = field.dataType;
-	switch (_p7) {
+	var _p6 = field.dataType;
+	switch (_p6) {
 		case 'Bool':
 			return _user$project$Field$leftAlign;
 		case 'String':
@@ -9875,17 +9897,17 @@ var _user$project$Field$alignment = function (field) {
 	}
 };
 var _user$project$Field$fieldReadList = function (model) {
-	var _p8 = model.value;
-	_v8_6:
+	var _p7 = model.value;
+	_v7_6:
 	do {
-		if (_p8.ctor === 'Just') {
-			switch (_p8._0.ctor) {
+		if (_p7.ctor === 'Just') {
+			switch (_p7._0.ctor) {
 				case 'String':
 					return _elm_lang$html$Html$text(
-						A2(_elm_lang$core$Basics_ops['++'], ' ', _p8._0._0));
+						A2(_elm_lang$core$Basics_ops['++'], ' ', _p7._0._0));
 				case 'Bool':
-					var _p9 = _p8._0._0;
-					if (_p9 === true) {
+					var _p8 = _p7._0._0;
+					if (_p8 === true) {
 						return _elm_lang$html$Html$text(' true');
 					} else {
 						return _elm_lang$html$Html$text(' false');
@@ -9895,30 +9917,30 @@ var _user$project$Field$fieldReadList = function (model) {
 						A2(
 							_elm_lang$core$Basics_ops['++'],
 							' ',
-							_elm_lang$core$Basics$toString(_p8._0._0)));
+							_elm_lang$core$Basics$toString(_p7._0._0)));
 				case 'I64':
 					return _elm_lang$html$Html$text(
 						A2(
 							_elm_lang$core$Basics_ops['++'],
 							' ',
-							_elm_lang$core$Basics$toString(_p8._0._0)));
+							_elm_lang$core$Basics$toString(_p7._0._0)));
 				case 'F64':
 					return _elm_lang$html$Html$text(
 						A2(
 							_elm_lang$core$Basics_ops['++'],
 							' ',
-							_elm_lang$core$Basics$toString(_p8._0._0)));
+							_elm_lang$core$Basics$toString(_p7._0._0)));
 				case 'Date':
 					return _elm_lang$html$Html$text(
 						A2(
 							_elm_lang$core$Basics_ops['++'],
 							' ',
-							_elm_lang$core$Basics$toString(_p8._0._0)));
+							_elm_lang$core$Basics$toString(_p7._0._0)));
 				default:
-					break _v8_6;
+					break _v7_6;
 			}
 		} else {
-			break _v8_6;
+			break _v7_6;
 		}
 	} while(false);
 	return _elm_lang$html$Html$text(
@@ -9928,44 +9950,44 @@ var _user$project$Field$fieldReadList = function (model) {
 			_elm_lang$core$Basics$toString(model.value)));
 };
 var _user$project$Field$stringValue = function (value) {
-	var _p10 = value;
-	switch (_p10.ctor) {
+	var _p9 = value;
+	switch (_p9.ctor) {
 		case 'Bool':
-			return _elm_lang$core$Basics$toString(_p10._0);
+			return _elm_lang$core$Basics$toString(_p9._0);
 		case 'I8':
-			return _elm_lang$core$Basics$toString(_p10._0);
+			return _elm_lang$core$Basics$toString(_p9._0);
 		case 'I16':
-			return _elm_lang$core$Basics$toString(_p10._0);
+			return _elm_lang$core$Basics$toString(_p9._0);
 		case 'I32':
-			return _elm_lang$core$Basics$toString(_p10._0);
+			return _elm_lang$core$Basics$toString(_p9._0);
 		case 'I64':
-			return _elm_lang$core$Basics$toString(_p10._0);
+			return _elm_lang$core$Basics$toString(_p9._0);
 		case 'U8':
-			return _elm_lang$core$Basics$toString(_p10._0);
+			return _elm_lang$core$Basics$toString(_p9._0);
 		case 'U16':
-			return _elm_lang$core$Basics$toString(_p10._0);
+			return _elm_lang$core$Basics$toString(_p9._0);
 		case 'U32':
-			return _elm_lang$core$Basics$toString(_p10._0);
+			return _elm_lang$core$Basics$toString(_p9._0);
 		case 'U64':
-			return _elm_lang$core$Basics$toString(_p10._0);
+			return _elm_lang$core$Basics$toString(_p9._0);
 		case 'F32':
-			return _elm_lang$core$Basics$toString(_p10._0);
+			return _elm_lang$core$Basics$toString(_p9._0);
 		case 'F64':
-			return _elm_lang$core$Basics$toString(_p10._0);
+			return _elm_lang$core$Basics$toString(_p9._0);
 		case 'String':
-			return _p10._0;
+			return _p9._0;
 		case 'Date':
-			return _p10._0;
+			return _p9._0;
 		case 'DateTime':
-			return _p10._0;
+			return _p9._0;
 		default:
-			return _p10._0;
+			return _p9._0;
 	}
 };
 var _user$project$Field$stringifyMaybeValue = function (value) {
-	var _p11 = value;
-	if (_p11.ctor === 'Just') {
-		return _user$project$Field$stringValue(_p11._0);
+	var _p10 = value;
+	if (_p10.ctor === 'Just') {
+		return _user$project$Field$stringValue(_p10._0);
 	} else {
 		return '';
 	}
@@ -9976,9 +9998,9 @@ var _user$project$Field$stringifyValue = function (model) {
 var _user$project$Field$createSelectedReadRow = F4(
 	function (fields, keyField, dao, model) {
 		var width = function () {
-			var _p12 = model.field.displayLength;
-			if (_p12.ctor === 'Just') {
-				return _p12._0 * 10;
+			var _p11 = model.field.displayLength;
+			if (_p11.ctor === 'Just') {
+				return _p11._0 * 10;
 			} else {
 				return 200;
 			}
@@ -10003,16 +10025,16 @@ var _user$project$Field$createSelectedReadRow = F4(
 			A2(
 				_elm_lang$core$List$map,
 				function (f) {
-					var _p13 = keyField;
-					if (_p13.ctor === 'Just') {
-						var pkValue = A2(_user$project$Field$getValue, _p13._0, dao);
+					var _p12 = keyField;
+					if (_p12.ctor === 'Just') {
+						var pkValue = A2(_user$project$Field$getValue, _p12._0, dao);
 						if (_elm_lang$core$Native_Utils.eq(pkValue, model.value)) {
-							var _p14 = A2(_user$project$Field$getValue, f, dao);
-							if (_p14.ctor === 'Just') {
+							var _p13 = A2(_user$project$Field$getValue, f, dao);
+							if (_p13.ctor === 'Just') {
 								return _elm_lang$html$Html$text(
 									A2(
 										_elm_lang$core$Basics_ops['++'],
-										_user$project$Field$stringValue(_p14._0),
+										_user$project$Field$stringValue(_p13._0),
 										' '));
 							} else {
 								return _elm_lang$html$Html$text('');
@@ -10024,10 +10046,10 @@ var _user$project$Field$createSelectedReadRow = F4(
 						return _elm_lang$core$Native_Utils.crashCase(
 							'Field',
 							{
-								start: {line: 778, column: 13},
-								end: {line: 790, column: 46}
+								start: {line: 741, column: 13},
+								end: {line: 753, column: 46}
 							},
-							_p13)('no keyfield');
+							_p12)('no keyfield');
 					}
 				},
 				fields));
@@ -10036,10 +10058,10 @@ var _user$project$Field$createSelectedLookupValue = F3(
 	function (fieldList, daoList, model) {
 		var keyField = _user$project$Field$getKeyField(fieldList);
 		var fields = function () {
-			var _p16 = _user$project$Field$mostSignificantField(fieldList);
-			if (_p16.ctor === 'Just') {
+			var _p15 = _user$project$Field$mostSignificantField(fieldList);
+			if (_p15.ctor === 'Just') {
 				return _elm_lang$core$Native_List.fromArray(
-					[_p16._0]);
+					[_p15._0]);
 			} else {
 				return _user$project$Field$allNonAuxilliaryNonKeyFields(fieldList);
 			}
@@ -10061,12 +10083,12 @@ var _user$project$Field$createListboxRow = F4(
 		var rowView = A2(
 			_elm_lang$core$List$map,
 			function (f) {
-				var _p17 = A2(_user$project$Field$getValue, f, dao);
-				if (_p17.ctor === 'Just') {
+				var _p16 = A2(_user$project$Field$getValue, f, dao);
+				if (_p16.ctor === 'Just') {
 					return _elm_lang$html$Html$text(
 						A2(
 							_elm_lang$core$Basics_ops['++'],
-							_user$project$Field$stringValue(_p17._0),
+							_user$project$Field$stringValue(_p16._0),
 							' '));
 				} else {
 					return _elm_lang$html$Html$text('');
@@ -10074,9 +10096,9 @@ var _user$project$Field$createListboxRow = F4(
 			},
 			fields);
 		var attributes = function () {
-			var _p18 = keyField;
-			if (_p18.ctor === 'Just') {
-				var pkValue = A2(_user$project$Field$getValue, _p18._0, dao);
+			var _p17 = keyField;
+			if (_p17.ctor === 'Just') {
+				var pkValue = A2(_user$project$Field$getValue, _p17._0, dao);
 				return _elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Attributes$value(
@@ -10100,9 +10122,9 @@ var _user$project$Field$createListboxRow = F4(
 var _user$project$Field$createCompactListField = F3(
 	function (fieldList, daoList, model) {
 		var width = function () {
-			var _p19 = model.field.displayLength;
-			if (_p19.ctor === 'Just') {
-				return 10 * _p19._0;
+			var _p18 = model.field.displayLength;
+			if (_p18.ctor === 'Just') {
+				return 10 * _p18._0;
 			} else {
 				return 200;
 			}
@@ -10115,10 +10137,10 @@ var _user$project$Field$createCompactListField = F3(
 				[]));
 		var keyField = _user$project$Field$getKeyField(fieldList);
 		var fields = function () {
-			var _p20 = _user$project$Field$mostSignificantField(fieldList);
-			if (_p20.ctor === 'Just') {
+			var _p19 = _user$project$Field$mostSignificantField(fieldList);
+			if (_p19.ctor === 'Just') {
 				return _elm_lang$core$Native_List.fromArray(
-					[_p20._0]);
+					[_p19._0]);
 			} else {
 				return _user$project$Field$allNonAuxilliaryNonKeyFields(fieldList);
 			}
@@ -10152,13 +10174,13 @@ var _user$project$Field$createCompactListField = F3(
 	});
 var _user$project$Field$lookupView = function (model) {
 	var table = model.field.referenceValue;
-	var _p21 = table;
-	if (_p21.ctor === 'Just') {
-		var _p23 = _p21._0;
-		var fieldList = A2(_user$project$Field$tableLookupTabFields, model.lookupTabs, _p23);
-		var daoList = A2(_user$project$Field$tableLookupData, model.lookupData, _p23);
-		var _p22 = model.mode;
-		if (_p22.ctor === 'Edit') {
+	var _p20 = table;
+	if (_p20.ctor === 'Just') {
+		var _p22 = _p20._0;
+		var fieldList = A2(_user$project$Field$tableLookupTabFields, model.lookupTabs, _p22);
+		var daoList = A2(_user$project$Field$tableLookupData, model.lookupData, _p22);
+		var _p21 = model.mode;
+		if (_p21.ctor === 'Edit') {
 			return A2(
 				_elm_lang$html$Html$div,
 				_elm_lang$core$Native_List.fromArray(
@@ -10188,34 +10210,22 @@ var _user$project$Field$lookupView = function (model) {
 				]));
 	}
 };
-var _user$project$Field$simpleDate = function (str) {
-	var time = _jweir$elm_iso8601$ISO8601$toTime(
-		A2(
-			_elm_lang$core$Result$withDefault,
-			_jweir$elm_iso8601$ISO8601$fromTime(0),
-			_jweir$elm_iso8601$ISO8601$fromString(str)));
-	var date = _elm_lang$core$Date$fromTime(
-		_elm_lang$core$Basics$toFloat(time));
-	var iso = _mgold$elm_date_format$Date_Format$formatISO8601(date);
-	var simple = A2(_mgold$elm_date_format$Date_Format$format, '%Y-%m-%d %H:%M', date);
-	return simple;
-};
 var _user$project$Field$fieldReadNoLookup = function (model) {
-	var _p24 = model.value;
-	if (_p24.ctor === 'Just') {
-		var _p25 = _p24._0;
-		switch (_p25.ctor) {
+	var _p23 = model.value;
+	if (_p23.ctor === 'Just') {
+		var _p24 = _p23._0;
+		switch (_p24.ctor) {
 			case 'String':
-				var _p27 = _p25._0;
+				var _p26 = _p24._0;
 				var emptyStyle = _elm_lang$html$Html_Attributes$style(
 					_elm_lang$core$Native_List.fromArray(
 						[
 							{ctor: '_Tuple2', _0: 'border-bottom', _1: '1px solid #eee'}
 						]));
 				var width = function () {
-					var _p26 = model.field.displayLength;
-					if (_p26.ctor === 'Just') {
-						return 10 * _p26._0;
+					var _p25 = model.field.displayLength;
+					if (_p25.ctor === 'Just') {
+						return 10 * _p25._0;
 					} else {
 						return 200;
 					}
@@ -10235,7 +10245,7 @@ var _user$project$Field$fieldReadNoLookup = function (model) {
 							{ctor: '_Tuple2', _0: 'overflow', _1: 'hidden'},
 							{ctor: '_Tuple2', _0: 'text-overflow', _1: 'ellipsis'}
 						]));
-				return _elm_lang$core$String$isEmpty(_p27) ? A2(
+				return _elm_lang$core$String$isEmpty(_p26) ? A2(
 					_elm_lang$html$Html$div,
 					_elm_lang$core$Native_List.fromArray(
 						[fieldStyle, emptyStyle]),
@@ -10246,11 +10256,11 @@ var _user$project$Field$fieldReadNoLookup = function (model) {
 						[fieldStyle]),
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_elm_lang$html$Html$text(_p27)
+							_elm_lang$html$Html$text(_p26)
 						]));
 			case 'Bool':
-				var _p28 = _p25._0;
-				if (_p28 === true) {
+				var _p27 = _p24._0;
+				if (_p27 === true) {
 					return A2(
 						_elm_lang$html$Html$span,
 						_elm_lang$core$Native_List.fromArray(
@@ -10281,18 +10291,18 @@ var _user$project$Field$fieldReadNoLookup = function (model) {
 				}
 			case 'I32':
 				return _elm_lang$html$Html$text(
-					_elm_lang$core$Basics$toString(_p25._0));
+					_elm_lang$core$Basics$toString(_p24._0));
 			case 'I64':
 				return _elm_lang$html$Html$text(
-					_elm_lang$core$Basics$toString(_p25._0));
+					_elm_lang$core$Basics$toString(_p24._0));
 			case 'F64':
 				return _elm_lang$html$Html$text(
-					_elm_lang$core$Basics$toString(_p25._0));
+					_elm_lang$core$Basics$toString(_p24._0));
 			case 'Date':
-				return _elm_lang$html$Html$text(_p25._0);
+				return _elm_lang$html$Html$text(_p24._0);
 			case 'DateTime':
 				return _elm_lang$html$Html$text(
-					_user$project$Field$simpleDate(_p25._0));
+					_user$project$Utils$simpleDate(_p24._0));
 			default:
 				return _elm_lang$html$Html$text(
 					_elm_lang$core$Basics$toString(_elm_lang$html$Html_Attributes$value));
@@ -10302,19 +10312,19 @@ var _user$project$Field$fieldReadNoLookup = function (model) {
 	}
 };
 var _user$project$Field$fieldRead = function (model) {
-	var _p29 = model.field.reference;
-	if (_p29 === 'Table') {
+	var _p28 = model.field.reference;
+	if (_p28 === 'Table') {
 		return _user$project$Field$lookupView(model);
 	} else {
 		return _user$project$Field$fieldReadNoLookup(model);
 	}
 };
 var _user$project$Field$isEmptyValue = function (value) {
-	var _p30 = value;
-	if (_p30.ctor === 'Just') {
-		var _p31 = _p30._0;
-		if (_p31.ctor === 'String') {
-			return _elm_lang$core$String$isEmpty(_p31._0);
+	var _p29 = value;
+	if (_p29.ctor === 'Just') {
+		var _p30 = _p29._0;
+		if (_p30.ctor === 'String') {
+			return _elm_lang$core$String$isEmpty(_p30._0);
 		} else {
 			return false;
 		}
@@ -10326,12 +10336,12 @@ var _user$project$Field$isMandatoryOk = function (model) {
 	return (_user$project$Field$isEmptyValue(model.value) && model.field.isMandatory) ? false : true;
 };
 var _user$project$Field$tooltipText = function (field) {
-	var _p32 = field.description;
-	if (_p32.ctor === 'Just') {
-		var _p33 = _p32._0;
+	var _p31 = field.description;
+	if (_p31.ctor === 'Just') {
+		var _p32 = _p31._0;
 		return _elm_lang$core$Basics$not(
 			_elm_lang$core$String$isEmpty(
-				_elm_lang$core$String$trim(_p33))) ? A2(
+				_elm_lang$core$String$trim(_p32))) ? A2(
 			_elm_lang$html$Html$span,
 			_elm_lang$core$Native_List.fromArray(
 				[
@@ -10339,7 +10349,7 @@ var _user$project$Field$tooltipText = function (field) {
 				]),
 			_elm_lang$core$Native_List.fromArray(
 				[
-					_elm_lang$html$Html$text(_p33)
+					_elm_lang$html$Html$text(_p32)
 				])) : _elm_lang$html$Html$text('');
 	} else {
 		return _elm_lang$html$Html$text('');
@@ -10357,6 +10367,20 @@ var _user$project$Field$newLookupTab = F2(
 	function (table, fields) {
 		return {table: table, fields: fields};
 	});
+var _user$project$Field$create = function (field) {
+	return {
+		field: field,
+		value: _elm_lang$core$Maybe$Nothing,
+		mode: _user$project$Presentation$Read,
+		presentation: _user$project$Presentation$Table,
+		focused: false,
+		density: _user$project$Presentation$Expanded,
+		lookupTabs: _elm_lang$core$Native_List.fromArray(
+			[]),
+		lookupData: _elm_lang$core$Native_List.fromArray(
+			[])
+	};
+};
 var _user$project$Field$Model = F8(
 	function (a, b, c, d, e, f, g, h) {
 		return {field: a, value: b, mode: c, presentation: d, focused: e, density: f, lookupTabs: g, lookupData: h};
@@ -10488,28 +10512,6 @@ var _user$project$Field$fieldDecoder = A2(
 			A2(_elm_lang$core$Json_Decode_ops[':='], 'display_length', _elm_lang$core$Json_Decode$int))),
 	_elm_lang$core$Json_Decode$maybe(
 		A2(_elm_lang$core$Json_Decode_ops[':='], 'default_value', _elm_lang$core$Json_Decode$string)));
-var _user$project$Field$Read = {ctor: 'Read'};
-var _user$project$Field$Edit = {ctor: 'Edit'};
-var _user$project$Field$Grid = {ctor: 'Grid'};
-var _user$project$Field$Form = {ctor: 'Form'};
-var _user$project$Field$Table = {ctor: 'Table'};
-var _user$project$Field$Expanded = {ctor: 'Expanded'};
-var _user$project$Field$create = function (field) {
-	return {
-		field: field,
-		value: _elm_lang$core$Maybe$Nothing,
-		mode: _user$project$Field$Read,
-		presentation: _user$project$Field$Table,
-		focused: false,
-		density: _user$project$Field$Expanded,
-		lookupTabs: _elm_lang$core$Native_List.fromArray(
-			[]),
-		lookupData: _elm_lang$core$Native_List.fromArray(
-			[])
-	};
-};
-var _user$project$Field$Medium = {ctor: 'Medium'};
-var _user$project$Field$Compact = {ctor: 'Compact'};
 var _user$project$Field$Uuid = function (a) {
 	return {ctor: 'Uuid', _0: a};
 };
@@ -10557,8 +10559,8 @@ var _user$project$Field$Bool = function (a) {
 	return {ctor: 'Bool', _0: a};
 };
 var _user$project$Field$valueVariant = function (tag) {
-	var _p34 = tag;
-	switch (_p34) {
+	var _p33 = tag;
+	switch (_p33) {
 		case 'Bool':
 			return A2(
 				_elm_lang$core$Json_Decode$map,
@@ -10733,8 +10735,8 @@ var _user$project$Field$valueDecoder = A2(
 var _user$project$Field$daoDecoder = _elm_lang$core$Json_Decode$dict(_user$project$Field$valueDecoder);
 var _user$project$Field$update = F2(
 	function (msg, model) {
-		var _p35 = msg;
-		switch (_p35.ctor) {
+		var _p34 = msg;
+		switch (_p34.ctor) {
 			case 'ChangeValue':
 				return {
 					ctor: '_Tuple2',
@@ -10742,7 +10744,7 @@ var _user$project$Field$update = F2(
 						model,
 						{
 							value: _elm_lang$core$Maybe$Just(
-								_user$project$Field$String(_p35._0))
+								_user$project$Field$String(_p34._0))
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
@@ -10753,19 +10755,19 @@ var _user$project$Field$update = F2(
 						model,
 						{
 							value: _elm_lang$core$Maybe$Just(
-								_user$project$Field$Bool(_p35._0))
+								_user$project$Field$Bool(_p34._0))
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'ChangeMode':
-				var _p37 = _p35._0;
-				var _p36 = _p37;
-				if (_p36.ctor === 'Edit') {
+				var _p36 = _p34._0;
+				var _p35 = _p36;
+				if (_p35.ctor === 'Edit') {
 					return {
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
-							{mode: _p37, focused: true}),
+							{mode: _p36, focused: true}),
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
 				} else {
@@ -10773,7 +10775,7 @@ var _user$project$Field$update = F2(
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
-							{mode: _p37}),
+							{mode: _p36}),
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
 				}
@@ -10782,7 +10784,7 @@ var _user$project$Field$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{presentation: _p35._0}),
+						{presentation: _p34._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'ChangeDensity':
@@ -10790,7 +10792,7 @@ var _user$project$Field$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{density: _p35._0}),
+						{density: _p34._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'SetValue':
@@ -10799,7 +10801,7 @@ var _user$project$Field$update = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							value: _elm_lang$core$Maybe$Just(_p35._0)
+							value: _elm_lang$core$Maybe$Just(_p34._0)
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
@@ -10808,7 +10810,7 @@ var _user$project$Field$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{lookupTabs: _p35._0}),
+						{lookupTabs: _p34._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'LookupDataReceived':
@@ -10816,7 +10818,7 @@ var _user$project$Field$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{lookupData: _p35._0}),
+						{lookupData: _p34._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			default:
@@ -10859,9 +10861,9 @@ var _user$project$Field$fieldEntry = function (model) {
 				{ctor: '_Tuple2', _0: 'border', _1: '1px solid red'}
 			]));
 	var width = function () {
-		var _p38 = model.field.displayLength;
-		if (_p38.ctor === 'Just') {
-			return _p38._0 * 10;
+		var _p37 = model.field.displayLength;
+		if (_p37.ctor === 'Just') {
+			return _p37._0 * 10;
 		} else {
 			return 200;
 		}
@@ -10883,21 +10885,21 @@ var _user$project$Field$fieldEntry = function (model) {
 				{ctor: '_Tuple2', _0: 'background-color', _1: '#fff'}
 			]));
 	var focusedField = function () {
-		var _p39 = model.focused;
-		if (_p39 === true) {
+		var _p38 = model.focused;
+		if (_p38 === true) {
 			return _elm_lang$html$Html_Attributes$class('focused_field');
 		} else {
 			return _elm_lang$html$Html_Attributes$class('');
 		}
 	}();
-	var _p40 = model.field.reference;
-	if (_p40 === 'Table') {
+	var _p39 = model.field.reference;
+	if (_p39 === 'Table') {
 		return _user$project$Field$lookupView(model);
 	} else {
-		var _p41 = model.field.dataType;
-		switch (_p41) {
+		var _p40 = model.field.dataType;
+		switch (_p40) {
 			case 'String':
-				if ((_elm_lang$core$Native_Utils.cmp(width, 200) > 0) && _elm_lang$core$Native_Utils.eq(model.presentation, _user$project$Field$Form)) {
+				if ((_elm_lang$core$Native_Utils.cmp(width, 200) > 0) && _elm_lang$core$Native_Utils.eq(model.presentation, _user$project$Presentation$Form)) {
 					var r = (width / 300) | 0;
 					return A2(
 						_elm_lang$html$Html$textarea,
@@ -10934,9 +10936,9 @@ var _user$project$Field$fieldEntry = function (model) {
 				}
 			case 'Bool':
 				var boolValue = function () {
-					var _p42 = model.value;
-					if ((_p42.ctor === 'Just') && (_p42._0.ctor === 'Bool')) {
-						return _p42._0._0;
+					var _p41 = model.value;
+					if ((_p41.ctor === 'Just') && (_p41._0.ctor === 'Bool')) {
+						return _p41._0._0;
 					} else {
 						return false;
 					}
@@ -11002,7 +11004,7 @@ var _user$project$Field$fieldEntry = function (model) {
 						[
 							_elm_lang$html$Html_Attributes$type$('date'),
 							_elm_lang$html$Html_Attributes$value(
-							_user$project$Field$simpleDate(
+							_user$project$Utils$simpleDate(
 								_user$project$Field$stringifyMaybeValue(model.value))),
 							textWidth,
 							_user$project$Field$rightAlign,
@@ -11017,7 +11019,7 @@ var _user$project$Field$fieldEntry = function (model) {
 						[
 							_elm_lang$html$Html_Attributes$type$('datetime'),
 							_elm_lang$html$Html_Attributes$value(
-							_user$project$Field$simpleDate(
+							_user$project$Utils$simpleDate(
 								_user$project$Field$stringifyMaybeValue(model.value))),
 							textWidth,
 							_user$project$Field$rightAlign,
@@ -11056,9 +11058,9 @@ var _user$project$Field$fieldEntry = function (model) {
 };
 var _user$project$Field$view = function (model) {
 	var width = function () {
-		var _p43 = model.field.displayLength;
-		if (_p43.ctor === 'Just') {
-			return _p43._0 * 10;
+		var _p42 = model.field.displayLength;
+		if (_p42.ctor === 'Just') {
+			return _p42._0 * 10;
 		} else {
 			return 200;
 		}
@@ -11099,8 +11101,8 @@ var _user$project$Field$view = function (model) {
 						_user$project$Field$tooltipText(model.field)
 					]))
 			]));
-	var _p44 = model.presentation;
-	switch (_p44.ctor) {
+	var _p43 = model.presentation;
+	switch (_p43.ctor) {
 		case 'Form':
 			var labelBool = A2(
 				_elm_lang$html$Html$label,
@@ -11123,10 +11125,10 @@ var _user$project$Field$view = function (model) {
 						{ctor: '_Tuple2', _0: 'width', _1: '350px'},
 						{ctor: '_Tuple2', _0: 'padding', _1: '2px'}
 					]));
-			var _p45 = model.mode;
-			if (_p45.ctor === 'Edit') {
-				var _p46 = model.field.dataType;
-				if (_p46 === 'Bool') {
+			var _p44 = model.mode;
+			if (_p44.ctor === 'Edit') {
+				var _p45 = model.field.dataType;
+				if (_p45 === 'Bool') {
 					return A2(
 						_elm_lang$html$Html$div,
 						_elm_lang$core$Native_List.fromArray(
@@ -11155,8 +11157,8 @@ var _user$project$Field$view = function (model) {
 							[labelHtml, editField]));
 				}
 			} else {
-				var _p47 = model.field.dataType;
-				if (_p47 === 'Bool') {
+				var _p46 = model.field.dataType;
+				if (_p46 === 'Bool') {
 					return A2(
 						_elm_lang$html$Html$div,
 						_elm_lang$core$Native_List.fromArray(
@@ -11214,8 +11216,8 @@ var _user$project$Field$view = function (model) {
 					[
 						{ctor: '_Tuple2', _0: 'border', _1: '1px solid red'}
 					]));
-			var _p48 = model.mode;
-			if (_p48.ctor === 'Edit') {
+			var _p47 = model.mode;
+			if (_p47.ctor === 'Edit') {
 				return A2(
 					_elm_lang$html$Html$td,
 					_elm_lang$core$Native_List.fromArray(
@@ -11258,12 +11260,12 @@ var _user$project$Field$view = function (model) {
 						]));
 			}
 		default:
-			var _p49 = model.mode;
-			if (_p49.ctor === 'Edit') {
+			var _p48 = model.mode;
+			if (_p48.ctor === 'Edit') {
 				return editField;
 			} else {
-				var _p50 = model.density;
-				switch (_p50.ctor) {
+				var _p49 = model.density;
+				switch (_p49.ctor) {
 					case 'Compact':
 						return model.field.isSignificant ? A2(
 							_elm_lang$html$Html$div,
@@ -11303,9 +11305,9 @@ var _user$project$Field$view = function (model) {
 						}
 					default:
 						var width = function () {
-							var _p51 = model.field.displayLength;
-							if (_p51.ctor === 'Just') {
-								return _p51._0 * 10;
+							var _p50 = model.field.displayLength;
+							if (_p50.ctor === 'Just') {
+								return _p50._0 * 10;
 							} else {
 								return 200;
 							}
@@ -11668,9 +11670,9 @@ var _user$project$Row$empty = {
 	rowId: 0,
 	fieldModels: _elm_lang$core$Native_List.fromArray(
 		[]),
-	mode: _user$project$Field$Read,
-	presentation: _user$project$Field$Table,
-	density: _user$project$Field$Expanded,
+	mode: _user$project$Presentation$Read,
+	presentation: _user$project$Presentation$Table,
+	density: _user$project$Presentation$Expanded,
 	isFocused: false,
 	isSelected: false
 };
@@ -12230,17 +12232,17 @@ var _user$project$Tab$update = F2(
 							ctor: '_Tuple2',
 							_0: A2(
 								_user$project$Tab$updateMode,
-								_user$project$Field$Edit,
+								_user$project$Presentation$Edit,
 								A2(
 									_user$project$Tab$updatePresentation,
-									_user$project$Field$Form,
+									_user$project$Presentation$Form,
 									A3(
 										_user$project$Tab$updateRow,
 										_p14,
 										_p13,
 										A3(
 											_user$project$Tab$updateRow,
-											_user$project$Row$ChangePresentation(_user$project$Field$Form),
+											_user$project$Row$ChangePresentation(_user$project$Presentation$Form),
 											_p13,
 											A2(_user$project$Tab$updateFocusedRow, _p13, model))))),
 							_1: _elm_lang$core$Platform_Cmd$none
@@ -12254,7 +12256,7 @@ var _user$project$Tab$update = F2(
 								_p13,
 								A3(
 									_user$project$Tab$updateRow,
-									_user$project$Row$ChangeMode(_user$project$Field$Edit),
+									_user$project$Row$ChangeMode(_user$project$Presentation$Edit),
 									_p13,
 									A2(_user$project$Tab$updateFocusedRow, _p13, model))),
 							_1: _elm_lang$core$Platform_Cmd$none
@@ -12374,8 +12376,8 @@ var _user$project$Tab$update = F2(
 					ctor: '_Tuple2',
 					_0: A2(
 						_user$project$Tab$updateMode,
-						_user$project$Field$Read,
-						A2(_user$project$Tab$updatePresentation, _user$project$Field$Table, model)),
+						_user$project$Presentation$Read,
+						A2(_user$project$Tab$updatePresentation, _user$project$Presentation$Table, model)),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			default:
@@ -12623,12 +12625,12 @@ var _user$project$Tab$emptyRowForm = function (model) {
 	var row = A2(_user$project$Row$create, model.tab.fields, model.uid);
 	var _p23 = A2(
 		_user$project$Row$update,
-		_user$project$Row$ChangePresentation(_user$project$Field$Form),
+		_user$project$Row$ChangePresentation(_user$project$Presentation$Form),
 		row);
 	var updatedRow = _p23._0;
 	var _p24 = A2(
 		_user$project$Row$update,
-		_user$project$Row$ChangeMode(_user$project$Field$Edit),
+		_user$project$Row$ChangeMode(_user$project$Presentation$Edit),
 		updatedRow);
 	var updatedRow1 = _p24._0;
 	return updatedRow1;
@@ -12640,9 +12642,9 @@ var _user$project$Tab$create = F3(
 			tab: tab,
 			rows: _elm_lang$core$Native_List.fromArray(
 				[]),
-			mode: _user$project$Field$Read,
-			presentation: tab.isExtension ? _user$project$Field$Form : _user$project$Field$Table,
-			density: _user$project$Field$Expanded,
+			mode: _user$project$Presentation$Read,
+			presentation: tab.isExtension ? _user$project$Presentation$Form : _user$project$Presentation$Table,
+			density: _user$project$Presentation$Expanded,
 			isOpen: true,
 			page: 0,
 			pageSize: 15,
@@ -13196,7 +13198,7 @@ var _user$project$Tab$tabControls = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Events$onClick(
-						_user$project$Tab$ChangeMode(_user$project$Field$Edit))
+						_user$project$Tab$ChangeMode(_user$project$Presentation$Edit))
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -13207,7 +13209,7 @@ var _user$project$Tab$tabControls = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Events$onClick(
-						_user$project$Tab$ChangeMode(_user$project$Field$Read))
+						_user$project$Tab$ChangeMode(_user$project$Presentation$Read))
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -13218,7 +13220,7 @@ var _user$project$Tab$tabControls = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Events$onClick(
-						_user$project$Tab$ChangePresentation(_user$project$Field$Table))
+						_user$project$Tab$ChangePresentation(_user$project$Presentation$Table))
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -13229,7 +13231,7 @@ var _user$project$Tab$tabControls = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Events$onClick(
-						_user$project$Tab$ChangePresentation(_user$project$Field$Form))
+						_user$project$Tab$ChangePresentation(_user$project$Presentation$Form))
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -13240,7 +13242,7 @@ var _user$project$Tab$tabControls = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Events$onClick(
-						_user$project$Tab$ChangePresentation(_user$project$Field$Grid))
+						_user$project$Tab$ChangePresentation(_user$project$Presentation$Grid))
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -13251,7 +13253,7 @@ var _user$project$Tab$tabControls = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Events$onClick(
-						_user$project$Tab$ChangeDensity(_user$project$Field$Compact))
+						_user$project$Tab$ChangeDensity(_user$project$Presentation$Compact))
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -13262,7 +13264,7 @@ var _user$project$Tab$tabControls = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Events$onClick(
-						_user$project$Tab$ChangeDensity(_user$project$Field$Medium))
+						_user$project$Tab$ChangeDensity(_user$project$Presentation$Medium))
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -13273,7 +13275,7 @@ var _user$project$Tab$tabControls = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Events$onClick(
-						_user$project$Tab$ChangeDensity(_user$project$Field$Expanded))
+						_user$project$Tab$ChangeDensity(_user$project$Presentation$Expanded))
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -13298,7 +13300,7 @@ var _user$project$DataWindow$updateWindow = F2(
 						var extModel = A3(_user$project$Tab$create, ext, model.nextTabId, 100);
 						return _elm_lang$core$Native_Utils.update(
 							extModel,
-							{presentation: _user$project$Field$Form});
+							{presentation: _user$project$Presentation$Form});
 					},
 					window.extTabs),
 				hasManyMergedTabs: A2(
@@ -13538,7 +13540,7 @@ var _user$project$DataWindow$update = F2(
 											_p16,
 											_elm_lang$core$Native_Utils.update(
 												model,
-												{presentation: _user$project$Field$Form}))),
+												{presentation: _user$project$Presentation$Form}))),
 									_1: _elm_lang$core$Platform_Cmd$none
 								};
 							default:
@@ -13557,7 +13559,7 @@ var _user$project$DataWindow$update = F2(
 									_p16,
 									_elm_lang$core$Native_Utils.update(
 										model,
-										{presentation: _user$project$Field$Table}))),
+										{presentation: _user$project$Presentation$Table}))),
 							_1: _elm_lang$core$Platform_Cmd$none
 						};
 					default:
@@ -13682,8 +13684,8 @@ var _user$project$DataWindow$defaultMainTableHeight = 600;
 var _user$project$DataWindow$create = F2(
 	function (window, windowId) {
 		return {
-			presentation: _user$project$Field$Table,
-			mode: _user$project$Field$Read,
+			presentation: _user$project$Presentation$Table,
+			mode: _user$project$Presentation$Read,
 			isActive: true,
 			extTabs: _elm_lang$core$Native_List.fromArray(
 				[]),
@@ -14053,7 +14055,7 @@ var _user$project$DataWindow$toolbar = function (model) {
 					[
 						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
 						_elm_lang$html$Html_Events$onClick(
-						_user$project$DataWindow$ChangeMode(_user$project$Field$Read))
+						_user$project$DataWindow$ChangeMode(_user$project$Presentation$Read))
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -14083,7 +14085,7 @@ var _user$project$DataWindow$toolbar = function (model) {
 					[
 						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
 						_elm_lang$html$Html_Events$onClick(
-						_user$project$DataWindow$ChangeMode(_user$project$Field$Read))
+						_user$project$DataWindow$ChangeMode(_user$project$Presentation$Read))
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -14113,7 +14115,7 @@ var _user$project$DataWindow$toolbar = function (model) {
 					[
 						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
 						_elm_lang$html$Html_Events$onClick(
-						_user$project$DataWindow$ChangePresentation(_user$project$Field$Table))
+						_user$project$DataWindow$ChangePresentation(_user$project$Presentation$Table))
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -14810,7 +14812,7 @@ var _user$project$Main$onClickNoPropagate = function (msg) {
 };
 var _user$project$Main$appModel = {
 	title: 'Curtain UI',
-	dbUrl: 'postgres://postgres:p0stgr3s@localhost:5432/bazaar_v8',
+	dbUrl: 'postgres://postgres:p0stgr3s@localhost:5432/guardian',
 	apiServer: 'http://localhost:8181',
 	windowList: _user$project$WindowList$empty,
 	openedWindows: _elm_lang$core$Native_List.fromArray(

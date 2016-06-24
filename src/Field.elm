@@ -6,14 +6,17 @@ import Html exposing (..)
 import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Date
 import Task
 import String
-import ISO8601
-import Date.Format
 import Random
 import Dict
 import Json.Decode as Decode exposing (Decoder)
+import Presentation exposing 
+    (Presentation (Table, Form, Grid)
+    ,Mode (Edit,Read)
+    ,Density(Compact, Medium, Expanded))
+
+import Utils
 
 type alias Model = 
     { field: Field
@@ -60,32 +63,6 @@ type alias LookupData =
     , daoList: List Dao
     }
 
-type Mode = Edit | Read 
-
-{- | Presentation - describes how the data 
-    is presented to the client
-    Table  - displays in tabular format for large data set 
-            but with enough screen space
-    Form - displays 1 row of data consuming the work area
-           ideal for editing 1 row of record
-    Grid - displays the large dataset in a grid like manner
-            like icons for apps. This is useful when the screen area is very tight
-         - Each record is crumpled into a uniform small box
--}
-type Presentation = Table | Form | Grid 
-
-
-{- | Density - a layman's term to describe how compact the data set to be presented
-    Compact - for mobile devices, and when displayed as dropdown choices (1-2) fields only are displayed
-            - (ie. country list: code, flag image as background)
-            - (person list: (first_name + last_name mangled as 1)
-    Medium  - for Tablets -  insignificant fields are not displayed
-            - (ie. country list: code, name, flag)
-            - (person list: (first_name, last_name, photo)
-    Expanded - for PC - all fields are displayed
-
--}
-type Density = Compact | Medium | Expanded
 
 type alias Field =
     { name: String
@@ -215,6 +192,7 @@ valueVariant tag =
             Decode.map String 
                 (("fields" := Decode.list Decode.string)
                     `Decode.andThen` firstValue "")
+
 firstValue: a -> List a -> Decode.Decoder a
 firstValue default args =
     Decode.succeed (Maybe.withDefault default (List.head args))
@@ -514,7 +492,7 @@ fieldEntry model =
 
                 "Date" ->
                     input [ type' "date"
-                          , value (simpleDate <| stringifyMaybeValue model.value) 
+                          , value (Utils.simpleDate <| stringifyMaybeValue model.value) 
                           , textWidth
                           , rightAlign
                           , onInput ChangeValue
@@ -522,7 +500,7 @@ fieldEntry model =
 
                 "DateTime" ->
                     input [ type' "datetime"
-                          , value (simpleDate <| stringifyMaybeValue model.value)
+                          , value (Utils.simpleDate <| stringifyMaybeValue model.value)
                           , textWidth
                           , rightAlign
                           , onInput ChangeValue
@@ -545,16 +523,6 @@ fieldEntry model =
             
 
 
-simpleDate: String -> String
-simpleDate str =
-    let time = ISO8601.fromString str 
-                |> Result.withDefault (ISO8601.fromTime 0)
-                |> ISO8601.toTime
-        date = Date.fromTime (toFloat time)
-        iso = Date.Format.formatISO8601 date
-        simple = Date.Format.format "%Y-%m-%d %H:%M" date
-    in
-    simple
 
 fieldRead: Model -> Html Msg
 fieldRead model = 
@@ -600,7 +568,7 @@ fieldReadNoLookup model =
                 Date d ->
                     text d
                 DateTime d ->
-                    text (simpleDate d)
+                    text (Utils.simpleDate d)
 
                 _  ->
                     text (toString value)
@@ -699,11 +667,6 @@ lookupView model =
             div [] [text "no matching table"]
 
 
-toList: Maybe a -> List a
-toList arg =
-    case arg of
-        Just a -> [a]
-        Nothing -> []
 
 getKeyField: List Field -> Maybe Field
 getKeyField fieldList =

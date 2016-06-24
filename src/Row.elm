@@ -9,13 +9,17 @@ import Dict
 import Json.Decode as Decode exposing ((:=))
 import Task
 import String
+import Presentation exposing 
+    (Presentation (Table, Form, Grid)
+    ,Mode (Edit,Read)
+    ,Density(Compact, Medium, Expanded))
 
 type alias Model =
     { rowId: Int
     , fieldModels: List Field.Model
-    , mode: Field.Mode
-    , presentation: Field.Presentation
-    , density: Field.Density
+    , mode: Mode
+    , presentation: Presentation
+    , density: Density
     , isFocused: Bool --determine by dao state
     , isSelected: Bool
     }
@@ -23,9 +27,9 @@ type alias Model =
 empty =
     { rowId = 0 
     , fieldModels = []
-    , mode = Field.Read
-    , presentation = Field.Table
-    , density = Field.Expanded
+    , mode = Read
+    , presentation = Table
+    , density = Expanded
     , isFocused = False
     , isSelected = False
     }
@@ -40,10 +44,10 @@ create listFields rowId =
      }
 
 type Msg
-    = ChangeMode Field.Mode
-    | ChangePresentation Field.Presentation
+    = ChangeMode Mode
+    | ChangePresentation Presentation
     | UpdateField String Field.Msg
-    | ChangeDensity Field.Density
+    | ChangeDensity Density
     | DaoStateReceived DaoState
     | Selection Bool
     | ToggleSelect
@@ -96,19 +100,19 @@ view model =
                         |> excludeKeyfieldModels
     in
     case model.presentation of
-        Field.Form ->
+        Form ->
             div []
                 [Html.form [style [("display", "flex"), ("flex-wrap", "wrap"), ("align-items", "flex-end")]] 
                   (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| fieldModels)
                 ]
-        Field.Table ->
+        Table ->
             tr [onDoubleClick EditRecordInForm
                ,onClick FocusRecord
                ,classList [("focused", model.isFocused), ("selected", model.isSelected)]
                ,style [("height", "35px")]
                ] 
                (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| fieldModels)
-        Field.Grid ->
+        Grid ->
             div []
                 [ div [style [("border", "1px solid green"), ("width", "200px")]] 
                   (List.map (\f -> 
@@ -161,7 +165,7 @@ tabularRecordControls model =
 
         modificationControls = 
             case model.mode of
-                Field.Read ->
+                Read ->
                     td [class "record_control"] 
                         [div [class "icon icon-menu tooltip", onClick EditRecordInForm] 
                                [span [class "tooltiptext"] [text "Click to open record in a form"]
@@ -170,7 +174,7 @@ tabularRecordControls model =
                                [span [class "tooltiptext"] [text "Click to edit record in the grid"]
                                ]
                         ]
-                Field.Edit ->
+                Edit ->
                     td [class "record_control"] 
                                 [div [class "icon icon-block tooltip"] 
                                     [span [class "tooltiptext"][text "Click to cancel your changes"]
@@ -322,19 +326,19 @@ toList arg =
 filterFieldModelsWithDensity: Model -> List Field.Model
 filterFieldModelsWithDensity model =
     case model.density of
-        Field.Compact -> --only the most significant
+        Compact -> --only the most significant
             toList (Field.mostSignificantModel model.fieldModels)
-        Field.Medium -> -- all significant fields
+        Medium -> -- all significant fields
             Field.significantModels model.fieldModels
-        Field.Expanded -> model.fieldModels -- all fields
+        Expanded -> model.fieldModels -- all fields
  
 
-filterFieldsWithDensity: List Field.Field -> Field.Density -> List Field.Field
+filterFieldsWithDensity: List Field.Field -> Density -> List Field.Field
 filterFieldsWithDensity fields density =
     case density of
-        Field.Compact -> toList (Field.mostSignificantField fields)
-        Field.Medium -> Field.significantFields fields
-        Field.Expanded -> fields
+        Compact -> toList (Field.mostSignificantField fields)
+        Medium -> Field.significantFields fields
+        Expanded -> fields
             
             
             

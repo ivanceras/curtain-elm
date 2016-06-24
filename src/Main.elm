@@ -58,10 +58,10 @@ type Msg
 
 appModel =
     { title = "Curtain UI"
-    , dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/bazaar_v8"
+    --, dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/bazaar_v8"
     --, dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/gda"
     --, dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/adempiere"
-    --, dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/guardian"
+    , dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/guardian"
     , apiServer = "http://localhost:8181"
     , windowList = WindowList.empty 
     , openedWindows = []

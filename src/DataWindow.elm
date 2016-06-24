@@ -10,13 +10,17 @@ import Tab
 import Field
 import Row
 import Update.Extra.Infix exposing ((:>))
+import Presentation exposing 
+    (Presentation (Table, Form, Grid)
+    ,Mode (Edit,Read)
+    ,Density(Compact, Medium, Expanded))
 
 
 type alias Model =
     { name: String
     , mainTab: Tab.Model
-    , presentation: Field.Presentation
-    , mode: Field.Mode
+    , presentation: Presentation
+    , mode: Mode
     , isActive: Bool
     , extTabs: List Tab.Model
     , hasManyMergedTabs: List Tab.Model
@@ -33,8 +37,8 @@ defaultDetailTableHeight = 200
 
 create: Window -> Int -> Model
 create window windowId =
-    { presentation = Field.Table
-    , mode = Field.Read
+    { presentation = Table
+    , mode = Read
     , isActive = True
     , extTabs = []
     , hasManyMergedTabs = []
@@ -48,8 +52,8 @@ create window windowId =
     }
 
 type Msg
-    = ChangeMode Field.Mode
-    | ChangePresentation Field.Presentation
+    = ChangeMode Mode
+    | ChangePresentation Presentation
     | UpdateTab Tab.Msg
     | WindowDetailReceived Window
     | WindowDataReceived (List TableDao)
@@ -111,7 +115,7 @@ view model =
                     [toolbar model
                     ,case model.presentation of
                         
-                        Field.Form ->
+                        Form ->
                             div[class "master-container"
                                ] 
                                 [formRecordControls model
@@ -129,9 +133,9 @@ view model =
                                       ]
                                       [hasManyTabView model]
                                 ]
-                        Field.Table ->
+                        Table ->
                             App.map UpdateTab(Tab.view model.mainTab) -- when in form view, main tab and extension table are in 1 scrollable container
-                        Field.Grid ->
+                        Grid ->
                             App.map UpdateTab(Tab.view model.mainTab) 
                     ]
                               
@@ -188,7 +192,7 @@ toolbar: Model ->Html Msg
 toolbar model= 
     let deleteTooltip = 
         case model.presentation of
-            Field.Table ->
+            Table ->
                 "Click to delete record(s) from the database"
             _ ->
                 "Click to delete this record from the database"
@@ -199,17 +203,17 @@ toolbar model=
                 ,text "New record" 
                 ,span [class "tooltiptext"] [text "Create a new record in a form"]
                 ]
-            ,button [class "btn btn-large btn-default tooltip", onClick (ChangeMode Field.Read)]
+            ,button [class "btn btn-large btn-default tooltip", onClick (ChangeMode Read)]
                 [span [class "icon icon-list-add icon-text"] []
                 ,text "Insert row"
                 ,span [class "tooltiptext"] [text "Insert row"]
                 ]
-            ,button [class "btn btn-large btn-default tooltip", onClick (ChangeMode Field.Read)]
+            ,button [class "btn btn-large btn-default tooltip", onClick (ChangeMode Read)]
                 [span [class "icon icon-floppy icon-text"] []
                 ,text "Save"
                 ,span [class "tooltiptext"] [text "Save record into the database"]
                 ]
-            ,button [class "btn btn-large btn-default tooltip", onClick (ChangePresentation Field.Table)]
+            ,button [class "btn btn-large btn-default tooltip", onClick (ChangePresentation Table)]
                 [span [class "icon icon-block icon-text"] []
                 ,text "Cancel" 
                 ,span [class "tooltiptext"] [text "Cancel changes and return to the last saved state"]
@@ -281,7 +285,7 @@ update msg model =
                             , Cmd.none)
 
                         Row.EditRecordInForm ->
-                            ({model | presentation = Field.Form}
+                            ({model | presentation = Form}
                                |> updateMainTab tab_msg
                                |> updateAllocatedHeight
                             , Cmd.none)
@@ -289,7 +293,7 @@ update msg model =
                         _ ->
                             (updateMainTab tab_msg model, Cmd.none)
                 Tab.FormRecordClose ->
-                    ({model | presentation = Field.Table}
+                    ({model | presentation = Table}
                         |> updateMainTab tab_msg
                         |> updateAllocatedHeight
                     , Cmd.none)
@@ -389,9 +393,9 @@ calcMainTableHeight model =
 updateAllocatedHeight: Model -> Model
 updateAllocatedHeight model =
     case model.presentation of
-        Field.Form ->
+        Form ->
             updateMainTab (Tab.ChangeAllocatedHeight defaultFormRecordHeight) model
-        Field.Table ->
+        Table ->
             updateMainTab (Tab.ChangeAllocatedHeight (calcMainTableHeight model)) model
 
         _ -> model
@@ -474,7 +478,7 @@ updateWindow window model =
         List.map(
             \ext ->
                let extModel = Tab.create ext model.nextTabId 100
-               in {extModel | presentation = Field.Form}
+               in {extModel | presentation = Form}
         ) window.extTabs
     ,hasManyMergedTabs =
         List.map(
