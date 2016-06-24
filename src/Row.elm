@@ -51,6 +51,8 @@ type Msg
     | LooseFocusRecord
     | LookupTabsReceived (List Field.LookupTab)
     | LookupDataReceived (List Field.LookupData)
+    | EditRecordInForm
+    | EditRecordInPlace
 
 type alias DaoState =
     { dao: Field.Dao
@@ -100,7 +102,7 @@ view model =
                   (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| fieldModels)
                 ]
         Field.Table ->
-            tr [onDoubleClick (ChangePresentation Field.Form)
+            tr [onDoubleClick EditRecordInForm
                ,onClick FocusRecord
                ,classList [("focused", model.isFocused), ("selected", model.isSelected)]
                ,style [("height", "35px")]
@@ -108,34 +110,12 @@ view model =
                (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| fieldModels)
         Field.Grid ->
             div []
-                [ rowControls model
-                , div [style [("border", "1px solid green"), ("width", "200px")]] 
+                [ div [style [("border", "1px solid green"), ("width", "200px")]] 
                   (List.map (\f -> 
                         App.map (UpdateField f.field.name) <| Field.view f 
                      ) <| fieldModels
                   )
                ]
-
-        Field.List ->
-            option []
-              (List.map (\f -> 
-                    App.map (UpdateField f.field.name) <| Field.view f 
-               ) <| fieldModels
-              )
-
-rowControls model =  
-    div [] 
-      [text (toString model.rowId)
-      ,button [onClick (ChangeMode Field.Edit)] [text "Edit"]
-      ,button [onClick (ChangeMode Field.Read)] [text "Read"]
-      ,button [onClick (ChangePresentation Field.Table)] [text "Table"]
-      ,button [onClick (ChangePresentation Field.Form)] [text "Form"]
-      ,button [onClick (ChangePresentation Field.Grid)] [text "Grid"]
-      ,button [onClick (ChangePresentation Field.List)] [text "List"]
-      ,button [onClick (ChangeDensity Field.Compact)] [text "Compact"]
-      ,button [onClick (ChangeDensity Field.Medium)] [text "Medium"]
-      ,button [onClick (ChangeDensity Field.Expanded)] [text "Expanded"]
-       ]
 
 
 onClickNoPropagate: msg -> Attribute msg
@@ -152,7 +132,7 @@ onDoubleClickNoPropagate msg =
 
 rowShadowRecordControls: Model -> Html Msg
 rowShadowRecordControls model =
-    tr [onDoubleClick (ChangePresentation Field.Form)
+    tr [onDoubleClick EditRecordInForm
        ,onClick FocusRecord
        ,classList [("focused", model.isFocused), ("selected", model.isSelected)]
        ,style [("height", "35px")]
@@ -183,19 +163,19 @@ tabularRecordControls model =
             case model.mode of
                 Field.Read ->
                     td [class "record_control"] 
-                        [div [class "icon icon-menu tooltip", onClick (ChangePresentation Field.Form)] 
+                        [div [class "icon icon-menu tooltip", onClick EditRecordInForm] 
                                [span [class "tooltiptext"] [text "Click to open record in a form"]
                                ]
-                        ,div [class "icon icon-pencil tooltip", onClick (ChangeMode Field.Edit)]
+                        ,div [class "icon icon-pencil tooltip", onClick EditRecordInPlace]
                                [span [class "tooltiptext"] [text "Click to edit record in the grid"]
                                ]
                         ]
                 Field.Edit ->
                     td [class "record_control"] 
-                                [div [class "icon icon-block tooltip", onClick (ChangeMode Field.Read)] 
+                                [div [class "icon icon-block tooltip"] 
                                     [span [class "tooltiptext"][text "Click to cancel your changes"]
                                     ]
-                                ,div [class "icon icon-floppy tooltip", onClick (ChangeMode Field.Read)]
+                                ,div [class "icon icon-floppy tooltip"]
                                     [span [class "tooltiptext"][text "Click to save your changes to the database"]
                                     ]
                                 ]
@@ -290,6 +270,10 @@ update msg model =
             (updateLookupFields (Field.LookupDataReceived lookupDataList) model
             , Cmd.none
             ) 
+        EditRecordInForm -> -- tapped in Tab
+            (model, Cmd.none)
+        EditRecordInPlace -> -- tapped in Tab
+            (model, Cmd.none)
 
 --add lookup fields only to those which needed it
 updateLookupFields: Field.Msg -> Model -> Model

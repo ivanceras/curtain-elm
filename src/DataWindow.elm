@@ -21,10 +21,10 @@ type alias Model =
     , extTabs: List Tab.Model
     , hasManyMergedTabs: List Tab.Model
     , windowId: Int
-    , includeRelatedData: Bool -- whether to include /exclude related data
     , nextTabId: Int
     , mainTableHeight: Int
     , detailTableHeight: Int
+    , browserDimension: Tab.BrowserDimension
     }
 
 defaultMainTableHeight = 600
@@ -41,10 +41,10 @@ create window windowId =
     , name = window.name
     , windowId = windowId
     , mainTab = Tab.create window.mainTab 0 defaultMainTableHeight
-    , includeRelatedData = True
     , nextTabId = 0
     , mainTableHeight = defaultMainTableHeight
     , detailTableHeight = defaultDetailTableHeight
+    , browserDimension = Tab.defaultBrowserDimension
     }
 
 type Msg
@@ -59,6 +59,8 @@ type Msg
     | DeactivateWindow
     | OpenHasManyTab String
     | FocusedRecordDataReceived Int (List TableDao)
+    | BrowserDimensionChanged Tab.BrowserDimension
+    | ToggleExtTab Tab.Model
     
 type alias Window =
     { name: String
@@ -94,59 +96,147 @@ windowDecoder =
         ("has_many_tabs" := Decode.list Tab.tabDecoder)
         ("has_many_indirect_tabs" := Decode.list Tab.tabDecoder)
 
+calcTotalHeight model =
+    let windowHeightDeductions = 100 --window tabs and footer
+    in
+    model.browserDimension.height - windowHeightDeductions
 
 view: Model -> Html Msg
 view model = 
     if model.isActive then
-        div [style [("height", "800px")
+        div [class "data_window_view"
+            ,style [("height", (toString (calcTotalHeight model))++"px")
                    ]
             ] 
-               [div [class "master-container"
+                    [toolbar model
+                    ,case model.presentation of
+                        
+                        Field.Form ->
+                            div[class "master-container"
+                               ] 
+                                [formRecordControls model
+                                ,div [style [("height", "400px")
+                                        ,("overflow", "auto")
+                                        ,("display", "block")
+                                        ,("padding", "20px")
+                                        ]
+                                    ]
+                                    [App.map UpdateTab(Tab.view model.mainTab) -- when in form view, main tab and extension table are in 1 scrollable container
+                                    ,extensionTabView model
+                                    ]
+                                 ,div [class "related-container"
+                                      ,style [("margin-top", "30px")]
+                                      ]
+                                      [hasManyTabView model]
+                                ]
+                        Field.Table ->
+                            App.map UpdateTab(Tab.view model.mainTab) -- when in form view, main tab and extension table are in 1 scrollable container
+                        Field.Grid ->
+                            App.map UpdateTab(Tab.view model.mainTab) 
                     ]
-                    [App.map UpdateTab(Tab.view model.mainTab)
-                    ,(if model.includeRelatedData then
-                        extensionTabView model
-                     else
-                        text ""
-                     )
-                    ]
-                 ,div [class "related-container"
-                      ]
-                     (if model.includeRelatedData then
-                        [hasManyTabView model]
-                     else
-                        []
-                     )
-               ]
                               
     else text ""
 
 extensionTabView: Model -> Html Msg
 extensionTabView model =
-    if model.presentation == Field.Form then
-        div [] 
-            <| 
-            [text "extension tab here.."
-            ]
-             ++
-             List.map (
-                    \ext ->
-                        div [] 
-                            [text ext.tab.name
-                            ,App.map UpdateTab (Tab.view ext)
-                            ]
-                ) model.extTabs
+    div [] 
+        <| 
+         List.map (
+                \ext ->
+                    div [] 
+                        [div [style [("margin-top", "30px")
+                                    ,("border-bottom", "2px solid #ccc")
+                                    ,("font-size", "1em")
+                                    ,("font-weight", "bold")
+                                    ,("width", "90%")
+                                    ]
+                             ,onClick (ToggleExtTab ext)
+                             ] 
+                             [span [classList [("icon icon-text", True)
+                                                ,("icon-right-dir", not ext.isOpen)
+                                                ,("icon-down-dir", ext.isOpen)
+                                                ]
+                                   ] []
+                             ,text (" "++ext.tab.name)]
+                        ,App.map UpdateTab (Tab.view ext)
+                        ]
+            ) model.extTabs
             
-    else
-        div [] [text "extenstion not displayed"]
 
+
+formRecordControls model =
+    div [class "btn-group"]
+        [button [class "btn btn-large btn-default"]
+            [span [class "icon icon-text icon-left-open"] []
+            ,text "Prev"
+            ]
+        ,button [class "btn btn-large btn-default"]
+            [span [class "icon icon-text icon-right-open"] []
+            ,text "Next"
+            ]
+        ,button [class "btn btn-large btn-default"]
+            [span [class "icon icon-text icon-resize-full"] []
+            ,text "Maximize"
+            ]
+        ,button [class "btn btn-large btn-default", onClick (UpdateTab Tab.FormRecordClose)]
+            [span [class "icon icon-text icon-cancel"] []
+            ,text "Close"
+            ]
+        ]
+
+toolbar: Model ->Html Msg
+toolbar model= 
+    let deleteTooltip = 
+        case model.presentation of
+            Field.Table ->
+                "Click to delete record(s) from the database"
+            _ ->
+                "Click to delete this record from the database"
+    in    
+        div [class "btn-group"]
+            [button [class "btn btn-large btn-default tooltip"]
+                [span [class "icon icon-plus icon-text tab-action"] []
+                ,text "New record" 
+                ,span [class "tooltiptext"] [text "Create a new record in a form"]
+                ]
+            ,button [class "btn btn-large btn-default tooltip", onClick (ChangeMode Field.Read)]
+                [span [class "icon icon-list-add icon-text"] []
+                ,text "Insert row"
+                ,span [class "tooltiptext"] [text "Insert row"]
+                ]
+            ,button [class "btn btn-large btn-default tooltip", onClick (ChangeMode Field.Read)]
+                [span [class "icon icon-floppy icon-text"] []
+                ,text "Save"
+                ,span [class "tooltiptext"] [text "Save record into the database"]
+                ]
+            ,button [class "btn btn-large btn-default tooltip", onClick (ChangePresentation Field.Table)]
+                [span [class "icon icon-block icon-text"] []
+                ,text "Cancel" 
+                ,span [class "tooltiptext"] [text "Cancel changes and return to the last saved state"]
+                ]
+            ,button [class "btn btn-large btn-default tooltip"]
+                [span [class "icon icon-trash icon-text"] []
+                ,text "Delete"
+                ,span [class "tooltiptext"] [text deleteTooltip] 
+                ]
+            ,button [class "btn btn-large btn-default tooltip"]
+                [span [class "icon icon-arrows-ccw icon-text"] []
+                ,text "Refresh"
+                ,span [class "tooltiptext"] [text "Refresh the current data from the database"]
+                ]
+            ,button [class "btn btn-large btn-default tooltip"]
+                [span [class "icon icon-export icon-text"] []
+                ,text "Export"
+                ,span [class "tooltiptext"] [text "Export to spreadsheet"]
+                ]
+            ]
+ 
 
 hasManyTabView: Model -> Html Msg
 hasManyTabView model =
-    if model.presentation == Field.Form then
+    if List.length model.hasManyMergedTabs > 0 then
         div [] 
-            [text "has many tabs here.."
-            ,div [class "tab-group has-many"] 
+            [div [class "tab-group has-many"] 
                  <| List.map (
                     \tab ->
                         div [classList [("tab-item has-many",True)
@@ -165,16 +255,12 @@ hasManyTabView model =
                  ) model.hasManyMergedTabs
             ]
     else
-        div [] [text "has many tabs not displayed"]
+        text ""
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-    let _ = Debug.log "window_msg" msg
-    in
     case msg of 
         UpdateTab tab_msg ->
-            let _ = Debug.log "tab_msg" tab_msg
-            in
             case tab_msg of
                 Tab.ChangePresentation presentation ->
                     ({model | presentation = presentation}
@@ -194,9 +280,14 @@ update msg model =
                                |> updateAllocatedHeight
                             , Cmd.none)
 
+                        Row.EditRecordInForm ->
+                            ({model | presentation = Field.Form}
+                               |> updateMainTab tab_msg
+                               |> updateAllocatedHeight
+                            , Cmd.none)
+
                         _ ->
                             (updateMainTab tab_msg model, Cmd.none)
-                
                 Tab.FormRecordClose ->
                     ({model | presentation = Field.Table}
                         |> updateMainTab tab_msg
@@ -222,8 +313,6 @@ update msg model =
             ({model | mode = mode}, Cmd.none)
 
         ChangePresentation presentation ->
-            let _ = Debug.log "Window presentation chaned to" presentation
-            in
             ({model | presentation = presentation}
                 |> updateAllocatedHeight
             , Cmd.none
@@ -250,16 +339,60 @@ update msg model =
                 |> openFirstMergedTab
            , Cmd.none)
 
+        BrowserDimensionChanged browserDimension ->
+            ( {model | browserDimension = browserDimension}
+                |> updateAllTabs (Tab.BrowserDimensionChanged browserDimension)
+                |> updateAllocatedHeight
+            , Cmd.none)
+        
+        ToggleExtTab tab ->
+            (updateExtTab Tab.Toggle tab model
+            ,Cmd.none
+            )
+
+
+updateAllTabs: Tab.Msg -> Model -> Model
+updateAllTabs tabMsg model =
+    updateMainTab tabMsg model
+        |> updateAllExtTab tabMsg
+        |> updateAllMergedTab tabMsg
+
+updateAllExtTab: Tab.Msg -> Model -> Model
+updateAllExtTab tabMsg model =
+    {model | extTabs = 
+        List.map (
+            \tab ->
+                let (updatedTab, _) = Tab.update tabMsg tab
+                in updatedTab
+        ) model.extTabs
+    }
+
+updateExtTab: Tab.Msg -> Tab.Model -> Model -> Model
+updateExtTab tabMsg tabModel model=
+    {model | extTabs = 
+        List.map (
+            \tab ->
+                if tab == tabModel then
+                    let (updatedTab, _) = Tab.update tabMsg tab
+                    in updatedTab
+                else
+                    tab
+        ) model.extTabs
+    }
+
+calcMainTableHeight model = 
+    let heightDeductions = 400
+    in
+    model.browserDimension.height - heightDeductions
+
 
 updateAllocatedHeight: Model -> Model
 updateAllocatedHeight model =
     case model.presentation of
         Field.Form ->
-            let _ = Debug.log "Form change height" "hello"
-            in
             updateMainTab (Tab.ChangeAllocatedHeight defaultFormRecordHeight) model
         Field.Table ->
-            updateMainTab (Tab.ChangeAllocatedHeight defaultMainTableHeight) model
+            updateMainTab (Tab.ChangeAllocatedHeight (calcMainTableHeight model)) model
 
         _ -> model
 
@@ -340,7 +473,8 @@ updateWindow window model =
     ,extTabs = 
         List.map(
             \ext ->
-               Tab.create ext model.nextTabId model.mainTableHeight
+               let extModel = Tab.create ext model.nextTabId 100
+               in {extModel | presentation = Field.Form}
         ) window.extTabs
     ,hasManyMergedTabs =
         List.map(

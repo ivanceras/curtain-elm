@@ -17,7 +17,7 @@ import Json.Decode as Decode exposing (Decoder)
 
 type alias Model = 
     { field: Field
-    , value: Value
+    , value: Maybe Value
     , mode: Mode
     , presentation: Presentation
     , focused: Bool
@@ -28,7 +28,7 @@ type alias Model =
 
 create field =
     { field = field
-    , value = defaultValue
+    , value = Nothing
     , mode = Read
     , presentation = Table
     , focused = False
@@ -71,10 +71,8 @@ type Mode = Edit | Read
     Grid - displays the large dataset in a grid like manner
             like icons for apps. This is useful when the screen area is very tight
          - Each record is crumpled into a uniform small box
-    List - displays the record in a listbox
-         - used when refered by some other fields as a dropdown
 -}
-type Presentation = Table | Form | Grid | List
+type Presentation = Table | Form | Grid 
 
 
 {- | Density - a layman's term to describe how compact the data set to be presented
@@ -104,6 +102,7 @@ type alias Field =
     , includeInSearch: Bool
     , isMandatory: Bool
     , seqNo: Int
+    , isAuxilliary: Bool
     , isSameLine: Bool
     , isDisplayed: Bool
     , isReadonly: Bool
@@ -124,11 +123,12 @@ type Value
     | U16 Int
     | U32 Int
     | U64 Int
-    | F32 Int
+    | F32 Float
     | F64 Float
     | String String
     | Date String
     | DateTime String
+    | Uuid String
 
 defaultValue = String "" 
 
@@ -146,6 +146,7 @@ type Msg
 
 
 
+
 valueDecoder: Decode.Decoder Value
 valueDecoder = 
     ("variant" := Decode.string) `Decode.andThen` valueVariant
@@ -153,22 +154,54 @@ valueDecoder =
 valueVariant: String -> Decode.Decoder Value
 valueVariant tag =
     case tag of 
-        "String" ->
-            Decode.map String 
-                (("fields" := Decode.list Decode.string)
-                    `Decode.andThen` firstValue "")
         "Bool" ->
             Decode.map Bool
                 (("fields" := Decode.list Decode.bool)
                     `Decode.andThen` firstValue False)
-        "F64" ->
-            Decode.map F64 
-                (("fields" := Decode.list Decode.float)
+        "I8" ->
+            Decode.map I8 
+                (("fields" := Decode.list Decode.int)
+                    `Decode.andThen` firstValue 0)
+        "I16" ->
+            Decode.map I16 
+                (("fields" := Decode.list Decode.int)
                     `Decode.andThen` firstValue 0)
         "I32" ->
             Decode.map I32 
                 (("fields" := Decode.list Decode.int)
                     `Decode.andThen` firstValue 0)
+        "I64" ->
+            Decode.map I64 
+                (("fields" := Decode.list Decode.int)
+                    `Decode.andThen` firstValue 0)
+        "U8" ->
+            Decode.map U8 
+                (("fields" := Decode.list Decode.int)
+                    `Decode.andThen` firstValue 0)
+        "U16" ->
+            Decode.map U16 
+                (("fields" := Decode.list Decode.int)
+                    `Decode.andThen` firstValue 0)
+        "U32" ->
+            Decode.map U32 
+                (("fields" := Decode.list Decode.int)
+                    `Decode.andThen` firstValue 0)
+        "U64" ->
+            Decode.map U64 
+                (("fields" := Decode.list Decode.int)
+                    `Decode.andThen` firstValue 0)
+        "F32" ->
+            Decode.map F32 
+                (("fields" := Decode.list Decode.float)
+                    `Decode.andThen` firstValue 0)
+        "F64" ->
+            Decode.map F64 
+                (("fields" := Decode.list Decode.float)
+                    `Decode.andThen` firstValue 0)
+        "String" ->
+            Decode.map String 
+                (("fields" := Decode.list Decode.string)
+                    `Decode.andThen` firstValue "")
         "Date" ->
             Decode.map Date 
                 (("fields" := Decode.list Decode.string)
@@ -177,15 +210,14 @@ valueVariant tag =
             Decode.map DateTime 
                 (("fields" := Decode.list Decode.string)
                     `Decode.andThen` firstValue "")
+
         _ ->
             Decode.map String 
                 (("fields" := Decode.list Decode.string)
                     `Decode.andThen` firstValue "")
-
 firstValue: a -> List a -> Decode.Decoder a
 firstValue default args =
     Decode.succeed (Maybe.withDefault default (List.head args))
-
 
 
 fieldDecoder: Decode.Decoder Field
@@ -205,6 +237,7 @@ fieldDecoder =
          |: ("include_in_search" := Decode.bool)
          |: ("is_mandatory" := Decode.bool)
          |: ("seq_no" := Decode.int)
+         |: ("is_auxilliary" := Decode.bool)
          |: ("is_same_line" := Decode.bool)
          |: ("is_displayed" := Decode.bool)
          |: ("is_readonly" := Decode.bool)
@@ -247,6 +280,9 @@ view model =
                     ,tooltipText model.field
                     ]
                 ]
+         width = case model.field.displayLength of
+            Just len -> len * 10
+            Nothing -> 200
 
      in
      case model.presentation of
@@ -300,7 +336,7 @@ view model =
                     Read ->
                         td [(alignment model.field), containerStyle
                            ]
-                           [(fieldRead model)
+                           [div [style [("width", (toString width)++"px")]] [(fieldRead model)]
                            ]
             Grid ->
                 case model.mode of
@@ -333,21 +369,22 @@ view model =
                                         style [("font-weight", "bold")]
                                     else
                                         style []
+
+                                    width = case model.field.displayLength of
+                                        Just len -> len * 10
+                                        Nothing -> 200
                                 in
-                                div [ textStyle] 
+                                div [ textStyle, style [("width", (toString width)++"px")]] 
                                     [(fieldRead model)
                                     ]
-            List -> 
-                -- edit or read  the same
-                fieldReadList model
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         ChangeValue v ->
-        ({model | value = String v }, Cmd.none)
+        ({model | value = Just (String v) }, Cmd.none)
         ChangeValueBool b ->
-        ({model | value = Bool b}, Cmd.none)
+        ({model | value = Just (Bool b)}, Cmd.none)
         ChangeMode mode ->
             case mode of
                 Edit ->
@@ -360,7 +397,7 @@ update msg model =
         ChangeDensity density ->
             ({model | density = density}, Cmd.none)
         SetValue value ->
-            ({model | value = value}, Cmd.none)
+            ({model | value = Just value}, Cmd.none)
 
         LookupTabsReceived lookupTabList ->
             ({model | lookupTabs = lookupTabList}
@@ -373,19 +410,20 @@ update msg model =
             )
 
         ListScrolled target ->
-            let _ = Debug.log "list scrolled" target
-            in
             ( model, Cmd.none)
 
 
 
-isEmptyValue: Value -> Bool
+isEmptyValue: Maybe Value -> Bool
 isEmptyValue value =
     case value of
-        String v ->
-            String.isEmpty v
-        _ ->
-            False 
+        Just fieldValue ->
+            case fieldValue of
+                String v ->
+                    String.isEmpty v
+                _ ->
+                    False 
+        Nothing -> True
 
 isMandatoryOk model =
      if isEmptyValue model.value && model.field.isMandatory then
@@ -398,13 +436,16 @@ fieldEntry model =
     let focusedField = case model.focused of
             True -> class "focused_field"
             False -> class ""
-        
+        width = case model.field.displayLength of
+            Just len -> len * 10
+            Nothing -> 200
+
         fieldCheck = if isMandatoryOk model then
             style []
         else
             style [("border", "1px solid red")]
         textWidth = 
-              style [("width", "300px")
+              style [("width", (toString width)++"px")
                     ,("border","0")
                     ,("outline", "0")
                     ,("border-bottom", "1px solid #ccc")
@@ -416,68 +457,93 @@ fieldEntry model =
         "Table" -> 
             lookupView model
         _ ->
+            case model.field.dataType of
+                "String" ->
+                    if width > 200 && model.presentation == Form then
+                        let r = width // 300
+                        in
+                        textarea [style [("width", "300px")], rows r] [text (stringifyMaybeValue model.value)]
+                    else 
+                        input [ type' "text"
+                              , fieldCheck
+                              , leftAlign
+                              , textWidth
+                              , focusedField
+                              , value (stringifyMaybeValue model.value)
+                              , onInput ChangeValue
+                              ] []
 
-            case model.value of
-                String s ->
-                    input [ type' "text"
-                          , fieldCheck
-                          , leftAlign
-                          , textWidth
-                          , focusedField
-                          , value s
-                          , onInput ChangeValue
-                          ] []
-                Bool b -> 
+
+                "Bool" ->
+                    let boolValue = 
+                        case model.value of
+                            Just (Bool b) -> b
+                            _ -> False
+                    in
                     input [ type' "checkbox"
                           , fieldCheck
                           , leftAlign
-                          , checked b
+                          , checked boolValue
                           , onCheck ChangeValueBool
                           ] []
-                I64 v -> 
+
+
+                "I64" ->      
                     input [ type' "number"
                           , fieldCheck
                           , rightAlign
                           , textWidth
-                          , value (toString v)
-                          ] []
-                I32 v -> 
-                    input [ type' "number"
-                          , fieldCheck
-                          , rightAlign
-                          , textWidth
-                          , value (toString v)
-                          ] []
-                F64 v -> 
-                    input [ type' "number"
-                          , fieldCheck
-                          , rightAlign
-                          , textWidth
-                          , value (toString v)
+                          , value (stringifyMaybeValue model.value)
                           ] []
 
-                Date d -> 
+                "I32" ->
+                    input [ type' "number"
+                          , fieldCheck
+                          , rightAlign
+                          , textWidth
+                          , value (stringifyMaybeValue model.value)
+                          ] []
+                        
+                "F64" ->
+                    input [ type' "number"
+                          , fieldCheck
+                          , rightAlign
+                          , textWidth
+                          , value (stringifyMaybeValue model.value)
+                          ] []
+
+                "Date" ->
                     input [ type' "date"
-                          , value d
+                          , value (simpleDate <| stringifyMaybeValue model.value) 
                           , textWidth
                           , rightAlign
                           , onInput ChangeValue
                           ] []
 
-                DateTime d -> 
+                "DateTime" ->
                     input [ type' "datetime"
-                          , value (simpleDate d)
+                          , value (simpleDate <| stringifyMaybeValue model.value)
                           , textWidth
                           , rightAlign
                           , onInput ChangeValue
                           ] []
+                
+                "Uuid" ->
+                    input [ type' "text"
+                          , textWidth
+                          , leftAlign
+                          , value (stringifyMaybeValue model.value) 
+                          ] []
+                            
+
                 _ ->
                     input [ type' "text"
                           , textWidth
                           , leftAlign
-                          , value (toString model.value)
+                          , value (stringifyMaybeValue model.value)
                           ] []
-                    
+            
+
 
 simpleDate: String -> String
 simpleDate str =
@@ -490,16 +556,24 @@ simpleDate str =
     in
     simple
 
-fieldRead: Model -> Html Msg 
-fieldRead model =
+fieldRead: Model -> Html Msg
+fieldRead model = 
     case model.field.reference of
-        "Table" ->
-            lookupView model
-        _ ->
-            case model.value of
+        "Table" -> lookupView model
+        _ -> fieldReadNoLookup model
+
+fieldReadNoLookup: Model -> Html Msg 
+fieldReadNoLookup model =
+    case model.value of
+        Just fieldValue ->
+            case fieldValue of
                 String s -> 
-                    let fieldStyle = 
-                            style [("width", "300px")
+                    let width = case model.field.displayLength of
+                            Just len -> 10 * len
+                            Nothing -> 200
+
+                        fieldStyle = 
+                            style [("width", (toString width)++"px")
                                   ,("height", "20px")
                                   ,("overflow", "hidden")
                                   ,("text-overflow", "ellipsis")
@@ -530,42 +604,58 @@ fieldRead model =
 
                 _  ->
                     text (toString value)
-            
+
+        Nothing -> text ""
+
+
 stringValue: Value -> String
 stringValue value =
-    case  value of
-        String s -> s
+    case value of
         Bool b -> toString b
+        I8 v -> toString v
+        I16 v -> toString v
         I32 v -> toString v
         I64 v -> toString v
+        U8 v -> toString v
+        U16 v -> toString v
+        U32 v -> toString v
+        U64 v -> toString v
+        F32 v -> toString v
         F64 v -> toString v
-        Date d -> toString d
-        DateTime d -> toString d
-        _ -> toString value
+        String s -> s
+        Date d -> d
+        DateTime d -> d
+        Uuid v -> v 
 
 stringifyValue: Model -> String
 stringifyValue model =
-    stringValue model.value
+    stringifyMaybeValue model.value
+ 
+stringifyMaybeValue: Maybe Value -> String
+stringifyMaybeValue value =
+    case value of
+        Just v -> stringValue v
+        Nothing -> ""
 
 
 fieldReadList: Model -> Html Msg
 fieldReadList model = 
     case model.value of
-        String s ->
+        Just (String s) ->
             text (" "++s)
 
-        Bool b ->
+        Just (Bool b) ->
             case b of
                 True -> text " true"
                 False -> text " false"
-        I32 v ->
+        Just (I32 v) ->
             text (" "++(toString v))
-        I64 v ->
+        Just (I64 v) ->
             text (" "++(toString v))
-        F64 v ->
+        Just (F64 v) ->
             text (" "++(toString v))
 
-        Date d ->
+        Just (Date d) ->
             text (" "++(toString d))
 
         _ ->
@@ -629,26 +719,42 @@ onSelectionChange msg =
 
 createCompactListField: List Field -> List Dao -> Model ->Html Msg
 createCompactListField fieldList daoList model =
-    let fields = toList (mostSignificantField fieldList)
+    let fields = case mostSignificantField fieldList of
+            Just field ->
+                [field]
+            Nothing -> 
+                allNonAuxilliaryNonKeyFields fieldList
+
         keyField = getKeyField fieldList
         rows  = 
             List.map(
                 \ dao ->
-                    createRow fields keyField dao model
+                    createListboxRow fields keyField dao model
                 ) daoList
         blankOption = option [] []
+        width = case model.field.displayLength of
+            Just len -> 10 * len
+            Nothing -> 200
     in
-    select [style [("width", "300px")
+    select [style [("width", (toString width)++"px")
                   ,("text-overflow","ellipsis")
                   ]
             ,attribute "onscroll" "scrollListener(event)"
             ] (blankOption :: rows)
 
+allNonAuxilliaryNonKeyFields: List Field -> List Field
+allNonAuxilliaryNonKeyFields fieldList =
+    List.filter (\f -> not f.isAuxilliary && not f.isKeyfield) fieldList
 
 -- in read mode
 createSelectedLookupValue: List Field -> List Dao -> Model -> Html Msg
 createSelectedLookupValue fieldList daoList model =
-    let fields = toList (mostSignificantField fieldList)
+    let fields = case mostSignificantField fieldList of
+            Just field ->
+                [field]
+            Nothing -> 
+                allNonAuxilliaryNonKeyFields fieldList
+
         keyField: Maybe Field
         keyField = getKeyField fieldList
         selectedRowView = 
@@ -662,68 +768,54 @@ createSelectedLookupValue fieldList daoList model =
 
 createSelectedReadRow: List Field -> Maybe Field -> Dao -> Model ->Html Msg 
 createSelectedReadRow fields keyField dao model =
-    div [] <|
+    let width = case model.field.displayLength of
+        Just len -> len * 10
+        Nothing -> 200
+    in
+    div [style [("width", (toString width)++"px")]] <|
     List.map (
         \f ->
             case keyField of
                 Just keyField ->
-                    case getValue keyField dao of
-                        Just pkValue ->
-                                let fieldModel = create f 
-                                    updatedModel =
-                                        case getValue f dao of
-                                            Just sigValue ->
-                                                {fieldModel | value = sigValue
-                                                , presentation = List
-                                                , mode = Read
-                                                }
-                                            Nothing -> model 
-
-                                in
-                                if pkValue == model.value then
-                                    view updatedModel
-                                else
-                                    text ""
-
-                        Nothing ->
-                            text "No pk value"
+                    let pkValue = getValue keyField dao
+                    in
+                    if pkValue == model.value then
+                        case getValue f dao of
+                            Just sigValue ->
+                                text (stringValue sigValue ++ " ")
+                            Nothing -> text "" 
+                    else
+                        text ""
                 Nothing ->
-                    text "no pk"
+                    Debug.crash "no keyfield"
+
         ) fields
         
 
-createRow: List Field -> Maybe Field -> Dao -> Model ->Html Msg 
-createRow fields keyField dao model =
+createListboxRow: List Field -> Maybe Field -> Dao -> Model ->Html Msg 
+createListboxRow fields keyField dao model =
     let attributes = 
         case keyField of 
             Just keyField ->
-               case getValue keyField dao of
-                Just pkValue ->
-                    [value (stringValue pkValue)
-                    ,selected (model.value == pkValue)
-                    ,style [("width","300px")
-                           ,("text-overflow", "ellipsis")
-                           ]
-                    ]
-                Nothing -> []
+                let pkValue = getValue keyField dao 
+                in
+                [value (stringifyMaybeValue pkValue)
+                ,selected (model.value == pkValue)
+                ,style [("width","300px")
+                       ,("text-overflow", "ellipsis")
+                       ]
+                ]
 
             Nothing -> []
 
         rowView = 
             List.map (
                 \f ->
-                    let fieldModel = create f 
-                        updatedModel =
-                            case getValue f dao of
-                                Just sigValue ->
-                                    { fieldModel | value = sigValue
-                                    , presentation = List
-                                    , mode = Edit
-                                    }
-                                Nothing -> fieldModel 
+                    case getValue f dao of
+                        Just sigValue ->
+                            text (stringValue sigValue ++ " ")
+                        Nothing -> text "" 
 
-                    in
-                    view updatedModel
                 ) fields
         
     in
@@ -733,12 +825,6 @@ getValue: Field -> Dao -> Maybe Value
 getValue field dao =
     Dict.get field.column dao
 
-
-createFieldWithValue: Field -> Value -> Model
-createFieldWithValue field value =
-    let model = create field
-    in
-    { model | value = value }
 
 tableLookupData: List LookupData -> String -> List Dao 
 tableLookupData lookupDataList table =

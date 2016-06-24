@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import DataWindow
 import Html.App as App
@@ -26,12 +26,13 @@ type alias Model =
     , uid: Int -- id for the opened windows
     , activeWindow: Maybe Int
     , isSettingsOpened: Bool
-    , windowSize: BrowserWindow.Size
+    , browserDimension: Tab.BrowserDimension
     }
 
 
 type alias WindowId = Int
 type alias RowId = Int
+
 
 
 type Msg
@@ -52,11 +53,15 @@ type Msg
     | FetchError Http.Error
     | FocusedRecordDataReceived WindowId RowId (List DataWindow.TableDao)
     | WindowResize BrowserWindow.Size
+    | ReceivedScrollBarWidth Int 
+    | GetScrollBarWidth
 
 appModel =
     { title = "Curtain UI"
-    --, dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/bazaar_v8"
-    , dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/gda"
+    , dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/bazaar_v8"
+    --, dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/gda"
+    --, dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/adempiere"
+    --, dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/guardian"
     , apiServer = "http://localhost:8181"
     , windowList = WindowList.empty 
     , openedWindows = []
@@ -64,12 +69,25 @@ appModel =
     , uid = 0
     , activeWindow = Nothing
     , isSettingsOpened = False
-    , windowSize = {width=0, height=0}
+    , browserDimension = 
+        { width=0
+        , height=0
+        , scrollBarWidth = 13
+        } --chrome 15, firefox 17
     }
 
 
 init: (Model, Cmd Msg)
-init = (appModel, fetchWindowList appModel)
+init = (appModel
+       ,Cmd.batch[fetchWindowList appModel
+                 ,getScrollbarWidth ()
+                 ,setWindowSize
+                 ])
+
+setWindowSize: Cmd Msg
+setWindowSize = 
+    Task.perform (\a -> a) (\size -> WindowResize size) BrowserWindow.size
+                
 
 onClickNoPropagate: msg -> Attribute msg
 onClickNoPropagate msg = 
@@ -99,6 +117,7 @@ view model =
                                                 \w ->
                                                     div [classList [("tab-item", True)
                                                                     ,("active", w.isActive)
+                                                                    ,("flex", (List.length model.openedWindows) > 5)
                                                                     ]
                                                         ,onClick (ActivateWindow w.windowId)
                                                         ]
@@ -138,15 +157,11 @@ settingsButton =
 
 update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-    let _ = Debug.log "main msg" msg
-    in
     case msg of
         UpdateWindow windowId windowMsg -> 
               case msg of 
                     -- TODO: a hacky long TAP? lazy
                     UpdateWindow windowId (DataWindow.UpdateTab (Tab.UpdateRow rowId Row.FocusRecord)) ->
-                        let _ = Debug.log ("this is it windowId:"++ (toString windowId)) (toString rowId)
-                        in 
                         (updateWindow model windowMsg windowId
                         ,fetchFocusedRecordDetail model windowId rowId)
 
@@ -227,8 +242,6 @@ update msg model =
                 Settings.ChangeDbUrl dbUrl ->
                     ({model | dbUrl = dbUrl}, Cmd.none)
                 Settings.ApplySettings ->
-                    let _ = Debug.log "settings applied" model
-                    in
                     (model, fetchWindowList model)
 
         ToggleSettingsWindow ->
@@ -238,9 +251,27 @@ update msg model =
             (updateWindow model (DataWindow.FocusedRecordDataReceived rowId tableDaoList) windowId, Cmd.none)
 
         WindowResize size ->
-            let _ = Debug.log "window resized" size
+            let dimension = model.browserDimension
+                updatedDimension = 
+                    {dimension | width  = size.width
+                    ,height = size.height
+                    }
             in
-            ({model | windowSize = size}, Cmd.none)
+            ({model | browserDimension = updatedDimension}
+                |> updateAllWindow (DataWindow.BrowserDimensionChanged updatedDimension)
+            , Cmd.none)
+
+        ReceivedScrollBarWidth width ->
+            let dimension = model.browserDimension
+                updatedDimension =
+                    {dimension | scrollBarWidth = width}
+            in
+            ({model | browserDimension = updatedDimension }
+                |> updateAllWindow (DataWindow.BrowserDimensionChanged updatedDimension) 
+            , Cmd.none)
+
+        GetScrollBarWidth ->
+            (model, getScrollbarWidth () )
 
 
 main = 
@@ -248,8 +279,14 @@ main =
         { init = init
         , update = update
         , view = view
-        , subscriptions= (\_ -> BrowserWindow.resizes sizeToMsg)
+        , subscriptions = subscriptions
         }
+
+subscriptions: Model -> Sub Msg 
+subscriptions model = 
+     Sub.batch [(BrowserWindow.resizes sizeToMsg)
+               ,receiveScrollBarWidth ReceivedScrollBarWidth
+               ]
 
 sizeToMsg: BrowserWindow.Size -> Msg
 sizeToMsg size = 
@@ -258,8 +295,9 @@ sizeToMsg size =
 addWindow: Model -> DataWindow.Window -> Model
 addWindow model window =
     let newWindow = DataWindow.create window model.uid
-        (mo, cmd) = DataWindow.update (DataWindow.WindowDetailReceived window) newWindow 
-        allWindows = mo :: model.openedWindows
+        (mo, _) = DataWindow.update (DataWindow.WindowDetailReceived window) newWindow 
+        (mo1, _) = DataWindow.update (DataWindow.BrowserDimensionChanged model.browserDimension) mo 
+        allWindows = mo1 :: model.openedWindows
     in
     { model | openedWindows = allWindows 
     , activeWindow = Just mo.windowId
@@ -291,6 +329,18 @@ updateWindow model windowMsg windowId =
                     in mo
                 else
                     w
+        ) model.openedWindows
+    in
+    {model | openedWindows = updatedWindows}
+
+
+updateAllWindow: DataWindow.Msg -> Model -> Model
+updateAllWindow windowMsg model =
+    let updatedWindows = 
+        List.map(
+            \w ->
+                let (updatedWindow, _) = DataWindow.update windowMsg w
+                in updatedWindow
         ) model.openedWindows
     in
     {model | openedWindows = updatedWindows}
@@ -389,8 +439,6 @@ getWindowTable model windowId =
 
 
 httpGet model url =
-    let _ = Debug.log "Requesting" url
-    in
     Http.send Http.defaultSettings
     { verb = "GET"
     , headers = [("db_url", model.dbUrl)]
@@ -462,3 +510,9 @@ fetchFocusedRecordDetail model windowId rowId =
 
         Nothing ->
             Debug.crash "No matching table for focused record"
+
+
+port receiveScrollBarWidth: (Int -> msg) -> Sub msg
+port getScrollbarWidth: () -> Cmd msg
+
+

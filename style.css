@@ -91,6 +91,11 @@ form * {
 .tab-item{
     flex:none;
     width: 300px;
+    white-space: nowrap;
+}
+
+.flex{
+    flex: 1
 }
 
 .tab-item.has-many{

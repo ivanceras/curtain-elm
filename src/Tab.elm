@@ -24,6 +24,13 @@ type alias Model =
     , focusedRow: Maybe Int
     , tabId: Int
     , allocatedHeight: Int
+    , browserDimension: BrowserDimension
+    }
+
+type alias BrowserDimension =
+    {width: Int
+    ,height: Int
+    ,scrollBarWidth: Int
     }
 
 type alias Tab =
@@ -84,16 +91,18 @@ type Msg
     | LookupDataReceived (List Field.LookupData)
     | Open
     | Close
+    | Toggle
     | TableScrolled Decode.Value 
     | ChangeAllocatedHeight Int
     | FormRecordClose
+    | BrowserDimensionChanged BrowserDimension
 
 create: Tab -> Int -> Int -> Model
 create tab tabId height =
     { tab = tab
     , rows= []
     , mode= Field.Read
-    , presentation= if tab.isExtension then Field.Table else Field.Table -- extension will be in form mode
+    , presentation= if tab.isExtension then Field.Form else Field.Table -- extension will be in form mode
     , density = Field.Expanded
     , isOpen = True
     , page = 0
@@ -102,91 +111,101 @@ create tab tabId height =
     , focusedRow = Nothing
     , tabId = tabId
     , allocatedHeight = height
+    , browserDimension = defaultBrowserDimension
     }
 
- 
+
+defaultBrowserDimension =
+    { width = 0
+    , height = 0 
+    , scrollBarWidth = 13
+    } --chrome 15, firefox 17
+
+
+emptyRowForm: Model -> Row.Model
+emptyRowForm model =
+    let row = Row.create model.tab.fields model.uid
+        _ = Debug.log "creating emptyRow in form using " model.tab.fields
+        (updatedRow,_) = Row.update (Row.ChangePresentation Field.Form) row
+        (updatedRow1,_) = Row.update (Row.ChangeMode Field.Edit) updatedRow
+     in
+     updatedRow1
+
+
 
 view: Model -> Html Msg
 view model =
-    let toolbarView = 
-            if model.tab.isExtension then
-                span [] [text "no toolbar for extension"]
-            else
-                toolbar model
+    let rowShadowWidth = 100
+        sidePaneWidth = 932
+
         tabView =
             case model.presentation of
             Field.Form ->
                 let focused = focusedRow model
                 in
                      div []
-                         [formRecordControls model
-                         ,div [class "form"
-                             ,style [("height", (toString model.allocatedHeight)++"px")
-                                    ,("overflow", "auto")
-                                    ,("display", "block")
-                                    ]
-
-                             ] 
+                         [div [class "form"] 
                             [case focused of
                                 Just focused ->
                                    Row.view focused |> App.map (UpdateRow focused.rowId)
                                 Nothing ->
-                                   div[] [text "No record selected"]
+                                   Row.view (emptyRowForm model) |> App.map (UpdateRow 1000)
                             ]
                          ]
 
             Field.Table ->
-            div [class "all_table_hack"
-                ,style [("display","flex")
-                       ,("white-space", "nowrap")
-                       ]
-                ]
-                [div [class "row_shadow_and_header"] 
-                     [div [style [("width", "100px")
-                                 ,("height", "59px")
-                                 ]
-                          ]
-                          [frozenControlHead model]
-
-                     ,div [class "row_shadow"
-                         ,id "row_shadow"
-                         ,style [("height", (toString (model.allocatedHeight-15))++"px")
-                                ,("width", "100px")
-                                ,("overflow", "hidden")
-                                ]
-                         ]
-                        [rowShadow model]
+                div [class "all_table_hack"
+                    ,style [("display","flex")
+                           ,("white-space", "nowrap")
+                           ]
                     ]
-                ,div [class "main_and_column_shadow"
-                     ,style [
-                            ]
-                     ]
-                    [div [class "head_shadow"
-                         ,id "head_shadow"
-                         ,style [("width","985px")
-                                ,("overflow", "hidden")
+                    [div [class "row_shadow_and_header"] 
+                         [div [style [("width", "100px")
+                                     ,("height", "70px")
+                                     ]
+                              ]
+                              [frozenControlHead model]
+
+                         ,div [class "row_shadow"
+                             ,id "row_shadow"
+                             ,style [("height", (toString (model.allocatedHeight-model.browserDimension.scrollBarWidth))++"px")
+                                    ,("width", "100px")
+                                    ,("overflow", "hidden")
+                                    ]
+                             ]
+                            [rowShadow model]
+                        ]
+                    ,div [class "main_and_column_shadow"
+                         ,style [
                                 ]
                          ]
-                        [table []
-                            [theadView model]
-                        ]
-                    ,div [style [("height", (toString model.allocatedHeight)++"px")
-                              ,("overflow", "auto")
-                              ,("width","1000px")
-                              ]
-                        ,attribute "onscroll" "alignScroll(event)"
-                        ]
-                        [table [id "main_table"
-                               ] 
-                            [tbody [                               ]
-                            (model.rows
-                                |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
-
-                            )
+                        [div [class "head_shadow"
+                             ,id "head_shadow"
+                             ,style [("width",(toString (calcMainTableWidth model - model.browserDimension.scrollBarWidth))++"px")
+                                    ,("overflow", "hidden")
+                                    ,("height", "70px")
+                                    ]
+                             ]
+                            [table []
+                                [theadView model]
                             ]
-                        ]
-                     ]
-                ]
+                        ,div [style [("height", (toString model.allocatedHeight)++"px")
+                                  ,("overflow", "auto")
+                                  ,("width",(toString (calcMainTableWidth model))++"px")
+                                  ]
+                            ,attribute "onscroll" "alignScroll(event)"
+                            ]
+                            [table [id "main_table"
+                                   ] 
+                                [tbody [                               ]
+                                (model.rows
+                                    |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
+
+                                )
+                                ]
+                            ]
+                         ]
+                    ]
 
             Field.Grid ->
                     div [class "grid"]
@@ -194,29 +213,26 @@ view model =
                             |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
 
                         )
-            Field.List ->
-                   select [class "list", style [("text-overflow", "ellipsis")]]
-                        (model.rows
-                            |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
-
-                        )
     in
     if model.isOpen then
         div []
-            [tabControls model
-            ,toolbarView
-            ,div []
+            [div []
                  [tabView
                  ]
             ]
     else 
        text "" 
                 
+
+calcMainTableWidth model =  
+    let widthDeductions = 500
+    in
+    model.browserDimension.width - widthDeductions
+
 onTableScroll msg =
     let _ = Debug.log "scrolling..." msg
         _ = Debug.log "targetValue" targetValue
     in
-    --on "scroll" (Decode.map msg Decode.value)
     on "scroll" (Decode.map msg Decode.value)
 
 tabControls model =
@@ -225,32 +241,12 @@ tabControls model =
            , button [onClick (ChangePresentation Field.Table)] [text "Table All rows"]
            , button [onClick (ChangePresentation Field.Form)] [text "Form All rows"]
            , button [onClick (ChangePresentation Field.Grid)] [text "Grid All rows"]
-           , button [onClick (ChangePresentation Field.List)] [text "List All rows"]
            , button [onClick (ChangeDensity Field.Compact)] [text "Compact All"]
            , button [onClick (ChangeDensity Field.Medium)] [text "Medium All"]
            , button [onClick (ChangeDensity Field.Expanded)] [text "Expanded All"]
            ]
 
 
-formRecordControls model =
-    div [class "btn-group"]
-        [button [class "btn btn-large btn-default"]
-            [span [class "icon icon-text icon-left-open"] []
-            ,text "Prev"
-            ]
-        ,button [class "btn btn-large btn-default"]
-            [span [class "icon icon-text icon-right-open"] []
-            ,text "Next"
-            ]
-        ,button [class "btn btn-large btn-default"]
-            [span [class "icon icon-text icon-resize-full"] []
-            ,text "Maximize"
-            ]
-        ,button [class "btn btn-large btn-default", onClick FormRecordClose]
-            [span [class "icon icon-text icon-cancel"] []
-            ,text "Close"
-            ]
-        ]
 
 rowShadow model =
    table []
@@ -269,7 +265,7 @@ theadView model =
     let filteredFields = Row.filterFieldsWithDensity model.tab.fields model.density
                             |> Row.excludeKeyfields
     in
-    thead [style [("height", "60px")
+    thead [style [("height", "66px")
                  ]
           ]
         [if model.tab.isExtension then
@@ -281,8 +277,14 @@ theadView model =
             ]
              (List.map (
                 \f -> 
+                    let width = case f.displayLength of
+                        Just len -> 10 * len
+                        Nothing -> 100
+                    in
                     th [Field.alignment f] 
-                        [div [class "tooltip"]
+                        [div [class "tooltip"
+                             ,style [("width", (toString width)++"px")]
+                             ]
                             [text f.name
                             ,Field.tooltipText f
                             ]
@@ -323,11 +325,19 @@ filterStatusView model =
 
 tabFilters: Model ->List Field.Field -> Html Msg
 tabFilters model filteredFields =
-    tr [class "tab_filters", style [("background-color", "#fefefe")]]
+    tr [class "tab_filters"
+       ,style [("background-color", "#fefefe")
+              ,("height","38px")
+              ]
+       ]
         (List.map (
             \f -> 
+               let width = case f.displayLength of
+                    Just len -> len * 10
+                    Nothing -> 200
+                in
                 th [Field.alignment f] 
-                    [input [style [("width", "300px")]
+                    [input [style [("width", (toString width)++"px")]
                             ,type' "text"
                             ,Field.alignment f
                            ] []
@@ -340,11 +350,11 @@ frozenControlHead model =
         [thead [style [("height", "60px")
                       ]
                ]
-            [tr [style [("height", "30px")
+            [tr [style [("height", "38px")
                        ]
                 ] 
                 (filterStatusView model)
-            ,tr [] (recordControlsHead model)
+            ,tr [style [("height","30px")]] (recordControlsHead model)
             ]
         ]
 
@@ -355,7 +365,9 @@ recordControlsHead model =
         tooltipText = 
             "Click to "++unselect++" "++(toString rows)++" record(s)"
     in
-    [th [class "tooltip"] 
+    [th [class "tooltip"
+        ,style [("height", "30px")]
+        ] 
         [input [type' "checkbox", onCheck SelectionAll, checked allSelected] []
         ,span[class "tooltiptext"] [text tooltipText]
         ]
@@ -369,75 +381,7 @@ areAllRecordSelected model =
     in 
     rows > 0 && selected == rows
 
-toolbar: Model ->Html Msg
-toolbar model= 
-    let deleteTooltip = 
-        case model.presentation of
-            Field.Table ->
-                "Click to delete "++toString (numberOfSelectedRecords model)++" record(s) from the database"
-            _ ->
-                "Click to delete this record from the database"
-    in    
-        div [class "btn-group"]
-            [button [class "btn btn-large btn-default tooltip"]
-                [span [class "icon icon-plus icon-text tab-action"] []
-                ,text "New record" 
-                ,span [class "tooltiptext"] [text "Create a new record in a form"]
-                ]
-            ,button [class "btn btn-large btn-default tooltip", onClick (ChangeMode Field.Read)]
-                [span [class "icon icon-list-add icon-text"] []
-                ,text "Insert row"
-                ,span [class "tooltiptext"] [text "Insert row"]
-                ]
-            ,button [class "btn btn-large btn-default tooltip", onClick (ChangeMode Field.Read)]
-                [span [class "icon icon-floppy icon-text"] []
-                ,text "Save"
-                ,span [class "tooltiptext"] [text "Save record into the database"]
-                ]
-            ,button [class "btn btn-large btn-default tooltip", onClick (ChangePresentation Field.Table)]
-                [span [class "icon icon-cancel icon-text"] []
-                ,text "Close" 
-                ,span [class "tooltiptext"] [text "Close the current record and return to grid view"]
-                ]
-            ,button [class "btn btn-large btn-default tooltip", onClick (ChangePresentation Field.Table)]
-                [span [class "icon icon-block icon-text"] []
-                ,text "Cancel" 
-                ,span [class "tooltiptext"] [text "Cancel changes and return to the last saved state"]
-                ]
-            ,button [class "btn btn-large btn-default tooltip"]
-                [span [class "icon icon-trash icon-text"] []
-                ,text "Delete"
-                ,span [class "tooltiptext"] [text deleteTooltip] 
-                ]
-            ,button [class "btn btn-large btn-default tooltip"]
-                [span [class "icon icon-arrows-ccw icon-text"] []
-                ,text "Refresh"
-                ,span [class "tooltiptext"] [text "Refresh the current data from the database"]
-                ]
-            ,button [class "btn btn-large btn-default tooltip"]
-                [span [class "icon icon-export icon-text"] []
-                ,text "Export"
-                ,span [class "tooltiptext"] [text "Export to spreadsheet"]
-                ]
-            ]
- 
 
-paging: Html Msg
-paging = 
-    div [class "btn-group"]
-        [button [class "btn btn-large btn-default"]
-            [span [class "icon icon-left-open icon-text"] []
-            , text "prev"
-            ]
-        ,button [class "btn btn-large btn-default"]
-            [span [class "icon icon-right-open icon-text"] []
-            , text "next"
-            ]
-        ,button [class "btn btn-large btn-default"]
-            [span [class "icon icon-arrows-ccw icon-text"] []
-            , text "refresh"
-            ]
-        ]
 
 
 updatePresentation: Field.Presentation -> Model -> Model
@@ -485,8 +429,8 @@ updateSelectionAllRecords model checked =
     {model | rows = rows}
     
 
-updateFocusedRow: Model -> Int -> Model
-updateFocusedRow model rowId=
+updateFocusedRow: Int -> Model -> Model
+updateFocusedRow rowId model =
     let model = updateSelectionAllRecords model False
         updatedRows = 
             List.map (
@@ -521,30 +465,33 @@ update msg model =
     case msg of
         UpdateRow rowId rowMsg ->
             case rowMsg of
-            Row.ChangePresentation presentation ->
-                case presentation of
-                    Field.Form ->
-                        (updatePresentation presentation model
-                            |> updateRow (Row.ChangeMode Field.Edit) rowId
-                            |> setFocusedRow rowId
-                        , Cmd.none
-                        )
-                    _ ->
-                        ( updateRow rowMsg rowId model, Cmd.none)
-                        
-            Row.FocusRecord ->
-                (updateFocusedRow model rowId
-                    |> updateRow rowMsg rowId
-                , Cmd.none)
+                Row.FocusRecord ->
+                    (updateFocusedRow rowId model
+                        |> updateRow rowMsg rowId
+                    , Cmd.none)
 
-            Row.Selection checked ->
-                let updatedModel = removeFocusedRecord model
-                in
-                ( updateRow rowMsg rowId updatedModel , Cmd.none)
+                Row.Selection checked ->
+                    let updatedModel = removeFocusedRecord model
+                    in
+                    ( updateRow rowMsg rowId updatedModel , Cmd.none)
+
+                Row.EditRecordInForm ->
+                    (updateFocusedRow rowId model
+                        |> updateRow (Row.ChangePresentation Field.Form) rowId
+                        |> updateRow rowMsg rowId
+                        |> updatePresentation Field.Form
+                        |> updateMode Field.Edit
+                    ,Cmd.none)
 
 
-            _ ->
-                ( updateRow rowMsg rowId model , Cmd.none)
+                Row.EditRecordInPlace ->
+                    (updateFocusedRow rowId model
+                        |> updateRow (Row.ChangeMode Field.Edit) rowId
+                        |> updateRow rowMsg rowId
+                    ,Cmd.none)
+
+                _ ->
+                    ( updateRow rowMsg rowId model , Cmd.none)
 
         ChangeMode mode ->
             (updateMode mode model, Cmd.none)
@@ -585,6 +532,9 @@ update msg model =
         Close ->
             ({model | isOpen = False}, Cmd.none)
 
+        Toggle ->
+            ({ model | isOpen = not model.isOpen}, Cmd.none)
+
         TableScrolled target ->
             let _ = Debug.log "help, im scrolled" "hi..."
             in
@@ -598,6 +548,10 @@ update msg model =
         FormRecordClose ->
             (updatePresentation Field.Table model
                 |> updateMode Field.Read, Cmd.none)
+
+        BrowserDimensionChanged browserDimension ->
+            ({ model | browserDimension = browserDimension}
+            , Cmd.none)
 
 createRows: Model -> List Row.DaoState -> Model
 createRows model listDaoState =
