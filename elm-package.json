@@ -9,6 +9,7 @@
     "exposed-modules": [],
     "dependencies": {
         "Bogdanp/elm-datepicker": "3.0.0 <= v < 4.0.0",
+        "NoRedInk/elm-task-extra": "2.0.0 <= v < 3.0.0",
         "ccapndave/elm-update-extra": "2.0.0 <= v < 3.0.0",
         "elm-community/elm-json-extra": "1.0.0 <= v < 2.0.0",
         "elm-lang/core": "4.0.1 <= v < 5.0.0",

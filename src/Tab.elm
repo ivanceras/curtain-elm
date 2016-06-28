@@ -14,6 +14,15 @@ import Presentation exposing
     ,Mode (Edit,Read)
     ,Density(Compact, Medium, Expanded))
 
+import Dao exposing 
+    (Dao
+    ,DaoState
+    ,TableDao
+    ,Value(Bool,I8,I16,I32,I64,U8,U16,U32,U64,F32,F64,String,Date,DateTime,Uuid)
+    )
+import Utils
+import Update.Extra exposing (andThen)
+
 
 type alias Model =
     { tab: Tab
@@ -22,13 +31,16 @@ type alias Model =
     , presentation: Presentation
     , density: Density
     , isOpen: Bool
-    , page: Int
-    , pageSize: Int
+    , page: Maybe Int
+    , pageSize: Maybe Int
+    , totalRecords: Maybe Int
+    , totalPage: Maybe Int
     , uid: Int -- used for tracking row number
     , focusedRow: Maybe Int
     , tabId: Int
     , allocatedHeight: Int
     , browserDimension: BrowserDimension
+    , loadingPage: Bool
     }
 
 type alias BrowserDimension =
@@ -80,7 +92,7 @@ lookupDataDecoder: Decode.Decoder Field.LookupData
 lookupDataDecoder = 
     Decode.succeed Field.LookupData
         |: ("table" := Decode.string)
-        |: ("dao_list" := Decode.list Field.daoDecoder)
+        |: ("dao_list" := Decode.list Dao.daoDecoder)
 
 
 type Msg
@@ -89,18 +101,18 @@ type Msg
     | ChangeDensity Density
     | UpdateRow Int Row.Msg
     | TabReceived Tab
-    | TabDataReceived (List Row.DaoState)
+    | TabDataReceived TableDao
     | SelectionAll Bool
     | LookupTabsReceived (List Tab)
     | LookupDataReceived (List Field.LookupData)
     | Open
     | Close
     | Toggle
-    | TableScrolled Decode.Value 
     | ChangeAllocatedHeight Int
     | FormRecordClose
     | BrowserDimensionChanged BrowserDimension
-    | TabDataNextPageReceived (List Row.DaoState)
+    | TabDataNextPageReceived TableDao
+    | ReceivedScrollBottomEvent
 
 create: Tab -> Int -> Int -> Model
 create tab tabId height =
@@ -110,13 +122,16 @@ create tab tabId height =
     , presentation= if tab.isExtension then Form else Table -- extension will be in form mode
     , density = Expanded
     , isOpen = True
-    , page = 0
-    , pageSize = 15
+    , page = Nothing
+    , pageSize = Nothing
+    , totalRecords = Nothing
+    , totalPage = Nothing
     , uid = 0 --will be incremented every row added
     , focusedRow = Nothing
     , tabId = tabId
     , allocatedHeight = height
     , browserDimension = defaultBrowserDimension
+    , loadingPage = False
     }
 
 
@@ -148,15 +163,15 @@ view model =
             Form ->
                 let focused = focusedRow model
                 in
-                     div []
-                         [div [class "form"] 
-                            [case focused of
-                                Just focused ->
-                                   Row.view focused |> App.map (UpdateRow focused.rowId)
-                                Nothing ->
-                                   Row.view (emptyRowForm model) |> App.map (UpdateRow 1000)
-                            ]
-                         ]
+                div []
+                    [div [class "form"] 
+                       [case focused of
+                           Just focused ->
+                              Row.view focused |> App.map (UpdateRow focused.rowId)
+                           Nothing ->
+                              Row.view (emptyRowForm model) |> App.map (UpdateRow 1000)
+                       ]
+                    ]
 
             Table ->
                 div [class "all_table_hack"
@@ -198,7 +213,7 @@ view model =
                                   ,("overflow", "auto")
                                   ,("width",(toString (calcMainTableWidth model))++"px")
                                   ]
-                            ,attribute "onscroll" ("alignScroll(event, '"++columnShadowId++"','"++rowShadowId++"')")
+                            ,attribute "onscroll" ("alignScroll(event, '"++model.tab.table++"','"++columnShadowId++"','"++rowShadowId++"')")
                             ]
                             [table [id "main_table"
                                    ] 
@@ -240,30 +255,19 @@ onTableScroll msg =
     in
     on "scroll" (Decode.map msg Decode.value)
 
-tabControls model =
-    div [] [ button [onClick (ChangeMode Edit)] [text "Edit All rows"]
-           , button [onClick (ChangeMode Read)] [text "Read All rows"]
-           , button [onClick (ChangePresentation Table)] [text "Table All rows"]
-           , button [onClick (ChangePresentation Form)] [text "Form All rows"]
-           , button [onClick (ChangePresentation Grid)] [text "Grid All rows"]
-           , button [onClick (ChangeDensity Compact)] [text "Compact All"]
-           , button [onClick (ChangeDensity Medium)] [text "Medium All"]
-           , button [onClick (ChangeDensity Expanded)] [text "Expanded All"]
-           ]
-
 
 
 rowShadow model =
    table []
-            (List.map(
-                \row -> 
-                    tr []
-                        [(App.map (UpdateRow row.rowId)
-                            (Row.rowShadowRecordControls row)
-                        )
-                        ]
-                ) model.rows
-            )
+        (List.map(
+            \row -> 
+                tr []
+                    [(App.map (UpdateRow row.rowId)
+                        (Row.rowShadowRecordControls row)
+                    )
+                    ]
+            ) model.rows
+        )
 
 theadView: Model -> Html Msg
 theadView model =
@@ -512,8 +516,8 @@ update msg model =
         TabReceived tab ->
             ( {model | tab = tab}, Cmd.none )
 
-        TabDataReceived listDaoState ->
-            (createRows model listDaoState, Cmd.none)
+        TabDataReceived tableDao ->
+            (setTabRows model tableDao, Cmd.none)
 
 
         SelectionAll checked ->
@@ -540,11 +544,6 @@ update msg model =
         Toggle ->
             ({ model | isOpen = not model.isOpen}, Cmd.none)
 
-        TableScrolled target ->
-            let _ = Debug.log "help, im scrolled" "hi..."
-            in
-            ( model, Cmd.none)
-        
         ChangeAllocatedHeight height ->
             ( {model | allocatedHeight = height}
             , Cmd.none
@@ -558,36 +557,73 @@ update msg model =
             ({ model | browserDimension = browserDimension}
             , Cmd.none)
 
-        TabDataNextPageReceived listDaoState ->
-            (addToRows model listDaoState, Cmd.none)
+        TabDataNextPageReceived tableDao ->
+            (addToRows model tableDao
+            , Cmd.none)
 
 
-createRows: Model -> List Row.DaoState -> Model
+        ReceivedScrollBottomEvent ->
+            let _ = Debug.log "----> RECEIVED SCROLL BOTTOM EVENT" ".."
+            in
+            ({model | loadingPage = True
+            }, Cmd.none)
+
+
+
+
+createRows: Model -> List DaoState -> List Row.Model
 createRows model listDaoState =
-    let rows = 
-            List.indexedMap (
-            \index daoState ->
-                let newRow = Row.create model.tab.fields (model.uid + index)
-                    (mo, cmd) = Row.update (Row.DaoStateReceived daoState) newRow 
-                in mo
-            ) listDaoState 
+    List.indexedMap (
+        \index daoState ->
+            let newRow = Row.create model.tab.fields (model.uid + index)
+                (mo, cmd) = Row.update (Row.DaoStateReceived daoState) newRow 
+            in mo
+        ) listDaoState 
+
+setTabRows: Model -> TableDao -> Model
+setTabRows model tableDao =
+    let rows = createRows model tableDao.daoList
     in
     {model | rows = rows
     ,uid = model.uid + List.length rows
+    ,loadingPage = False
+    ,page = Debug.log "page" tableDao.page
+    ,pageSize = Debug.log "page size" tableDao.pageSize
+    ,totalRecords = tableDao.total
+    ,totalPage = case tableDao.total of
+            Just total ->
+                case tableDao.pageSize of
+                    Just pageSize ->
+                        let totalPage = (total + pageSize - 1 ) // pageSize
+                            _ = Debug.log "totalPage: " totalPage
+                        in 
+                        Just totalPage
+
+                    Nothing -> Nothing
+            Nothing -> Nothing
     }
     
-addToRows: Model -> List Row.DaoState -> Model
-addToRows model listDaoState =
-    let rows = 
-            List.indexedMap (
-            \index daoState ->
-                let newRow = Row.create model.tab.fields (model.uid + index)
-                    (mo, cmd) = Row.update (Row.DaoStateReceived daoState) newRow 
-                in mo
-            ) listDaoState 
+addToRows: Model -> TableDao -> Model
+addToRows model tableDao =
+    let rows = createRows model tableDao.daoList
     in
     {model | rows = model.rows ++ rows
     ,uid = model.uid + List.length rows
+    ,loadingPage = False
+    ,page = Debug.log "page" tableDao.page
+    ,pageSize = Debug.log "page size" tableDao.pageSize
+    ,totalRecords = tableDao.total
+    ,totalPage = case tableDao.total of
+            Just total ->
+                case tableDao.pageSize of
+                    Just pageSize ->
+                        let totalPage = (total + pageSize - 1 ) // pageSize
+                            _ = Debug.log "totalPage: " totalPage
+                        in 
+                        Just totalPage
+
+                    Nothing -> Nothing
+            Nothing -> Nothing
     }
 
 completeTableName: Tab -> String

@@ -36,7 +36,11 @@ empty =
 view: Model -> Html Msg
 view model =
     nav [class "nav-group"]
-        (h5 [class "nav-group-title"][text "Window"] ::
+        (h5 [class "nav-group-title"]
+            [if List.length model.windowList > 0 then
+                text "Window"
+             else text "" 
+            ] ::
             (List.map(\w ->
                 let isActive =
                     case model.activeWindow of

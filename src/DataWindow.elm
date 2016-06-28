@@ -15,6 +15,8 @@ import Presentation exposing
     ,Mode (Edit,Read)
     ,Density(Compact, Medium, Expanded))
 
+import Dao exposing (TableDao)
+
 
 type alias Model =
     { name: String
@@ -31,9 +33,7 @@ type alias Model =
     , browserDimension: Tab.BrowserDimension
     }
 
-defaultMainTableHeight = 600
 defaultFormRecordHeight = 200
-defaultDetailTableHeight = 200
 
 create: Window -> Int -> Model
 create window windowId =
@@ -44,10 +44,10 @@ create window windowId =
     , hasManyMergedTabs = []
     , name = window.name
     , windowId = windowId
-    , mainTab = Tab.create window.mainTab 0 defaultMainTableHeight
+    , mainTab = Tab.create window.mainTab 0 0
     , nextTabId = 0
-    , mainTableHeight = defaultMainTableHeight
-    , detailTableHeight = defaultDetailTableHeight
+    , mainTableHeight = 0
+    , detailTableHeight = 0
     , browserDimension = Tab.defaultBrowserDimension
     }
 
@@ -65,8 +65,8 @@ type Msg
     | FocusedRecordDataReceived Int (List TableDao)
     | BrowserDimensionChanged Tab.BrowserDimension
     | ToggleExtTab Tab.Model
-    | LoadNextPage Tab.Model
     | WindowDataNextPageReceived (List TableDao)
+    | ReceivedScrollBottomEvent String 
     
 type alias Window =
     { name: String
@@ -79,15 +79,6 @@ type alias Window =
     , hasManyIndirectTabs: List Tab.Tab
     }
 
-type alias TableDao =
-    { table: String
-    , daoList: List Row.DaoState
-    }
-
-tableDaoDecoder =
-    Decode.object2 TableDao
-        ("table" := Decode.string)
-        ("dao_list" := Decode.list Row.daoStateDecoder)
 
 
 
@@ -238,12 +229,6 @@ toolbar model=
                 ,text "Export"
                 ,span [class "tooltiptext"] [text "Export to spreadsheet"]
                 ]
-            ,button [class "btn btn-large btn-default tooltip"
-                    , onClick (LoadNextPage model.mainTab)]
-                [span [class "icon icon-download icon-text"] []
-                ,text "Load More"
-                ,span [class "tooltiptext"] [text "Load Next Page"]
-                ]
             ]
  
 
@@ -276,6 +261,8 @@ update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of 
         UpdateTab tab_msg ->
+            let _ = Debug.log "Update tab" tab_msg
+            in
             case tab_msg of
                 Tab.ChangePresentation presentation ->
                     ({model | presentation = presentation}
@@ -308,6 +295,8 @@ update msg model =
                         |> updateMainTab tab_msg
                         |> updateAllocatedHeight
                     , Cmd.none)
+                
+
                 _ ->
                     (updateMainTab tab_msg model, Cmd.none)
         
@@ -319,7 +308,7 @@ update msg model =
         WindowDataReceived listTableDao ->
             (case (List.head listTableDao) of --TODO: get the main tab
                     Just tableDao -> 
-                        updateMainTab (Tab.TabDataReceived tableDao.daoList) model
+                        updateMainTab (Tab.TabDataReceived tableDao) model
                     Nothing -> model 
             ,Cmd.none
             )
@@ -365,18 +354,16 @@ update msg model =
             ,Cmd.none
             )
 
-        LoadNextPage tab-> -- main window tapped on this one
-            (model, Cmd.none)
-
-
         WindowDataNextPageReceived listTableDao ->
             (case (List.head listTableDao) of --TODO: get the main tab
                     Just tableDao -> 
-                        updateMainTab (Tab.TabDataNextPageReceived tableDao.daoList) model
+                        updateMainTab (Tab.TabDataNextPageReceived tableDao) model
                     Nothing -> model 
             ,Cmd.none
             )
-
+        
+        ReceivedScrollBottomEvent table ->
+           (updateMainTab Tab.ReceivedScrollBottomEvent model, Cmd.none)
 
 updateAllTabs: Tab.Msg -> Model -> Model
 updateAllTabs tabMsg model =
@@ -439,7 +426,8 @@ hydrateAllMergedTab tableDaoList model =
             \tab ->
                case getTableDao tableDaoList tab.tab of
                     Just tableDao ->
-                        let (updatedTab, _) = Tab.update (Tab.TabDataReceived tableDao.daoList) tab
+                        let (updatedTab, _) = 
+                            Tab.update (Tab.TabDataReceived tableDao) tab
                         in updatedTab
                     Nothing -> 
                         tab

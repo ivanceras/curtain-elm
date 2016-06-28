@@ -14,11 +14,12 @@ import Field
 import Settings
 import Row
 import Window as BrowserWindow
+import Dao
 
 
 type alias Model =
     { title: String
-    , dbUrl: String
+    , dbUrl: Maybe String
     , apiServer: String
     , windowList: WindowList.Model
     , openedWindows: List DataWindow.Model
@@ -27,6 +28,8 @@ type alias Model =
     , activeWindow: Maybe Int
     , isSettingsOpened: Bool
     , browserDimension: Tab.BrowserDimension
+    , defaultPageSize: Int
+    , settingsModel: Maybe Settings.Model
     }
 
 
@@ -47,42 +50,68 @@ type Msg
     | ToggleSettingsWindow
     | WindowDetailReceived DataWindow.Window
     | GetWindowData String
-    | WindowDataReceived WindowId (List DataWindow.TableDao) 
+    | WindowDataReceived WindowId (List Dao.TableDao) 
     | LookupTabsReceived WindowId (List Tab.Tab)
     | LookupDataReceived WindowId (List Field.LookupData)
     | FetchError Http.Error
-    | FocusedRecordDataReceived WindowId RowId (List DataWindow.TableDao)
+    | FocusedRecordDataReceived WindowId RowId (List Dao.TableDao)
     | WindowResize BrowserWindow.Size
     | ReceivedScrollBarWidth Int 
-    | WindowDataNextPageReceived WindowId (List DataWindow.TableDao)
+    | ReceivedScrollBottomEvent String 
+    | WindowDataNextPageReceived WindowId (List Dao.TableDao)
 
 appModel =
     { title = "Curtain UI"
-    --, dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/bazaar_v8"
-    --, dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/gda"
-    --, dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/adempiere"
-    , dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/guardian"
-    , apiServer = "http://localhost:8181"
+    , dbUrl = Just "postgres://postgres:p0stgr3s@localhost:5432/guardian"
+    , apiServer = "http://localhost:3224"
     , windowList = WindowList.empty 
     , openedWindows = []
     , error = []
     , uid = 0
     , activeWindow = Nothing
-    , isSettingsOpened = False
+    , isSettingsOpened = True 
     , browserDimension = 
         { width=0
         , height=0
         , scrollBarWidth = 13
-        } --chrome 15, firefox 17
+        }
+    , defaultPageSize = 40
+    , settingsModel = Nothing
     }
 
 
 init: (Model, Cmd Msg)
-init = (appModel
-       ,Cmd.batch[fetchWindowList appModel
-                 ,getScrollbarWidth ()
+init = 
+    Debug.log "Initializing..."
+    (appModel
+        |> createSettingsModel
+       ,Cmd.batch[getScrollbarWidth ()
                  ,setWindowSize
                  ])
+
+createSettingsModel: Model -> Model
+createSettingsModel model =
+    {model | settingsModel = Just (Settings.create model.dbUrl model.apiServer)}
+
+updateSettings: Settings.Msg -> Model -> Model
+updateSettings settingsMsg model =
+    {model | settingsModel = 
+        case model.settingsModel of
+            Just settingsModel ->
+                let (updatedSettings, _) = Settings.update settingsMsg settingsModel
+                in Just updatedSettings
+            Nothing -> Nothing
+    }
+
+closeSettingsWindow: Model -> Model
+closeSettingsWindow model =
+   {model | isSettingsOpened = False}
+
+cleanOpenedWindows: Model -> Model
+cleanOpenedWindows model =
+    {model | openedWindows = []}
+    
+
 
 setWindowSize: Cmd Msg
 setWindowSize = 
@@ -107,8 +136,11 @@ view model =
                          , (App.map UpdateWindowList (WindowList.view model.windowList))
                          ]
                    , if model.isSettingsOpened then
-                         Settings.view (Settings.create model.dbUrl model.apiServer)
-                            |> App.map UpdateSettings
+                        case model.settingsModel of
+                            Just settingsModel ->
+                                 Settings.view settingsModel
+                                    |> App.map UpdateSettings
+                            Nothing -> text "No settings.."
                      else
                         div [class "pane main_container"] 
                              [ div [class "tab-group"] 
@@ -149,14 +181,48 @@ settingsButton =
             [class "btn btn-default"
             ,onClick ToggleSettingsWindow
             ]
-            [ span [class "icon icon-cancel icon-cog"] []
-            , text " Settings"
+            [ span [class "icon icon-text icon-cog"] []
+            , text "Connection Settings"
             ]
          ]
 
-loadNextPage: WindowId -> Tab.Model -> Model -> Cmd Msg
-loadNextPage windowId tab model =
-    getWindowDataPage tab.tab.table windowId 1 20 model
+shallLoadNextPage: Int -> Model -> Cmd Msg
+shallLoadNextPage windowId model =
+    case getWindow model windowId of
+        Just window ->
+            if not window.mainTab.loadingPage then
+                loadNextPage windowId model
+            else
+                let _ = Debug.log "Ignoring LoadNextPage request" ""
+                in Cmd.none
+        Nothing ->
+            Cmd.none
+
+loadNextPage: Int -> Model -> Cmd Msg
+loadNextPage windowId model =
+    case getWindow model windowId of
+        Just window -> 
+            let table = window.mainTab.tab.table
+                nextPage = 
+                    case window.mainTab.page of
+                        Just page -> page + 1
+                        Nothing -> 0
+                pageSize = 
+                    case window.mainTab.pageSize of
+                        Just pageSize -> pageSize
+                        Nothing -> 0
+                totalPage =
+                    case window.mainTab.totalPage of
+                        Just totalPage -> totalPage
+                        Nothing -> 0
+            in
+            if nextPage < totalPage then
+                getWindowDataPage table windowId nextPage pageSize model
+            else
+                let _ = Debug.log "Has reached the last page"
+                in
+                Cmd.none
+        Nothing -> Cmd.none
     
 
 update: Msg -> Model -> (Model, Cmd Msg)
@@ -164,22 +230,12 @@ update msg model =
     case msg of
         UpdateWindow windowId windowMsg -> 
               case msg of 
-                    -- TODO: a hacky long TAP? lazy
                     UpdateWindow windowId (DataWindow.UpdateTab (Tab.UpdateRow rowId Row.FocusRecord)) ->
                         (updateWindow model windowMsg windowId
                         ,fetchFocusedRecordDetail model windowId rowId)
 
-
                     _ -> 
-                        case windowMsg of
-                            DataWindow.LoadNextPage tab ->
-                                let _ = Debug.log "Loading next page" "page"
-                                in 
-                                (updateWindow model windowMsg windowId
-                                ,loadNextPage windowId tab model
-                                )
-                            _ -> 
-                                (updateWindow model windowMsg windowId, Cmd.none)
+                        (updateWindow model windowMsg windowId, Cmd.none)
 
         CloseWindow windowId ->
             (closeWindow model windowId 
@@ -239,15 +295,27 @@ update msg model =
             ( { model | error = (toString e)::model.error }, Cmd.none )
 
         UpdateSettings settingsMsg ->
+            let _ = Debug.log "settings" settingsMsg
+            in
             case settingsMsg of
-                Settings.OpenWindow ->
-                    ({model | isSettingsOpened = True}, Cmd.none)
                 Settings.CloseWindow ->
-                    ({model | isSettingsOpened = False}, Cmd.none)
+                    (closeSettingsWindow model
+                        |> updateSettings settingsMsg
+                    , Cmd.none)
+
                 Settings.ChangeDbUrl dbUrl ->
-                    ({model | dbUrl = dbUrl}, Cmd.none)
+                    ({model | dbUrl = Just dbUrl}
+                        |> updateSettings settingsMsg
+                    , Cmd.none)
+
                 Settings.ApplySettings ->
-                    (model, fetchWindowList model)
+                    let _ = Debug.log "Apllying the settings down...." ""
+                    in
+                    (closeSettingsWindow model
+                        |> cleanOpenedWindows
+                        |> updateSettings settingsMsg
+                    ,fetchWindowList model)
+
 
         ToggleSettingsWindow ->
             ({model | isSettingsOpened = not model.isSettingsOpened}, Cmd.none)
@@ -275,6 +343,16 @@ update msg model =
                 |> updateAllWindow (DataWindow.BrowserDimensionChanged updatedDimension) 
             , Cmd.none)
 
+        ReceivedScrollBottomEvent table ->
+            case model.activeWindow of
+                Just windowId ->
+                    (updateActiveWindow (DataWindow.ReceivedScrollBottomEvent table) model
+                     ,shallLoadNextPage windowId model
+                    )
+
+                Nothing -> 
+                     (model,Cmd.none)
+
         WindowDataNextPageReceived windowId tableDaoList ->
             let _ = Debug.log "got next page for " windowId
             in
@@ -295,6 +373,7 @@ subscriptions: Model -> Sub Msg
 subscriptions model = 
      Sub.batch [(BrowserWindow.resizes sizeToMsg)
                ,receiveScrollBarWidth ReceivedScrollBarWidth
+               ,receivedScrollBottomEvent ReceivedScrollBottomEvent
                ]
 
 sizeToMsg: BrowserWindow.Size -> Msg
@@ -350,6 +429,20 @@ updateAllWindow windowMsg model =
             \w ->
                 let (updatedWindow, _) = DataWindow.update windowMsg w
                 in updatedWindow
+        ) model.openedWindows
+    in
+    {model | openedWindows = updatedWindows}
+
+updateActiveWindow: DataWindow.Msg -> Model -> Model
+updateActiveWindow windowMsg model =
+    let updatedWindows = 
+        List.map(
+            \w ->
+                if model.activeWindow == Just w.windowId then
+                    let (updatedWindow, _) = DataWindow.update windowMsg w
+                    in updatedWindow
+                else
+                    w 
         ) model.openedWindows
     in
     {model | openedWindows = updatedWindows}
@@ -448,9 +541,13 @@ getWindowTable model windowId =
 
 
 httpGet model url =
+   let dbUrl = case model.dbUrl of
+        Just dbUrl ->   dbUrl
+        Nothing -> ""
+    in
     Http.send Http.defaultSettings
     { verb = "GET"
-    , headers = [("db_url", model.dbUrl)]
+    , headers = [("db_url", dbUrl)]
     , url = model.apiServer ++ url
     , body = Http.empty
     }
@@ -469,17 +566,17 @@ fetchWindowDetail model table =
 
 getWindowData: Model -> String -> WindowId -> Cmd Msg
 getWindowData model mainTable windowId =
-    httpGet model ("/app/" ++ mainTable)
-        |> Http.fromJson (Decode.list DataWindow.tableDaoDecoder)
+    httpGet model ("/app/" ++ mainTable ++ "?"++pageSizeQuery 0 model.defaultPageSize)
+        |> Http.fromJson (Decode.list Dao.tableDaoDecoder)
         |> Task.perform FetchError (WindowDataReceived windowId)
 
-getWindowDataWithQuery: Model -> String -> WindowId -> String -> Cmd Msg
+getWindowDataWithQuery: Model -> String -> Int -> String -> Cmd Msg
 getWindowDataWithQuery model mainTable windowId query =
     httpGet model ("/app/" ++ mainTable ++ "?"++query)
-        |> Http.fromJson (Decode.list DataWindow.tableDaoDecoder)
+        |> Http.fromJson (Decode.list Dao.tableDaoDecoder)
         |> Task.perform FetchError (WindowDataNextPageReceived windowId)
  
-getWindowDataPage: String -> WindowId -> Int -> Int -> Model -> Cmd Msg
+getWindowDataPage: String -> Int -> Int -> Int -> Model -> Cmd Msg
 getWindowDataPage mainTable windowId page pageSize model =
     getWindowDataWithQuery model mainTable windowId (pageSizeQuery page pageSize)
 
@@ -531,7 +628,7 @@ fetchFocusedRecordDetail model windowId rowId =
                             let focusedParam =  "[" ++ Row.focusedRecordParam row ++ "]"
                             in
                             httpGet model ("/app/focus/" ++ mainTable ++ "?focused_record=" ++ focusedParam )
-                                |> Http.fromJson (Decode.list DataWindow.tableDaoDecoder)
+                                |> Http.fromJson (Decode.list Dao.tableDaoDecoder)
                                 |> Task.perform FetchError (FocusedRecordDataReceived windowId rowId)
                         Nothing ->
                             Debug.crash "No such row"
@@ -544,5 +641,6 @@ fetchFocusedRecordDetail model windowId rowId =
 
 port receiveScrollBarWidth: (Int -> msg) -> Sub msg
 port getScrollbarWidth: () -> Cmd msg
+port receivedScrollBottomEvent: (String -> msg) -> Sub msg
 
 

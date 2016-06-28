@@ -14,6 +14,8 @@ import Presentation exposing
     ,Mode (Edit,Read)
     ,Density(Compact, Medium, Expanded))
 
+import Dao exposing (DaoState)
+
 type alias Model =
     { rowId: Int
     , fieldModels: List Field.Model
@@ -57,16 +59,9 @@ type Msg
     | LookupDataReceived (List Field.LookupData)
     | EditRecordInForm
     | EditRecordInPlace
+    | CancelChanges
+    | SaveChanges
 
-type alias DaoState =
-    { dao: Field.Dao
-    , focused: Bool
-    }
-
-daoStateDecoder =
-    Decode.object2 DaoState
-        ("dao" := Field.daoDecoder)
-        ("focused" := Decode.bool)
 
 
 
@@ -167,19 +162,23 @@ tabularRecordControls model =
             case model.mode of
                 Read ->
                     td [class "record_control"] 
-                        [div [class "icon icon-menu tooltip", onClick EditRecordInForm] 
+                        [div [class "icon icon-menu tooltip"
+                              ,onClick EditRecordInForm] 
                                [span [class "tooltiptext"] [text "Click to open record in a form"]
                                ]
-                        ,div [class "icon icon-pencil tooltip", onClick EditRecordInPlace]
+                        ,div [class "icon icon-pencil tooltip"
+                             ,onClick EditRecordInPlace]
                                [span [class "tooltiptext"] [text "Click to edit record in the grid"]
                                ]
                         ]
                 Edit ->
                     td [class "record_control"] 
-                                [div [class "icon icon-block tooltip"] 
+                                [div [class "icon icon-block tooltip"
+                                      ,onClick CancelChanges] 
                                     [span [class "tooltiptext"][text "Click to cancel your changes"]
                                     ]
-                                ,div [class "icon icon-floppy tooltip"]
+                                ,div [class "icon icon-floppy tooltip"
+                                        ,onClick SaveChanges]
                                     [span [class "tooltiptext"][text "Click to save your changes to the database"]
                                     ]
                                 ]
@@ -275,9 +274,28 @@ update msg model =
             , Cmd.none
             ) 
         EditRecordInForm -> -- tapped in Tab
-            (model, Cmd.none)
+            ({model | mode = Edit
+             ,presentation = Form
+             }
+             ,Cmd.none)
         EditRecordInPlace -> -- tapped in Tab
-            (model, Cmd.none)
+            ({model | mode = Edit
+             ,presentation = Table
+             }
+            ,Cmd.none)
+
+        CancelChanges ->
+            ({model | mode = Read
+             ,presentation = Table
+             }
+            , Cmd.none)
+
+        SaveChanges ->
+            ({model | mode = Read
+             ,presentation = Table
+             }
+            , Cmd.none)
+
 
 --add lookup fields only to those which needed it
 updateLookupFields: Field.Msg -> Model -> Model
