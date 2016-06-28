@@ -6,11 +6,11 @@ import Html.Events exposing (..)
 
 type alias Model =
     { dbUrl: Maybe String
-    , apiServer: String
+    , apiServer: Maybe String
     }
 
 
-create: Maybe String -> String -> Model
+create: Maybe String -> Maybe String -> Model
 create dbUrl apiServer =
     { dbUrl = dbUrl
     , apiServer = apiServer
@@ -19,6 +19,7 @@ create dbUrl apiServer =
 
 
 type Msg = ChangeDbUrl String
+         | ChangeApiServer String
          | ApplySettings
          | CloseWindow
 
@@ -26,6 +27,10 @@ view: Model -> Html Msg
 view model =
    let  dbUrl = case model.dbUrl of
             Just dbUrl -> dbUrl
+            Nothing -> ""
+        
+        apiServer = case model.apiServer of
+            Just apiServer -> apiServer
             Nothing -> ""
 
         labelStyle = style [ ("width", "200px") 
@@ -72,7 +77,8 @@ view model =
                  ,input [type' "text"
                         ,placeholder "api server"
                         ,textStyle
-                        ,value model.apiServer
+                        ,value apiServer
+                        ,onInput ChangeApiServer
                         ] []
                    ]
             ,button [onClick ApplySettings
@@ -93,5 +99,7 @@ update msg model =
     case msg of
         ChangeDbUrl dbUrl ->
             ({model | dbUrl = Just dbUrl}, Cmd.none)
+        ChangeApiServer apiServer ->
+            ({model | apiServer = Just apiServer}, Cmd.none)
         _ ->
             (model, Cmd.none)

@@ -20,7 +20,7 @@ import Dao
 type alias Model =
     { title: String
     , dbUrl: Maybe String
-    , apiServer: String
+    , apiServer: Maybe String
     , windowList: WindowList.Model
     , openedWindows: List DataWindow.Model
     , error: List String
@@ -63,7 +63,7 @@ type Msg
 appModel =
     { title = "Curtain UI"
     , dbUrl = Just "postgres://postgres:p0stgr3s@localhost:5432/guardian"
-    , apiServer = "http://localhost:3224"
+    , apiServer = Just "http://localhost:3224"
     , windowList = WindowList.empty 
     , openedWindows = []
     , error = []
@@ -308,6 +308,11 @@ update msg model =
                         |> updateSettings settingsMsg
                     , Cmd.none)
 
+                Settings.ChangeApiServer apiServer ->
+                    ({model | apiServer = Just apiServer}
+                        |> updateSettings settingsMsg
+                    , Cmd.none)
+
                 Settings.ApplySettings ->
                     let _ = Debug.log "Apllying the settings down...." ""
                     in
@@ -541,14 +546,20 @@ getWindowTable model windowId =
 
 
 httpGet model url =
-   let dbUrl = case model.dbUrl of
-        Just dbUrl ->   dbUrl
-        Nothing -> ""
+   let dbUrl = 
+        case model.dbUrl of
+            Just dbUrl ->   dbUrl
+            Nothing -> ""
+
+       apiServer = 
+         case model.apiServer of
+            Just apiServer -> apiServer
+            Nothing -> ""
     in
     Http.send Http.defaultSettings
     { verb = "GET"
     , headers = [("db_url", dbUrl)]
-    , url = model.apiServer ++ url
+    , url = apiServer ++ url
     , body = Http.empty
     }
 
