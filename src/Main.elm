@@ -59,10 +59,11 @@ type Msg
     | ReceivedScrollBarWidth Int 
     | ReceivedScrollBottomEvent String 
     | WindowDataNextPageReceived WindowId (List Dao.TableDao)
+    | CacheReset String
 
 appModel =
     { title = "Curtain UI"
-    , dbUrl = Just "postgres://postgres:p0stgr3s@localhost:5432/guardian"
+    , dbUrl = Just "postgres://postgres:p0stgr3s@localhost:5432/mock"
     , apiServer = Just "http://localhost:3224"
     , windowList = WindowList.empty 
     , openedWindows = []
@@ -319,7 +320,9 @@ update msg model =
                     (closeSettingsWindow model
                         |> cleanOpenedWindows
                         |> updateSettings settingsMsg
-                    ,fetchWindowList model)
+                    ,Cmd.batch [resetCache model
+                               ,fetchWindowList model
+                               ])
 
 
         ToggleSettingsWindow ->
@@ -364,6 +367,11 @@ update msg model =
             (updateWindow model (DataWindow.WindowDataNextPageReceived tableDaoList) windowId
             ,Cmd.none
             )
+
+        CacheReset str ->
+            let _ = Debug.log "cache has been reset" ""
+            in
+            (model, Cmd.none)
 
 
 main = 
@@ -562,6 +570,31 @@ httpGet model url =
     , url = apiServer ++ url
     , body = Http.empty
     }
+
+resetCache: Model -> Cmd Msg
+resetCache model =
+    httpDelete model "/cache"
+        |> Http.fromJson Decode.string
+        |> Task.perform FetchError CacheReset
+
+httpDelete model url =
+   let dbUrl = 
+        case model.dbUrl of
+            Just dbUrl ->   dbUrl
+            Nothing -> ""
+
+       apiServer = 
+         case model.apiServer of
+            Just apiServer -> apiServer
+            Nothing -> ""
+    in
+    Http.send Http.defaultSettings
+    { verb = "DELETE"
+    , headers = [("db_url", dbUrl)]
+    , url = apiServer ++ url
+    , body = Http.empty
+    }
+
 
 fetchWindowList: Model -> Cmd Msg
 fetchWindowList model = 

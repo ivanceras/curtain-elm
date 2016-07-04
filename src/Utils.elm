@@ -5,6 +5,7 @@ import Date.Format
 import Date
 import Task
 import Task.Extra
+import String
 
 {-| Utility functions used in most parts of the code
 
@@ -12,14 +13,17 @@ import Task.Extra
 
 simpleDate: String -> String
 simpleDate str =
-    let time = ISO8601.fromString str 
-                |> Result.withDefault (ISO8601.fromTime 0)
-                |> ISO8601.toTime
-        date = Date.fromTime (toFloat time)
-        iso = Date.Format.formatISO8601 date
-        simple = Date.Format.format "%Y-%m-%d %H:%M" date
-    in
-    simple
+    if not (String.isEmpty str) then
+        let time = ISO8601.fromString str 
+                    |> Result.withDefault (ISO8601.fromTime 0)
+                    |> ISO8601.toTime
+            date = Date.fromTime (toFloat time)
+            iso = Date.Format.formatISO8601 date
+            simple = Date.Format.format "%Y-%m-%d %H:%M" date
+        in
+        simple
+    else
+        ""
 
 
 toList: Maybe a -> List a

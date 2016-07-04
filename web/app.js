@@ -37,7 +37,7 @@ function isScrolledBottom(el, table){
     var totalScrollHeight = el.scrollTop + el.offsetHeight + scrollAllowance; 
     //console.log("total scroll height", totalScrollHeight);
     //console.log(totalScrollHeight +" >= "+ el.firstChild.offsetHeight +" ?")
-    if ( event.target.scrollTop > prevScrollTop){
+    if ( el.scrollTop > prevScrollTop){
         if (totalScrollHeight >= el.firstChild.offsetHeight){
             console.log("Reach bottom")
             app.ports.receivedScrollBottomEvent.send(table);
