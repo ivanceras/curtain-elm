@@ -35,7 +35,7 @@ function alignScroll(event, table, column_shadow_id, row_shadow_id){
 function sendSettingsDbUrl(){
     var dbUrl = localStorage.getItem("db_url");
     if (!dbUrl){
-        dbUrl = "";
+        dbUrl = "postgres://user:pwd@localhost:5432/db";
     }
     console.log("sending db_url", dbUrl);
     app.ports.receiveSettingsDbUrl.send(dbUrl.toString());
@@ -48,7 +48,7 @@ function saveSettingsDbUrl(dbUrl){
 function sendSettingsApiServer(){
     var apiServer = localStorage.getItem("api_server");
     if (!apiServer){
-        apiServer = ""
+        apiServer = "http://localhost:3224"
     }
     console.log("sending api_server", apiServer)
     app.ports.receiveSettingsApiServer.send(apiServer.toString());

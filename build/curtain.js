@@ -15268,6 +15268,22 @@ var _user$project$Main$Model = function (a) {
 		};
 	};
 };
+var _user$project$Main$DbConnectionTestError = function (a) {
+	return {ctor: 'DbConnectionTestError', _0: a};
+};
+var _user$project$Main$DbConnectionTested = function (a) {
+	return {ctor: 'DbConnectionTested', _0: a};
+};
+var _user$project$Main$testDbConnection = function (model) {
+	return A3(
+		_elm_lang$core$Task$perform,
+		_user$project$Main$DbConnectionTestError,
+		_user$project$Main$DbConnectionTested,
+		A2(
+			_evancz$elm_http$Http$fromJson,
+			_elm_lang$core$Json_Decode$string,
+			A2(_user$project$Main$httpGet, model, '/connection')));
+};
 var _user$project$Main$CacheReset = function (a) {
 	return {ctor: 'CacheReset', _0: a};
 };
@@ -15466,8 +15482,8 @@ var _user$project$Main$fetchFocusedRecordDetail = F3(
 					return _elm_lang$core$Native_Utils.crashCase(
 						'Main',
 						{
-							start: {line: 706, column: 21},
-							end: {line: 714, column: 54}
+							start: {line: 727, column: 21},
+							end: {line: 735, column: 54}
 						},
 						_p35)('No such row');
 				}
@@ -15475,8 +15491,8 @@ var _user$project$Main$fetchFocusedRecordDetail = F3(
 				return _elm_lang$core$Native_Utils.crashCase(
 					'Main',
 					{
-						start: {line: 704, column: 13},
-						end: {line: 716, column: 49}
+						start: {line: 725, column: 13},
+						end: {line: 737, column: 49}
 					},
 					_p34)('No such window');
 			}
@@ -15484,8 +15500,8 @@ var _user$project$Main$fetchFocusedRecordDetail = F3(
 			return _elm_lang$core$Native_Utils.crashCase(
 				'Main',
 				{
-					start: {line: 702, column: 5},
-					end: {line: 719, column: 63}
+					start: {line: 723, column: 5},
+					end: {line: 740, column: 63}
 				},
 				_p33)('No matching table for focused record');
 		}
@@ -15514,8 +15530,8 @@ var _user$project$Main$fetchLookupData = F2(
 			return _elm_lang$core$Native_Utils.crashCase(
 				'Main',
 				{
-					start: {line: 690, column: 5},
-					end: {line: 696, column: 54}
+					start: {line: 711, column: 5},
+					end: {line: 717, column: 54}
 				},
 				_p39)('Unable to get matching table');
 		}
@@ -15544,8 +15560,8 @@ var _user$project$Main$fetchLookupTabs = F2(
 			return _elm_lang$core$Native_Utils.crashCase(
 				'Main',
 				{
-					start: {line: 678, column: 5},
-					end: {line: 684, column: 54}
+					start: {line: 699, column: 5},
+					end: {line: 705, column: 54}
 				},
 				_p41)('Unable to get matching table');
 		}
@@ -15998,16 +16014,11 @@ var _user$project$Main$update = F2(
 						var _p55 = A2(_elm_lang$core$Debug$log, 'Apllying the settings down....', '');
 						return {
 							ctor: '_Tuple2',
-							_0: A2(
-								_user$project$Main$updateSettings,
-								_p56,
-								_user$project$Main$cleanOpenedWindows(
-									_user$project$Main$closeSettingsWindow(model))),
+							_0: A2(_user$project$Main$updateSettings, _p56, model),
 							_1: _elm_lang$core$Platform_Cmd$batch(
 								_elm_lang$core$Native_List.fromArray(
 									[
-										_user$project$Main$resetCache(model),
-										_user$project$Main$fetchWindowList(model),
+										_user$project$Main$testDbConnection(model),
 										_user$project$Main$saveSettings(model)
 									]))
 						};
@@ -16095,7 +16106,12 @@ var _user$project$Main$update = F2(
 				};
 			case 'CacheReset':
 				var _p65 = A2(_elm_lang$core$Debug$log, 'cache has been reset', '');
-				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+				return {
+					ctor: '_Tuple2',
+					_0: _user$project$Main$cleanOpenedWindows(
+						_user$project$Main$closeSettingsWindow(model)),
+					_1: _user$project$Main$fetchWindowList(model)
+				};
 			case 'ReceivedSettingsDbUrl':
 				var _p67 = _p44._0;
 				var _p66 = A2(_elm_lang$core$Debug$log, 'received settings db_url', _p67);
@@ -16109,18 +16125,35 @@ var _user$project$Main$update = F2(
 							})),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
-			default:
-				var _p68 = A2(_elm_lang$core$Debug$log, 'received settings api_server', 'hello..');
+			case 'ReceivedSettingsApiServer':
+				var _p69 = _p44._0;
+				var _p68 = A2(_elm_lang$core$Debug$log, 'received settings api_server', _p69);
 				return {
 					ctor: '_Tuple2',
 					_0: _user$project$Main$createSettingsModel(
 						_elm_lang$core$Native_Utils.update(
 							model,
 							{
-								apiServer: _elm_lang$core$Maybe$Just(_p44._0)
+								apiServer: _elm_lang$core$Maybe$Just(_p69)
 							})),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
+			case 'DbConnectionTested':
+				var _p72 = _p44._0;
+				var _p70 = A2(_elm_lang$core$Debug$log, 'Database connection tested', _p72);
+				if (_elm_lang$core$Native_Utils.eq(_p72, 'OK')) {
+					return {
+						ctor: '_Tuple2',
+						_0: model,
+						_1: _user$project$Main$resetCache(model)
+					};
+				} else {
+					var _p71 = _elm_lang$core$Debug$log('Unable to connect to database');
+					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+				}
+			default:
+				var _p73 = A2(_elm_lang$core$Debug$log, 'There is an error with this request', '');
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 		}
 	});
 var _user$project$Main$main = {

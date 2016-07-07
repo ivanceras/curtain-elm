@@ -62,6 +62,8 @@ type Msg
     | ReceivedSettingsApiServer String
     | WindowDataNextPageReceived WindowId (List Dao.TableDao)
     | CacheReset String
+    | DbConnectionTested String
+    | DbConnectionTestError Http.Error
 
 appModel =
     { title = "Curtain UI"
@@ -333,11 +335,9 @@ update msg model =
                 Settings.ApplySettings ->
                     let _ = Debug.log "Apllying the settings down...." ""
                     in
-                    (closeSettingsWindow model
-                        |> cleanOpenedWindows
+                    (model
                         |> updateSettings settingsMsg
-                    ,Cmd.batch [resetCache model
-                               ,fetchWindowList model
+                    ,Cmd.batch [testDbConnection model
                                ,saveSettings model
                                ])
 
@@ -390,7 +390,9 @@ update msg model =
         CacheReset str ->
             let _ = Debug.log "cache has been reset" ""
             in
-            (model, Cmd.none)
+            (closeSettingsWindow model
+                |> cleanOpenedWindows
+            , fetchWindowList model)
 
         ReceivedSettingsDbUrl dbUrl ->
             let _ = Debug.log "received settings db_url" dbUrl in
@@ -400,11 +402,24 @@ update msg model =
             )
 
         ReceivedSettingsApiServer apiServer ->
-            let _ = Debug.log "received settings api_server" "hello.." in
+            let _ = Debug.log "received settings api_server" apiServer in
             ({model | apiServer = Just apiServer}
                 |> createSettingsModel
             , Cmd.none
             )
+        
+        DbConnectionTested result ->
+            let _ = Debug.log "Database connection tested" result in
+            if result == "OK" then
+                (model, resetCache model)
+            else
+                let _ = Debug.log "Unable to connect to database"
+                in
+                (model, Cmd.none)
+
+        DbConnectionTestError error ->
+            let _ = Debug.log "There is an error with this request" "" in
+            (model, Cmd.none)
 
 
 main = 
@@ -612,6 +627,12 @@ resetCache model =
     httpDelete model "/cache"
         |> Http.fromJson Decode.string
         |> Task.perform FetchError CacheReset
+
+
+testDbConnection model =
+    httpGet model "/connection"
+        |> Http.fromJson Decode.string
+        |> Task.perform DbConnectionTestError DbConnectionTested
 
 httpDelete model url =
    let dbUrl = 
