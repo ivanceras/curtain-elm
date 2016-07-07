@@ -58,13 +58,15 @@ type Msg
     | WindowResize BrowserWindow.Size
     | ReceivedScrollBarWidth Int 
     | ReceivedScrollBottomEvent String 
+    | ReceivedSettingsDbUrl String
+    | ReceivedSettingsApiServer String
     | WindowDataNextPageReceived WindowId (List Dao.TableDao)
     | CacheReset String
 
 appModel =
     { title = "Curtain UI"
-    , dbUrl = Just "postgres://postgres:p0stgr3s@localhost:5432/mock"
-    , apiServer = Just "http://localhost:3224"
+    , dbUrl = Nothing
+    , apiServer = Nothing
     , windowList = WindowList.empty 
     , openedWindows = []
     , error = []
@@ -83,11 +85,12 @@ appModel =
 
 init: (Model, Cmd Msg)
 init = 
-    Debug.log "Initializing..."
     (appModel
         |> createSettingsModel
        ,Cmd.batch[getScrollbarWidth ()
                  ,setWindowSize
+                 ,getSettingsDbUrl ()
+                 ,getSettingsApiServer ()
                  ])
 
 createSettingsModel: Model -> Model
@@ -103,6 +106,19 @@ updateSettings settingsMsg model =
                 in Just updatedSettings
             Nothing -> Nothing
     }
+
+saveSettings: Model -> Cmd msg 
+saveSettings model =
+   Cmd.batch[
+     case model.dbUrl of
+        Just dbUrl -> saveSettingsDbUrl dbUrl
+        Nothing -> Cmd.none
+
+    ,case model.apiServer of
+        Just apiServer -> saveSettingsApiServer apiServer
+        Nothing -> Cmd.none
+
+   ] 
 
 closeSettingsWindow: Model -> Model
 closeSettingsWindow model =
@@ -322,6 +338,7 @@ update msg model =
                         |> updateSettings settingsMsg
                     ,Cmd.batch [resetCache model
                                ,fetchWindowList model
+                               ,saveSettings model
                                ])
 
 
@@ -343,7 +360,8 @@ update msg model =
             , Cmd.none)
 
         ReceivedScrollBarWidth width ->
-            let dimension = model.browserDimension
+            let _ = Debug.log "received scrollbar width" width
+                dimension = model.browserDimension
                 updatedDimension =
                     {dimension | scrollBarWidth = width}
             in
@@ -352,6 +370,7 @@ update msg model =
             , Cmd.none)
 
         ReceivedScrollBottomEvent table ->
+            let _ = Debug.log "main received scrollbottom event" table in
             case model.activeWindow of
                 Just windowId ->
                     (updateActiveWindow (DataWindow.ReceivedScrollBottomEvent table) model
@@ -373,6 +392,20 @@ update msg model =
             in
             (model, Cmd.none)
 
+        ReceivedSettingsDbUrl dbUrl ->
+            let _ = Debug.log "received settings db_url" dbUrl in
+            ({model | dbUrl = Just dbUrl}
+                |> createSettingsModel 
+            , Cmd.none
+            )
+
+        ReceivedSettingsApiServer apiServer ->
+            let _ = Debug.log "received settings api_server" "hello.." in
+            ({model | apiServer = Just apiServer}
+                |> createSettingsModel
+            , Cmd.none
+            )
+
 
 main = 
     App.program
@@ -384,9 +417,12 @@ main =
 
 subscriptions: Model -> Sub Msg 
 subscriptions model = 
+    let _ = Debug.log "setting up subscription" "" in
      Sub.batch [(BrowserWindow.resizes sizeToMsg)
                ,receiveScrollBarWidth ReceivedScrollBarWidth
-               ,receivedScrollBottomEvent ReceivedScrollBottomEvent
+               ,receiveScrollBottomEvent ReceivedScrollBottomEvent
+               ,receiveSettingsDbUrl ReceivedSettingsDbUrl
+               ,receiveSettingsApiServer ReceivedSettingsApiServer
                ]
 
 sizeToMsg: BrowserWindow.Size -> Msg
@@ -683,8 +719,16 @@ fetchFocusedRecordDetail model windowId rowId =
             Debug.crash "No matching table for focused record"
 
 
-port receiveScrollBarWidth: (Int -> msg) -> Sub msg
 port getScrollbarWidth: () -> Cmd msg
-port receivedScrollBottomEvent: (String -> msg) -> Sub msg
+port getSettingsDbUrl: () -> Cmd msg
+port getSettingsApiServer: () -> Cmd msg
+
+port saveSettingsDbUrl: String -> Cmd msg
+port saveSettingsApiServer: String -> Cmd msg
+
+port receiveScrollBarWidth: (Int -> msg) -> Sub msg
+port receiveScrollBottomEvent: (String -> msg) -> Sub msg
+port receiveSettingsDbUrl: (String -> msg) -> Sub msg
+port receiveSettingsApiServer: (String -> msg) -> Sub msg
 
 

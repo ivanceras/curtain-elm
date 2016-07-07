@@ -1,14 +1,6 @@
 var app;
 
 
-function init(){
-    app = Elm.Main.fullscreen();
-    app.ports.getScrollbarWidth.subscribe(function(){
-        sendScrollBarWidth();
-    });
-    sendScrollBarWidth();
-}
-window.onload = init
 
 function sendScrollBarWidth(){
     var width = getScrollbarWidth();
@@ -16,31 +8,17 @@ function sendScrollBarWidth(){
     app.ports.receiveScrollBarWidth.send(width);
 }
 
-function scrollListener(event){
-    console.log("scroll", event);
-    console.log("target", event.target);
-    console.log("scrollTop", event.target.scrollTop);
-    console.log("top", event.target.top);
-    console.log("offsetHeight", event.target.offsetHeight);
-    console.log("firstChild offsetHeight", event.target.firstChild.offsetHeight);
-
-}
 
 var prevScrollTop;
 var prevScrollLeft;
 
 function isScrolledBottom(el, table){
     scrollAllowance = 200;
-    //console.log("el scrolltop", el.scrollTop);
-    //console.log("el Height", el.offsetHeight);
-    //console.log("el.firstChild Height", el.firstChild.offsetHeight);
     var totalScrollHeight = el.scrollTop + el.offsetHeight + scrollAllowance; 
-    //console.log("total scroll height", totalScrollHeight);
-    //console.log(totalScrollHeight +" >= "+ el.firstChild.offsetHeight +" ?")
     if ( el.scrollTop > prevScrollTop){
         if (totalScrollHeight >= el.firstChild.offsetHeight){
             console.log("Reach bottom")
-            app.ports.receivedScrollBottomEvent.send(table);
+            app.ports.receiveScrollBottomEvent.send(table);
         }
     }
     prevScrollLeft = el.scrollLeft;
@@ -49,22 +27,40 @@ function isScrolledBottom(el, table){
 
 
 function alignScroll(event, table, column_shadow_id, row_shadow_id){
-    // console.log("column_shadow_id", column_shadow_id);
-    // console.log("row_shadow_id", row_shadow_id);
-    //throttle(
-    //    function(){
-            isScrolledBottom(event.target, table);
-    //    }, 50);
-
+    isScrolledBottom(event.target, table);
     alignScrollElements(event, table, column_shadow_id, row_shadow_id);
 
+}
+
+function sendSettingsDbUrl(){
+    var dbUrl = localStorage.getItem("db_url");
+    if (!dbUrl){
+        dbUrl = "";
+    }
+    console.log("sending db_url", dbUrl);
+    app.ports.receiveSettingsDbUrl.send(dbUrl.toString());
+}
+
+function saveSettingsDbUrl(dbUrl){
+   localStorage.setItem("db_url", dbUrl);
+}
+
+function sendSettingsApiServer(){
+    var apiServer = localStorage.getItem("api_server");
+    if (!apiServer){
+        apiServer = ""
+    }
+    console.log("sending api_server", apiServer)
+    app.ports.receiveSettingsApiServer.send(apiServer.toString());
+}
+
+function saveSettingsApiServer(apiServer){
+    localStorage.setItem("api_server", apiServer);
 }
 
 
 function alignScrollElements(event, table, column_shadow_id, row_shadow_id){
     if (column_shadow_id && row_shadow_id){
-        // console.log("target", event.target);
-        // console.log("scrollLeft", event.target.scrollLeft);
         var column_shadow = document.getElementById(column_shadow_id);
         var row_shadow = document.getElementById(row_shadow_id);
         if (column_shadow){
@@ -108,19 +104,30 @@ function getScrollbarWidth() {
 }
 
 var wait = false;                 // Initially, we're not waiting
-/// throttle http://sampsonblog.com/749/simple-throttle-function
-function throttle (callback, limit) {
-    //return function () {              // We return a throttled function
-        if (!wait) {                  // If we're not waiting
-            console.log("executing...");
-            callback.call();          // Execute users function
-            wait = true;              // Prevent future invocations
-            setTimeout(function () {  // After a period of time
-                wait = false;         // And allow future invocations
-            }, limit);
-        }else{
-            console.log("not executing");
-        }
-    //}
-}
 
+function init(){
+    app = Elm.Main.fullscreen();
+    app.ports.getScrollbarWidth.subscribe(function(){
+        setTimeout(function(){
+            sendScrollBarWidth();
+        },4);
+    });
+
+    app.ports.saveSettingsDbUrl.subscribe(function(dbUrl){
+        saveSettingsDbUrl(dbUrl);
+    });
+    app.ports.saveSettingsApiServer.subscribe(function(apiServer){
+        saveSettingsApiServer(apiServer);
+    });
+    app.ports.getSettingsDbUrl.subscribe(function(){
+        setTimeout(function(){//TODO: had to put timeout, seems curtain.js ports calls are not received
+             sendSettingsDbUrl();
+        }, 4);
+    });
+    app.ports.getSettingsApiServer.subscribe(function(){
+        setTimeout(function(){//TODO: had to put timeout, seems curtain.js ports calls are not received
+            sendSettingsApiServer();
+        }, 4);
+    });
+}
+window.onload = init
