@@ -287,6 +287,7 @@ update msg model =
        
         WindowDetailReceived window ->
             ( displayWindowDetail model window
+                |> activateFirstWindow
                 |> updateActivatedWindowList
             , getWindowData model window.table model.uid
             )

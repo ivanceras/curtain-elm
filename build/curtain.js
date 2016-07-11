@@ -12953,7 +12953,9 @@ var _user$project$Tab$Tab = function (a) {
 												return function (m) {
 													return function (n) {
 														return function (o) {
-															return {name: a, isOwned: b, isExtension: c, isHasOne: d, isHasMany: e, isDirect: f, linkerTable: g, description: h, info: i, table: j, schema: k, fields: l, logo: m, icon: n, estimatedRowCount: o};
+															return function (p) {
+																return {name: a, isOwned: b, isExtension: c, isHasOne: d, isHasMany: e, isDirect: f, linkerTable: g, linkerColumn: h, description: i, info: j, table: k, schema: l, fields: m, logo: n, icon: o, estimatedRowCount: p};
+															};
 														};
 													};
 												};
@@ -12999,15 +13001,19 @@ var _user$project$Tab$tabDecoder = A2(
 														_elm_community$elm_json_extra$Json_Decode_Extra_ops['|:'],
 														A2(
 															_elm_community$elm_json_extra$Json_Decode_Extra_ops['|:'],
-															_elm_lang$core$Json_Decode$succeed(_user$project$Tab$Tab),
-															A2(_elm_lang$core$Json_Decode_ops[':='], 'name', _elm_lang$core$Json_Decode$string)),
-														A2(_elm_lang$core$Json_Decode_ops[':='], 'is_owned', _elm_lang$core$Json_Decode$bool)),
-													A2(_elm_lang$core$Json_Decode_ops[':='], 'is_extension', _elm_lang$core$Json_Decode$bool)),
-												A2(_elm_lang$core$Json_Decode_ops[':='], 'is_has_one', _elm_lang$core$Json_Decode$bool)),
-											A2(_elm_lang$core$Json_Decode_ops[':='], 'is_has_many', _elm_lang$core$Json_Decode$bool)),
-										A2(_elm_lang$core$Json_Decode_ops[':='], 'is_direct', _elm_lang$core$Json_Decode$bool)),
+															A2(
+																_elm_community$elm_json_extra$Json_Decode_Extra_ops['|:'],
+																_elm_lang$core$Json_Decode$succeed(_user$project$Tab$Tab),
+																A2(_elm_lang$core$Json_Decode_ops[':='], 'name', _elm_lang$core$Json_Decode$string)),
+															A2(_elm_lang$core$Json_Decode_ops[':='], 'is_owned', _elm_lang$core$Json_Decode$bool)),
+														A2(_elm_lang$core$Json_Decode_ops[':='], 'is_extension', _elm_lang$core$Json_Decode$bool)),
+													A2(_elm_lang$core$Json_Decode_ops[':='], 'is_has_one', _elm_lang$core$Json_Decode$bool)),
+												A2(_elm_lang$core$Json_Decode_ops[':='], 'is_has_many', _elm_lang$core$Json_Decode$bool)),
+											A2(_elm_lang$core$Json_Decode_ops[':='], 'is_direct', _elm_lang$core$Json_Decode$bool)),
+										_elm_lang$core$Json_Decode$maybe(
+											A2(_elm_lang$core$Json_Decode_ops[':='], 'linker_table', _elm_lang$core$Json_Decode$string))),
 									_elm_lang$core$Json_Decode$maybe(
-										A2(_elm_lang$core$Json_Decode_ops[':='], 'linker_table', _elm_lang$core$Json_Decode$string))),
+										A2(_elm_lang$core$Json_Decode_ops[':='], 'linker_column', _elm_lang$core$Json_Decode$string))),
 								_elm_lang$core$Json_Decode$maybe(
 									A2(_elm_lang$core$Json_Decode_ops[':='], 'description', _elm_lang$core$Json_Decode$string))),
 							_elm_lang$core$Json_Decode$maybe(
@@ -15482,8 +15488,8 @@ var _user$project$Main$fetchFocusedRecordDetail = F3(
 					return _elm_lang$core$Native_Utils.crashCase(
 						'Main',
 						{
-							start: {line: 727, column: 21},
-							end: {line: 735, column: 54}
+							start: {line: 728, column: 21},
+							end: {line: 736, column: 54}
 						},
 						_p35)('No such row');
 				}
@@ -15491,8 +15497,8 @@ var _user$project$Main$fetchFocusedRecordDetail = F3(
 				return _elm_lang$core$Native_Utils.crashCase(
 					'Main',
 					{
-						start: {line: 725, column: 13},
-						end: {line: 737, column: 49}
+						start: {line: 726, column: 13},
+						end: {line: 738, column: 49}
 					},
 					_p34)('No such window');
 			}
@@ -15500,8 +15506,8 @@ var _user$project$Main$fetchFocusedRecordDetail = F3(
 			return _elm_lang$core$Native_Utils.crashCase(
 				'Main',
 				{
-					start: {line: 723, column: 5},
-					end: {line: 740, column: 63}
+					start: {line: 724, column: 5},
+					end: {line: 741, column: 63}
 				},
 				_p33)('No matching table for focused record');
 		}
@@ -15530,8 +15536,8 @@ var _user$project$Main$fetchLookupData = F2(
 			return _elm_lang$core$Native_Utils.crashCase(
 				'Main',
 				{
-					start: {line: 711, column: 5},
-					end: {line: 717, column: 54}
+					start: {line: 712, column: 5},
+					end: {line: 718, column: 54}
 				},
 				_p39)('Unable to get matching table');
 		}
@@ -15560,8 +15566,8 @@ var _user$project$Main$fetchLookupTabs = F2(
 			return _elm_lang$core$Native_Utils.crashCase(
 				'Main',
 				{
-					start: {line: 699, column: 5},
-					end: {line: 705, column: 54}
+					start: {line: 700, column: 5},
+					end: {line: 706, column: 54}
 				},
 				_p41)('Unable to get matching table');
 		}
@@ -15914,7 +15920,8 @@ var _user$project$Main$update = F2(
 				return {
 					ctor: '_Tuple2',
 					_0: _user$project$Main$updateActivatedWindowList(
-						A2(_user$project$Main$displayWindowDetail, model, _p50)),
+						_user$project$Main$activateFirstWindow(
+							A2(_user$project$Main$displayWindowDetail, model, _p50))),
 					_1: A3(_user$project$Main$getWindowData, model, _p50.table, model.uid)
 				};
 			case 'LoadWindow':

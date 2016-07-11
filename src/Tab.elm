@@ -57,6 +57,7 @@ type alias Tab =
     , isHasMany: Bool
     , isDirect: Bool
     , linkerTable: Maybe String
+    , linkerColumn: Maybe String
     , description: Maybe String
     , info: Maybe String
     , table: String
@@ -79,6 +80,7 @@ tabDecoder =
         |: ("is_has_many" := Decode.bool)
         |: ("is_direct" := Decode.bool)
         |: (Decode.maybe ("linker_table" := Decode.string))
+        |: (Decode.maybe ("linker_column" := Decode.string))
         |: (Decode.maybe ("description" := Decode.string))
         |: (Decode.maybe ("info" := Decode.string))
         |: ("table" := Decode.string)
