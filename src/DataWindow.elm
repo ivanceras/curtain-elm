@@ -100,9 +100,11 @@ calcTotalHeight model =
 
 view: Model -> Html Msg
 view model = 
-    if model.isActive then
+    let display = if model.isActive then "block" else "none"
+    in
         div [class "data_window_view"
             ,style [("height", (toString (calcTotalHeight model))++"px")
+                    ,("display", display)
                    ]
             ] 
                     [toolbar model
@@ -132,7 +134,7 @@ view model =
                             App.map UpdateTab(Tab.view model.mainTab) 
                     ]
                               
-    else text ""
+    --else text ""
 
 extensionTabView: Model -> Html Msg
 extensionTabView model =

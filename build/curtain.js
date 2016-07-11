@@ -14417,7 +14417,8 @@ var _user$project$DataWindow$toolbar = function (model) {
 			]));
 };
 var _user$project$DataWindow$view = function (model) {
-	return model.isActive ? A2(
+	var display = model.isActive ? 'block' : 'none';
+	return A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
 			[
@@ -14433,7 +14434,8 @@ var _user$project$DataWindow$view = function (model) {
 							_elm_lang$core$Basics$toString(
 								_user$project$DataWindow$calcTotalHeight(model)),
 							'px')
-					}
+					},
+						{ctor: '_Tuple2', _0: 'display', _1: display}
 					]))
 			]),
 		_elm_lang$core$Native_List.fromArray(
@@ -14501,7 +14503,7 @@ var _user$project$DataWindow$view = function (model) {
 							_user$project$Tab$view(model.mainTab));
 				}
 			}()
-			])) : _elm_lang$html$Html$text('');
+			]));
 };
 
 var _user$project$WindowList$update = F2(
