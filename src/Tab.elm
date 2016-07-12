@@ -37,7 +37,7 @@ type alias Model =
     , totalPage: Maybe Int
     , uid: Int -- used for tracking row number
     , focusedRow: Maybe Int
-    , tabId: Int
+    , tabId: String
     , allocatedHeight: Int
     , browserDimension: BrowserDimension
     , loadingPage: Bool
@@ -116,7 +116,7 @@ type Msg
     | TabDataNextPageReceived TableDao
     | ReceivedScrollBottomEvent
 
-create: Tab -> Int -> Int -> Model
+create: Tab -> String -> Int -> Model
 create tab tabId height =
     { tab = tab
     , rows= []
@@ -157,8 +157,8 @@ emptyRowForm model =
 
 view: Model -> Html Msg
 view model =
-    let columnShadowId = "column_shadow-"++(toString model.tabId)
-        rowShadowId = "row_shadow-"++(toString model.tabId)
+    let columnShadowId = "column_shadow-"++model.tabId
+        rowShadowId = "row_shadow-"++ model.tabId
 
         tabView =
             case model.presentation of

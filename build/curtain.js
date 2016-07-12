@@ -13192,14 +13192,8 @@ var _user$project$Tab$rowShadow = function (model) {
 			model.rows));
 };
 var _user$project$Tab$view = function (model) {
-	var rowShadowId = A2(
-		_elm_lang$core$Basics_ops['++'],
-		'row_shadow-',
-		_elm_lang$core$Basics$toString(model.tabId));
-	var columnShadowId = A2(
-		_elm_lang$core$Basics_ops['++'],
-		'column_shadow-',
-		_elm_lang$core$Basics$toString(model.tabId));
+	var rowShadowId = A2(_elm_lang$core$Basics_ops['++'], 'row_shadow-', model.tabId);
+	var columnShadowId = A2(_elm_lang$core$Basics_ops['++'], 'column_shadow-', model.tabId);
 	var tabView = function () {
 		var _p33 = model.presentation;
 		switch (_p33.ctor) {
@@ -13464,32 +13458,6 @@ var _user$project$DataWindow$getMainTabFocusedRow = F2(
 	function (model, rowId) {
 		return A2(_user$project$Tab$getRow, model.mainTab, rowId);
 	});
-var _user$project$DataWindow$updateWindow = F2(
-	function (window, model) {
-		return _elm_lang$core$Native_Utils.update(
-			model,
-			{
-				mainTab: A3(_user$project$Tab$create, window.mainTab, model.nextTabId, model.mainTableHeight),
-				extTabs: A2(
-					_elm_lang$core$List$map,
-					function (ext) {
-						var extModel = A3(_user$project$Tab$create, ext, model.nextTabId, 100);
-						return _elm_lang$core$Native_Utils.update(
-							extModel,
-							{presentation: _user$project$Presentation$Form});
-					},
-					window.extTabs),
-				hasManyMergedTabs: A2(
-					_elm_lang$core$List$map,
-					function (tab) {
-						var tabModel = A3(_user$project$Tab$create, tab, model.nextTabId, model.detailTableHeight);
-						return _elm_lang$core$Native_Utils.update(
-							tabModel,
-							{isOpen: false});
-					},
-					A2(_elm_lang$core$Basics_ops['++'], window.hasManyTabs, window.hasManyIndirectTabs))
-			});
-	});
 var _user$project$DataWindow$updateMainTab = F2(
 	function (tabMsg, model) {
 		var _p0 = A2(_user$project$Tab$update, tabMsg, model.mainTab);
@@ -13647,6 +13615,19 @@ var _user$project$DataWindow$calcTotalHeight = function (model) {
 	var windowHeightDeductions = 100;
 	return model.browserDimension.height - windowHeightDeductions;
 };
+var _user$project$DataWindow$generateTabId = F2(
+	function (window, windowId) {
+		return A2(
+			_elm_lang$core$Basics_ops['++'],
+			window.table,
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				'[',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(windowId),
+					']')));
+	});
 var _user$project$DataWindow$create = F2(
 	function (window, windowId) {
 		return {
@@ -13659,12 +13640,54 @@ var _user$project$DataWindow$create = F2(
 				[]),
 			name: window.name,
 			windowId: windowId,
-			mainTab: A3(_user$project$Tab$create, window.mainTab, 0, 0),
+			mainTab: A3(
+				_user$project$Tab$create,
+				window.mainTab,
+				A2(_user$project$DataWindow$generateTabId, window, windowId),
+				0),
 			nextTabId: 0,
 			mainTableHeight: 0,
 			detailTableHeight: 0,
 			browserDimension: _user$project$Tab$defaultBrowserDimension
 		};
+	});
+var _user$project$DataWindow$updateWindow = F2(
+	function (window, model) {
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				mainTab: A3(
+					_user$project$Tab$create,
+					window.mainTab,
+					A2(_user$project$DataWindow$generateTabId, window, model.windowId),
+					model.mainTableHeight),
+				extTabs: A2(
+					_elm_lang$core$List$map,
+					function (ext) {
+						var extModel = A3(
+							_user$project$Tab$create,
+							ext,
+							A2(_user$project$DataWindow$generateTabId, window, model.windowId),
+							100);
+						return _elm_lang$core$Native_Utils.update(
+							extModel,
+							{presentation: _user$project$Presentation$Form});
+					},
+					window.extTabs),
+				hasManyMergedTabs: A2(
+					_elm_lang$core$List$map,
+					function (tab) {
+						var tabModel = A3(
+							_user$project$Tab$create,
+							tab,
+							A2(_user$project$DataWindow$generateTabId, window, model.windowId),
+							model.detailTableHeight);
+						return _elm_lang$core$Native_Utils.update(
+							tabModel,
+							{isOpen: false});
+					},
+					A2(_elm_lang$core$Basics_ops['++'], window.hasManyTabs, window.hasManyIndirectTabs))
+			});
 	});
 var _user$project$DataWindow$defaultFormRecordHeight = 200;
 var _user$project$DataWindow$updateAllocatedHeight = function (model) {

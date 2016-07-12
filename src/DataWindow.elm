@@ -35,6 +35,10 @@ type alias Model =
 
 defaultFormRecordHeight = 200
 
+generateTabId: Window -> Int -> String
+generateTabId window windowId =
+    (window.table++"["++(toString windowId)++"]")
+
 create: Window -> Int -> Model
 create window windowId =
     { presentation = Table
@@ -44,7 +48,7 @@ create window windowId =
     , hasManyMergedTabs = []
     , name = window.name
     , windowId = windowId
-    , mainTab = Tab.create window.mainTab 0 0
+    , mainTab = Tab.create window.mainTab (generateTabId window windowId) 0
     , nextTabId = 0
     , mainTableHeight = 0
     , detailTableHeight = 0
@@ -484,19 +488,20 @@ updateMainTab tabMsg model =
     {model | mainTab = updatedMainTab}
 
 
+
 updateWindow: Window -> Model -> Model
 updateWindow window model =
-    {model | mainTab = Tab.create window.mainTab model.nextTabId model.mainTableHeight
+    {model | mainTab = Tab.create window.mainTab (generateTabId window model.windowId) model.mainTableHeight
     ,extTabs = 
         List.map(
             \ext ->
-               let extModel = Tab.create ext model.nextTabId 100
+               let extModel = Tab.create ext (generateTabId window model.windowId) 100
                in {extModel | presentation = Form}
         ) window.extTabs
     ,hasManyMergedTabs =
         List.map(
             \tab -> 
-                let tabModel = Tab.create tab model.nextTabId model.detailTableHeight
+                let tabModel = Tab.create tab (generateTabId window model.windowId) model.detailTableHeight
                 in {tabModel | isOpen = False}
         ) (window.hasManyTabs ++ window.hasManyIndirectTabs)
     }
