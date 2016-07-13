@@ -147,7 +147,6 @@ defaultBrowserDimension =
 emptyRowForm: Model -> Row.Model
 emptyRowForm model =
     let row = Row.create model.tab.fields model.uid
-        _ = Debug.log "creating emptyRow in form using " model.tab.fields
         (updatedRow,_) = Row.update (Row.ChangePresentation Form) row
         (updatedRow1,_) = Row.update (Row.ChangeMode Edit) updatedRow
      in

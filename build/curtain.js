@@ -282,49 +282,123 @@ var _elm_lang$core$Native_Utils = function() {
 
 // COMPARISONS
 
-function eq(rootX, rootY)
+function eq(x, y)
 {
-	var stack = [{ x: rootX, y: rootY }];
-	while (stack.length > 0)
+	var stack = [];
+	var isEqual = eqHelp(x, y, 0, stack);
+	var pair;
+	while (isEqual && (pair = stack.pop()))
 	{
-		var front = stack.pop();
-		var x = front.x;
-		var y = front.y;
-		if (x === y)
+		isEqual = eqHelp(pair.x, pair.y, 0, stack);
+	}
+	return isEqual;
+}
+
+
+function eqHelp(x, y, depth, stack)
+{
+	if (depth > 100)
+	{
+		stack.push({ x: x, y: y });
+		return true;
+	}
+
+	if (x === y)
+	{
+		return true;
+	}
+
+	if (typeof x !== 'object')
+	{
+		if (typeof x === 'function')
 		{
-			continue;
+			throw new Error(
+				'Trying to use `(==)` on functions. There is no way to know if functions are "the same" in the Elm sense.'
+				+ ' Read more about this at http://package.elm-lang.org/packages/elm-lang/core/latest/Basics#=='
+				+ ' which describes why it is this way and what the better version will look like.'
+			);
 		}
-		if (typeof x === 'object')
+		return false;
+	}
+
+	if (x === null || y === null)
+	{
+		return false
+	}
+
+	if (x instanceof Date)
+	{
+		return x.getTime() === y.getTime();
+	}
+
+	if (!('ctor' in x))
+	{
+		for (var key in x)
 		{
-			var c = 0;
-			for (var key in x)
-			{
-				++c;
-				if (!(key in y))
-				{
-					return false;
-				}
-				if (key === 'ctor')
-				{
-					continue;
-				}
-				stack.push({ x: x[key], y: y[key] });
-			}
-			if ('ctor' in x)
-			{
-				stack.push({ x: x.ctor, y: y.ctor});
-			}
-			if (c !== Object.keys(y).length)
+			if (!eqHelp(x[key], y[key], depth + 1, stack))
 			{
 				return false;
 			}
 		}
-		else if (typeof x === 'function')
+		return true;
+	}
+
+	// convert Dicts and Sets to lists
+	if (x.ctor === 'RBNode_elm_builtin' || x.ctor === 'RBEmpty_elm_builtin')
+	{
+		x = _elm_lang$core$Dict$toList(x);
+		y = _elm_lang$core$Dict$toList(y);
+	}
+	if (x.ctor === 'Set_elm_builtin')
+	{
+		x = _elm_lang$core$Set$toList(x);
+		y = _elm_lang$core$Set$toList(y);
+	}
+
+	// check if lists are equal without recursion
+	if (x.ctor === '::')
+	{
+		var a = x;
+		var b = y;
+		while (a.ctor === '::' && b.ctor === '::')
 		{
-			throw new Error('Equality error: general function equality is ' +
-							'undecidable, and therefore, unsupported');
+			if (!eqHelp(a._0, b._0, depth + 1, stack))
+			{
+				return false;
+			}
+			a = a._1;
+			b = b._1;
 		}
-		else
+		return a.ctor === b.ctor;
+	}
+
+	// check if Arrays are equal
+	if (x.ctor === '_Array')
+	{
+		var xs = _elm_lang$core$Native_Array.toJSArray(x);
+		var ys = _elm_lang$core$Native_Array.toJSArray(y);
+		if (xs.length !== ys.length)
+		{
+			return false;
+		}
+		for (var i = 0; i < xs.length; i++)
+		{
+			if (!eqHelp(xs[i], ys[i], depth + 1, stack))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	if (x.ctor !== y.ctor)
+	{
+		return false;
+	}
+
+	for (var key in x)
+	{
+		if (!eqHelp(x[key], y[key], depth + 1, stack))
 		{
 			return false;
 		}
@@ -339,34 +413,23 @@ var LT = -1, EQ = 0, GT = 1;
 
 function cmp(x, y)
 {
-	var ord;
 	if (typeof x !== 'object')
 	{
 		return x === y ? EQ : x < y ? LT : GT;
 	}
-	else if (x instanceof String)
+
+	if (x instanceof String)
 	{
 		var a = x.valueOf();
 		var b = y.valueOf();
-		return a === b
-			? EQ
-			: a < b
-				? LT
-				: GT;
+		return a === b ? EQ : a < b ? LT : GT;
 	}
-	else if (x.ctor === '::' || x.ctor === '[]')
+
+	if (x.ctor === '::' || x.ctor === '[]')
 	{
-		while (true)
+		while (x.ctor === '::' && y.ctor === '::')
 		{
-			if (x.ctor === '[]' && y.ctor === '[]')
-			{
-				return EQ;
-			}
-			if (x.ctor !== y.ctor)
-			{
-				return x.ctor === '[]' ? LT : GT;
-			}
-			ord = cmp(x._0, y._0);
+			var ord = cmp(x._0, y._0);
 			if (ord !== EQ)
 			{
 				return ord;
@@ -374,9 +437,12 @@ function cmp(x, y)
 			x = x._1;
 			y = y._1;
 		}
+		return x.ctor === y.ctor ? EQ : x.ctor === '[]' ? LT : GT;
 	}
-	else if (x.ctor.slice(0, 6) === '_Tuple')
+
+	if (x.ctor.slice(0, 6) === '_Tuple')
 	{
+		var ord;
 		var n = x.ctor.slice(6) - 0;
 		var err = 'cannot compare tuples with more than 6 elements.';
 		if (n === 0) return EQ;
@@ -389,12 +455,12 @@ function cmp(x, y)
 		if (n >= 7) throw new Error('Comparison error: ' + err); } } } } } }
 		return EQ;
 	}
-	else
-	{
-		throw new Error('Comparison error: comparison is only defined on ints, ' +
-						'floats, times, chars, strings, lists of comparable values, ' +
-						'and tuples of comparable values.');
-	}
+
+	throw new Error(
+		'Comparison error: comparison is only defined on ints, '
+		+ 'floats, times, chars, strings, lists of comparable values, '
+		+ 'and tuples of comparable values.'
+	);
 }
 
 
@@ -613,11 +679,7 @@ function toString(v)
 			if (v.ctor === 'Set_elm_builtin')
 			{
 				name = 'Set';
-				list = A2(
-					_elm_lang$core$List$map,
-					function(x) {return x._0; },
-					_elm_lang$core$Dict$toList(v._0)
-				);
+				list = _elm_lang$core$Set$toList(v._0);
 			}
 			else
 			{
@@ -641,6 +703,16 @@ function toString(v)
 
 	if (type === 'object')
 	{
+		if (v instanceof Date)
+		{
+			return '<' + v.toString() + '>';
+		}
+
+		if (v.elm_web_socket)
+		{
+			return '<websocket>';
+		}
+
 		var output = [];
 		for (var k in v)
 		{
@@ -2532,7 +2604,7 @@ function fromString(str)
 {
 	var date = new Date(str);
 	return isNaN(date.getTime())
-		? _elm_lang$core$Result$Err('unable to parse \'' + str + '\' as a date')
+		? _elm_lang$core$Result$Err('Unable to parse \'' + str + '\' as a date. Dates must be in the ISO 8601 format.')
 		: _elm_lang$core$Result$Ok(date);
 }
 
@@ -3302,33 +3374,50 @@ var _elm_lang$core$Dict$merge = F6(
 	function (leftStep, bothStep, rightStep, leftDict, rightDict, initialResult) {
 		var stepState = F3(
 			function (rKey, rValue, _p2) {
-				var _p3 = _p2;
-				var _p9 = _p3._1;
-				var _p8 = _p3._0;
-				var _p4 = _p8;
-				if (_p4.ctor === '[]') {
-					return {
-						ctor: '_Tuple2',
-						_0: _p8,
-						_1: A3(rightStep, rKey, rValue, _p9)
-					};
-				} else {
-					var _p7 = _p4._1;
-					var _p6 = _p4._0._1;
-					var _p5 = _p4._0._0;
-					return (_elm_lang$core$Native_Utils.cmp(_p5, rKey) < 0) ? {
-						ctor: '_Tuple2',
-						_0: _p7,
-						_1: A3(leftStep, _p5, _p6, _p9)
-					} : ((_elm_lang$core$Native_Utils.cmp(_p5, rKey) > 0) ? {
-						ctor: '_Tuple2',
-						_0: _p8,
-						_1: A3(rightStep, rKey, rValue, _p9)
-					} : {
-						ctor: '_Tuple2',
-						_0: _p7,
-						_1: A4(bothStep, _p5, _p6, rValue, _p9)
-					});
+				stepState:
+				while (true) {
+					var _p3 = _p2;
+					var _p9 = _p3._1;
+					var _p8 = _p3._0;
+					var _p4 = _p8;
+					if (_p4.ctor === '[]') {
+						return {
+							ctor: '_Tuple2',
+							_0: _p8,
+							_1: A3(rightStep, rKey, rValue, _p9)
+						};
+					} else {
+						var _p7 = _p4._1;
+						var _p6 = _p4._0._1;
+						var _p5 = _p4._0._0;
+						if (_elm_lang$core$Native_Utils.cmp(_p5, rKey) < 0) {
+							var _v10 = rKey,
+								_v11 = rValue,
+								_v12 = {
+								ctor: '_Tuple2',
+								_0: _p7,
+								_1: A3(leftStep, _p5, _p6, _p9)
+							};
+							rKey = _v10;
+							rValue = _v11;
+							_p2 = _v12;
+							continue stepState;
+						} else {
+							if (_elm_lang$core$Native_Utils.cmp(_p5, rKey) > 0) {
+								return {
+									ctor: '_Tuple2',
+									_0: _p8,
+									_1: A3(rightStep, rKey, rValue, _p9)
+								};
+							} else {
+								return {
+									ctor: '_Tuple2',
+									_0: _p7,
+									_1: A4(bothStep, _p5, _p6, rValue, _p9)
+								};
+							}
+						}
+					}
 				}
 			});
 		var _p10 = A3(
@@ -3371,19 +3460,19 @@ var _elm_lang$core$Dict$reportRemBug = F4(
 	});
 var _elm_lang$core$Dict$isBBlack = function (dict) {
 	var _p13 = dict;
-	_v11_2:
+	_v14_2:
 	do {
 		if (_p13.ctor === 'RBNode_elm_builtin') {
 			if (_p13._0.ctor === 'BBlack') {
 				return true;
 			} else {
-				break _v11_2;
+				break _v14_2;
 			}
 		} else {
 			if (_p13._0.ctor === 'LBBlack') {
 				return true;
 			} else {
-				break _v11_2;
+				break _v14_2;
 			}
 		}
 	} while(false);
@@ -3397,10 +3486,10 @@ var _elm_lang$core$Dict$sizeHelp = F2(
 			if (_p14.ctor === 'RBEmpty_elm_builtin') {
 				return n;
 			} else {
-				var _v13 = A2(_elm_lang$core$Dict$sizeHelp, n + 1, _p14._4),
-					_v14 = _p14._3;
-				n = _v13;
-				dict = _v14;
+				var _v16 = A2(_elm_lang$core$Dict$sizeHelp, n + 1, _p14._4),
+					_v17 = _p14._3;
+				n = _v16;
+				dict = _v17;
 				continue sizeHelp;
 			}
 		}
@@ -3419,18 +3508,18 @@ var _elm_lang$core$Dict$get = F2(
 				var _p16 = A2(_elm_lang$core$Basics$compare, targetKey, _p15._1);
 				switch (_p16.ctor) {
 					case 'LT':
-						var _v17 = targetKey,
-							_v18 = _p15._3;
-						targetKey = _v17;
-						dict = _v18;
+						var _v20 = targetKey,
+							_v21 = _p15._3;
+						targetKey = _v20;
+						dict = _v21;
 						continue get;
 					case 'EQ':
 						return _elm_lang$core$Maybe$Just(_p15._2);
 					default:
-						var _v19 = targetKey,
-							_v20 = _p15._4;
-						targetKey = _v19;
-						dict = _v20;
+						var _v22 = targetKey,
+							_v23 = _p15._4;
+						targetKey = _v22;
+						dict = _v23;
 						continue get;
 				}
 			}
@@ -3453,12 +3542,12 @@ var _elm_lang$core$Dict$maxWithDefault = F3(
 			if (_p18.ctor === 'RBEmpty_elm_builtin') {
 				return {ctor: '_Tuple2', _0: k, _1: v};
 			} else {
-				var _v23 = _p18._1,
-					_v24 = _p18._2,
-					_v25 = _p18._4;
-				k = _v23;
-				v = _v24;
-				r = _v25;
+				var _v26 = _p18._1,
+					_v27 = _p18._2,
+					_v28 = _p18._4;
+				k = _v26;
+				v = _v27;
+				r = _v28;
 				continue maxWithDefault;
 			}
 		}
@@ -3584,19 +3673,19 @@ var _elm_lang$core$Dict$redden = function (t) {
 };
 var _elm_lang$core$Dict$balanceHelp = function (tree) {
 	var _p27 = tree;
-	_v33_6:
+	_v36_6:
 	do {
-		_v33_5:
+		_v36_5:
 		do {
-			_v33_4:
+			_v36_4:
 			do {
-				_v33_3:
+				_v36_3:
 				do {
-					_v33_2:
+					_v36_2:
 					do {
-						_v33_1:
+						_v36_1:
 						do {
-							_v33_0:
+							_v36_0:
 							do {
 								if (_p27.ctor === 'RBNode_elm_builtin') {
 									if (_p27._3.ctor === 'RBNode_elm_builtin') {
@@ -3606,44 +3695,44 @@ var _elm_lang$core$Dict$balanceHelp = function (tree) {
 													switch (_p27._4._0.ctor) {
 														case 'Red':
 															if ((_p27._3._3.ctor === 'RBNode_elm_builtin') && (_p27._3._3._0.ctor === 'Red')) {
-																break _v33_0;
+																break _v36_0;
 															} else {
 																if ((_p27._3._4.ctor === 'RBNode_elm_builtin') && (_p27._3._4._0.ctor === 'Red')) {
-																	break _v33_1;
+																	break _v36_1;
 																} else {
 																	if ((_p27._4._3.ctor === 'RBNode_elm_builtin') && (_p27._4._3._0.ctor === 'Red')) {
-																		break _v33_2;
+																		break _v36_2;
 																	} else {
 																		if ((_p27._4._4.ctor === 'RBNode_elm_builtin') && (_p27._4._4._0.ctor === 'Red')) {
-																			break _v33_3;
+																			break _v36_3;
 																		} else {
-																			break _v33_6;
+																			break _v36_6;
 																		}
 																	}
 																}
 															}
 														case 'NBlack':
 															if ((_p27._3._3.ctor === 'RBNode_elm_builtin') && (_p27._3._3._0.ctor === 'Red')) {
-																break _v33_0;
+																break _v36_0;
 															} else {
 																if ((_p27._3._4.ctor === 'RBNode_elm_builtin') && (_p27._3._4._0.ctor === 'Red')) {
-																	break _v33_1;
+																	break _v36_1;
 																} else {
 																	if (((((_p27._0.ctor === 'BBlack') && (_p27._4._3.ctor === 'RBNode_elm_builtin')) && (_p27._4._3._0.ctor === 'Black')) && (_p27._4._4.ctor === 'RBNode_elm_builtin')) && (_p27._4._4._0.ctor === 'Black')) {
-																		break _v33_4;
+																		break _v36_4;
 																	} else {
-																		break _v33_6;
+																		break _v36_6;
 																	}
 																}
 															}
 														default:
 															if ((_p27._3._3.ctor === 'RBNode_elm_builtin') && (_p27._3._3._0.ctor === 'Red')) {
-																break _v33_0;
+																break _v36_0;
 															} else {
 																if ((_p27._3._4.ctor === 'RBNode_elm_builtin') && (_p27._3._4._0.ctor === 'Red')) {
-																	break _v33_1;
+																	break _v36_1;
 																} else {
-																	break _v33_6;
+																	break _v36_6;
 																}
 															}
 													}
@@ -3651,81 +3740,81 @@ var _elm_lang$core$Dict$balanceHelp = function (tree) {
 													switch (_p27._4._0.ctor) {
 														case 'Red':
 															if ((_p27._4._3.ctor === 'RBNode_elm_builtin') && (_p27._4._3._0.ctor === 'Red')) {
-																break _v33_2;
+																break _v36_2;
 															} else {
 																if ((_p27._4._4.ctor === 'RBNode_elm_builtin') && (_p27._4._4._0.ctor === 'Red')) {
-																	break _v33_3;
+																	break _v36_3;
 																} else {
 																	if (((((_p27._0.ctor === 'BBlack') && (_p27._3._3.ctor === 'RBNode_elm_builtin')) && (_p27._3._3._0.ctor === 'Black')) && (_p27._3._4.ctor === 'RBNode_elm_builtin')) && (_p27._3._4._0.ctor === 'Black')) {
-																		break _v33_5;
+																		break _v36_5;
 																	} else {
-																		break _v33_6;
+																		break _v36_6;
 																	}
 																}
 															}
 														case 'NBlack':
 															if (_p27._0.ctor === 'BBlack') {
 																if ((((_p27._4._3.ctor === 'RBNode_elm_builtin') && (_p27._4._3._0.ctor === 'Black')) && (_p27._4._4.ctor === 'RBNode_elm_builtin')) && (_p27._4._4._0.ctor === 'Black')) {
-																	break _v33_4;
+																	break _v36_4;
 																} else {
 																	if ((((_p27._3._3.ctor === 'RBNode_elm_builtin') && (_p27._3._3._0.ctor === 'Black')) && (_p27._3._4.ctor === 'RBNode_elm_builtin')) && (_p27._3._4._0.ctor === 'Black')) {
-																		break _v33_5;
+																		break _v36_5;
 																	} else {
-																		break _v33_6;
+																		break _v36_6;
 																	}
 																}
 															} else {
-																break _v33_6;
+																break _v36_6;
 															}
 														default:
 															if (((((_p27._0.ctor === 'BBlack') && (_p27._3._3.ctor === 'RBNode_elm_builtin')) && (_p27._3._3._0.ctor === 'Black')) && (_p27._3._4.ctor === 'RBNode_elm_builtin')) && (_p27._3._4._0.ctor === 'Black')) {
-																break _v33_5;
+																break _v36_5;
 															} else {
-																break _v33_6;
+																break _v36_6;
 															}
 													}
 												default:
 													switch (_p27._4._0.ctor) {
 														case 'Red':
 															if ((_p27._4._3.ctor === 'RBNode_elm_builtin') && (_p27._4._3._0.ctor === 'Red')) {
-																break _v33_2;
+																break _v36_2;
 															} else {
 																if ((_p27._4._4.ctor === 'RBNode_elm_builtin') && (_p27._4._4._0.ctor === 'Red')) {
-																	break _v33_3;
+																	break _v36_3;
 																} else {
-																	break _v33_6;
+																	break _v36_6;
 																}
 															}
 														case 'NBlack':
 															if (((((_p27._0.ctor === 'BBlack') && (_p27._4._3.ctor === 'RBNode_elm_builtin')) && (_p27._4._3._0.ctor === 'Black')) && (_p27._4._4.ctor === 'RBNode_elm_builtin')) && (_p27._4._4._0.ctor === 'Black')) {
-																break _v33_4;
+																break _v36_4;
 															} else {
-																break _v33_6;
+																break _v36_6;
 															}
 														default:
-															break _v33_6;
+															break _v36_6;
 													}
 											}
 										} else {
 											switch (_p27._3._0.ctor) {
 												case 'Red':
 													if ((_p27._3._3.ctor === 'RBNode_elm_builtin') && (_p27._3._3._0.ctor === 'Red')) {
-														break _v33_0;
+														break _v36_0;
 													} else {
 														if ((_p27._3._4.ctor === 'RBNode_elm_builtin') && (_p27._3._4._0.ctor === 'Red')) {
-															break _v33_1;
+															break _v36_1;
 														} else {
-															break _v33_6;
+															break _v36_6;
 														}
 													}
 												case 'NBlack':
 													if (((((_p27._0.ctor === 'BBlack') && (_p27._3._3.ctor === 'RBNode_elm_builtin')) && (_p27._3._3._0.ctor === 'Black')) && (_p27._3._4.ctor === 'RBNode_elm_builtin')) && (_p27._3._4._0.ctor === 'Black')) {
-														break _v33_5;
+														break _v36_5;
 													} else {
-														break _v33_6;
+														break _v36_6;
 													}
 												default:
-													break _v33_6;
+													break _v36_6;
 											}
 										}
 									} else {
@@ -3733,29 +3822,29 @@ var _elm_lang$core$Dict$balanceHelp = function (tree) {
 											switch (_p27._4._0.ctor) {
 												case 'Red':
 													if ((_p27._4._3.ctor === 'RBNode_elm_builtin') && (_p27._4._3._0.ctor === 'Red')) {
-														break _v33_2;
+														break _v36_2;
 													} else {
 														if ((_p27._4._4.ctor === 'RBNode_elm_builtin') && (_p27._4._4._0.ctor === 'Red')) {
-															break _v33_3;
+															break _v36_3;
 														} else {
-															break _v33_6;
+															break _v36_6;
 														}
 													}
 												case 'NBlack':
 													if (((((_p27._0.ctor === 'BBlack') && (_p27._4._3.ctor === 'RBNode_elm_builtin')) && (_p27._4._3._0.ctor === 'Black')) && (_p27._4._4.ctor === 'RBNode_elm_builtin')) && (_p27._4._4._0.ctor === 'Black')) {
-														break _v33_4;
+														break _v36_4;
 													} else {
-														break _v33_6;
+														break _v36_6;
 													}
 												default:
-													break _v33_6;
+													break _v36_6;
 											}
 										} else {
-											break _v33_6;
+											break _v36_6;
 										}
 									}
 								} else {
-									break _v33_6;
+									break _v36_6;
 								}
 							} while(false);
 							return _elm_lang$core$Dict$balancedTree(_p27._0)(_p27._3._3._1)(_p27._3._3._2)(_p27._3._1)(_p27._3._2)(_p27._1)(_p27._2)(_p27._3._3._3)(_p27._3._3._4)(_p27._3._4)(_p27._4);
@@ -6150,6 +6239,34 @@ function nodeHelp(tag, factList, kidList)
 }
 
 
+function keyedNode(tag, factList, kidList)
+{
+	var organized = organizeFacts(factList);
+	var namespace = organized.namespace;
+	var facts = organized.facts;
+
+	var children = [];
+	var descendantsCount = 0;
+	while (kidList.ctor !== '[]')
+	{
+		var kid = kidList._0;
+		descendantsCount += (kid._1.descendantsCount || 0);
+		children.push(kid);
+		kidList = kidList._1;
+	}
+	descendantsCount += children.length;
+
+	return {
+		type: 'keyed-node',
+		tag: tag,
+		facts: facts,
+		children: children,
+		namespace: namespace,
+		descendantsCount: descendantsCount
+	};
+}
+
+
 function custom(factList, model, impl)
 {
 	var facts = organizeFacts(factList).facts;
@@ -6181,7 +6298,7 @@ function thunk(func, args, thunk)
 		func: func,
 		args: args,
 		thunk: thunk,
-		node: null
+		node: undefined
 	};
 }
 
@@ -6333,7 +6450,7 @@ function equalEvents(a, b)
 
 function renderer(parent, tagger, initialVirtualNode)
 {
-	var eventNode = { tagger: tagger, parent: null };
+	var eventNode = { tagger: tagger, parent: undefined };
 
 	var domNode = render(initialVirtualNode, eventNode);
 	parent.appendChild(domNode);
@@ -6406,7 +6523,7 @@ function render(vNode, eventNode)
 		case 'tagger':
 			var subNode = vNode.node;
 			var tagger = vNode.tagger;
-		
+
 			while (subNode.type === 'tagger')
 			{
 				typeof tagger !== 'object'
@@ -6415,12 +6532,12 @@ function render(vNode, eventNode)
 
 				subNode = subNode.node;
 			}
-            
+
 			var subEventRoot = {
 				tagger: tagger,
 				parent: eventNode
 			};
-			
+
 			var domNode = render(subNode, subEventRoot);
 			domNode.elm_event_node_ref = subEventRoot;
 			return domNode;
@@ -6440,6 +6557,22 @@ function render(vNode, eventNode)
 			for (var i = 0; i < children.length; i++)
 			{
 				domNode.appendChild(render(children[i], eventNode));
+			}
+
+			return domNode;
+
+		case 'keyed-node':
+			var domNode = vNode.namespace
+				? document.createElementNS(vNode.namespace, vNode.tag)
+				: document.createElement(vNode.tag);
+
+			applyFacts(domNode, eventNode, vNode.facts);
+
+			var children = vNode.children;
+
+			for (var i = 0; i < children.length; i++)
+			{
+				domNode.appendChild(render(children[i]._1, eventNode));
 			}
 
 			return domNode;
@@ -6634,8 +6767,8 @@ function makePatch(type, index, data)
 		index: index,
 		type: type,
 		data: data,
-		domNode: null,
-		eventNode: null
+		domNode: undefined,
+		eventNode: undefined
 	};
 }
 
@@ -6760,6 +6893,25 @@ function diffHelp(a, b, patches, index)
 			diffChildren(a, b, patches, index);
 			return;
 
+		case 'keyed-node':
+			// Bail if obvious indicators have changed. Implies more serious
+			// structural changes such that it's not worth it to diff.
+			if (a.tag !== b.tag || a.namespace !== b.namespace)
+			{
+				patches.push(makePatch('p-redraw', index, b));
+				return;
+			}
+
+			var factsDiff = diffFacts(a.facts, b.facts);
+
+			if (typeof factsDiff !== 'undefined')
+			{
+				patches.push(makePatch('p-facts', index, factsDiff));
+			}
+
+			diffKeyedChildren(a, b, patches, index);
+			return;
+
 		case 'custom':
 			if (a.impl !== b.impl)
 			{
@@ -6880,11 +7032,11 @@ function diffChildren(aParent, bParent, patches, rootIndex)
 
 	if (aLen > bLen)
 	{
-		patches.push(makePatch('p-remove', rootIndex, aLen - bLen));
+		patches.push(makePatch('p-remove-last', rootIndex, aLen - bLen));
 	}
 	else if (aLen < bLen)
 	{
-		patches.push(makePatch('p-insert', rootIndex, bChildren.slice(aLen)));
+		patches.push(makePatch('p-append', rootIndex, bChildren.slice(aLen)));
 	}
 
 	// PAIRWISE DIFF EVERYTHING ELSE
@@ -6898,6 +7050,260 @@ function diffChildren(aParent, bParent, patches, rootIndex)
 		diffHelp(aChild, bChildren[i], patches, index);
 		index += aChild.descendantsCount || 0;
 	}
+}
+
+
+
+////////////  KEYED DIFF  ////////////
+
+
+function diffKeyedChildren(aParent, bParent, patches, rootIndex)
+{
+	var localPatches = [];
+
+	var changes = {}; // Dict String Entry
+	var inserts = []; // Array { index : Int, entry : Entry }
+	// type Entry = { tag : String, vnode : VNode, index : Int, data : _ }
+
+	var aChildren = aParent.children;
+	var bChildren = bParent.children;
+	var aLen = aChildren.length;
+	var bLen = bChildren.length;
+	var aIndex = 0;
+	var bIndex = 0;
+
+	var index = rootIndex;
+
+	while (aIndex < aLen && bIndex < bLen)
+	{
+		var a = aChildren[aIndex];
+		var b = bChildren[bIndex];
+
+		var aKey = a._0;
+		var bKey = b._0;
+		var aNode = a._1;
+		var bNode = b._1;
+
+		// check if keys match
+
+		if (aKey === bKey)
+		{
+			index++;
+			diffHelp(aNode, bNode, localPatches, index);
+			index += aNode.descendantsCount || 0;
+
+			aIndex++;
+			bIndex++;
+			continue;
+		}
+
+		// look ahead 1 to detect insertions and removals.
+
+		var aLookAhead = aIndex + 1 < aLen;
+		var bLookAhead = bIndex + 1 < bLen;
+
+		if (aLookAhead)
+		{
+			var aNext = aChildren[aIndex + 1];
+			var aNextKey = aNext._0;
+			var aNextNode = aNext._1;
+			var oldMatch = bKey === aNextKey;
+		}
+
+		if (bLookAhead)
+		{
+			var bNext = bChildren[bIndex + 1];
+			var bNextKey = bNext._0;
+			var bNextNode = bNext._1;
+			var newMatch = aKey === bNextKey;
+		}
+
+
+		// swap a and b
+		if (aLookAhead && bLookAhead && newMatch && oldMatch)
+		{
+			index++;
+			diffHelp(aNode, bNextNode, localPatches, index);
+			insertNode(changes, localPatches, aKey, bNode, bIndex, inserts);
+			index += aNode.descendantsCount || 0;
+
+			index++;
+			removeNode(changes, localPatches, aKey, aNextNode, index);
+			index += aNextNode.descendantsCount || 0;
+
+			aIndex += 2;
+			bIndex += 2;
+			continue;
+		}
+
+		// insert b
+		if (bLookAhead && newMatch)
+		{
+			index++;
+			insertNode(changes, localPatches, bKey, bNode, bIndex, inserts);
+			diffHelp(aNode, bNextNode, localPatches, index);
+			index += aNode.descendantsCount || 0;
+
+			aIndex += 1;
+			bIndex += 2;
+			continue;
+		}
+
+		// remove a
+		if (aLookAhead && oldMatch)
+		{
+			index++;
+			removeNode(changes, localPatches, aKey, aNode, index);
+			index += aNode.descendantsCount || 0;
+
+			index++;
+			diffHelp(aNextNode, bNode, localPatches, index);
+			index += aNextNode.descendantsCount || 0;
+
+			aIndex += 2;
+			bIndex += 1;
+			continue;
+		}
+
+		// remove a, insert b
+		if (aLookAhead && bLookAhead && aNextKey === bNextKey)
+		{
+			index++;
+			removeNode(changes, localPatches, aKey, aNode, index);
+			insertNode(changes, localPatches, bKey, bNode, bIndex, inserts);
+			index += aNode.descendantsCount || 0;
+
+			index++;
+			diffHelp(aNextNode, bNextNode, localPatches, index);
+			index += aNextNode.descendantsCount || 0;
+
+			aIndex += 2;
+			bIndex += 2;
+			continue;
+		}
+
+		break;
+	}
+
+	// eat up any remaining nodes with removeNode and insertNode
+
+	while (aIndex < aLen)
+	{
+		index++;
+		var a = aChildren[aIndex];
+		var aNode = a._1;
+		removeNode(changes, localPatches, a._0, aNode, index);
+		index += aNode.descendantsCount || 0;
+		aIndex++;
+	}
+
+	var endInserts;
+	while (bIndex < bLen)
+	{
+		endInserts = endInserts || [];
+		var b = bChildren[bIndex];
+		insertNode(changes, localPatches, b._0, b._1, undefined, endInserts);
+		bIndex++;
+	}
+
+	if (localPatches.length > 0 || inserts.length > 0 || typeof endInserts !== 'undefined')
+	{
+		patches.push(makePatch('p-reorder', rootIndex, {
+			patches: localPatches,
+			inserts: inserts,
+			endInserts: endInserts
+		}));
+	}
+}
+
+
+
+////////////  CHANGES FROM KEYED DIFF  ////////////
+
+
+var POSTFIX = '_elmW6BL';
+
+
+function insertNode(changes, localPatches, key, vnode, bIndex, inserts)
+{
+	var entry = changes[key];
+
+	// never seen this key before
+	if (typeof entry === 'undefined')
+	{
+		entry = {
+			tag: 'insert',
+			vnode: vnode,
+			index: bIndex,
+			data: undefined
+		};
+
+		inserts.push({ index: bIndex, entry: entry });
+		changes[key] = entry;
+
+		return;
+	}
+
+	// this key was removed earlier, a match!
+	if (entry.tag === 'remove')
+	{
+		inserts.push({ index: bIndex, entry: entry });
+
+		entry.tag = 'move';
+		var subPatches = [];
+		diffHelp(entry.vnode, vnode, subPatches, entry.index);
+		entry.index = bIndex;
+		entry.data.data = {
+			patches: subPatches,
+			entry: entry
+		};
+
+		return;
+	}
+
+	// this key has already been inserted or moved, a duplicate!
+	insertNode(changes, localPatches, key + POSTFIX, vnode, bIndex, inserts);
+}
+
+
+function removeNode(changes, localPatches, key, vnode, index)
+{
+	var entry = changes[key];
+
+	// never seen this key before
+	if (typeof entry === 'undefined')
+	{
+		var patch = makePatch('p-remove', index, undefined);
+		localPatches.push(patch);
+
+		changes[key] = {
+			tag: 'remove',
+			vnode: vnode,
+			index: index,
+			data: patch
+		};
+
+		return;
+	}
+
+	// this key was inserted earlier, a match!
+	if (entry.tag === 'insert')
+	{
+		entry.tag = 'move';
+		var subPatches = [];
+		diffHelp(vnode, entry.vnode, subPatches, index);
+
+		var patch = makePatch('p-remove', index, {
+			patches: subPatches,
+			entry: entry
+		});
+		localPatches.push(patch);
+
+		return;
+	}
+
+	// this key has already been removed or moved, a duplicate!
+	removeNode(changes, localPatches, key + POSTFIX, vnode, index);
 }
 
 
@@ -6930,6 +7336,33 @@ function addDomNodesHelp(domNode, vNode, patches, i, low, high, eventNode)
 		{
 			addDomNodes(domNode, vNode.node, patch.data, eventNode);
 		}
+		else if (patchType === 'p-reorder')
+		{
+			patch.domNode = domNode;
+			patch.eventNode = eventNode;
+
+			var subPatches = patch.data.patches;
+			if (subPatches.length > 0)
+			{
+				addDomNodesHelp(domNode, vNode, subPatches, 0, low, high, eventNode);
+			}
+		}
+		else if (patchType === 'p-remove')
+		{
+			patch.domNode = domNode;
+			patch.eventNode = eventNode;
+
+			var data = patch.data;
+			if (typeof data !== 'undefined')
+			{
+				data.entry.data = domNode;
+				var subPatches = data.patches;
+				if (subPatches.length > 0)
+				{
+					addDomNodesHelp(domNode, vNode, subPatches, 0, low, high, eventNode);
+				}
+			}
+		}
 		else
 		{
 			patch.domNode = domNode;
@@ -6948,12 +7381,12 @@ function addDomNodesHelp(domNode, vNode, patches, i, low, high, eventNode)
 	{
 		case 'tagger':
 			var subNode = vNode.node;
-            
+
 			while (subNode.type === "tagger")
 			{
 				subNode = subNode.node;
 			}
-            
+
 			return addDomNodesHelp(domNode, subNode, patches, i, low + 1, high, domNode.elm_event_node_ref);
 
 		case 'node':
@@ -6963,6 +7396,26 @@ function addDomNodesHelp(domNode, vNode, patches, i, low, high, eventNode)
 			{
 				low++;
 				var vChild = vChildren[j];
+				var nextLow = low + (vChild.descendantsCount || 0);
+				if (low <= index && index <= nextLow)
+				{
+					i = addDomNodesHelp(childNodes[j], vChild, patches, i, low, nextLow, eventNode);
+					if (!(patch = patches[i]) || (index = patch.index) > high)
+					{
+						return i;
+					}
+				}
+				low = nextLow;
+			}
+			return i;
+
+		case 'keyed-node':
+			var vChildren = vNode.children;
+			var childNodes = domNode.childNodes;
+			for (var j = 0; j < vChildren.length; j++)
+			{
+				low++;
+				var vChild = vChildren[j]._1;
 				var nextLow = low + (vChild.descendantsCount || 0);
 				if (low <= index && index <= nextLow)
 				{
@@ -7035,7 +7488,7 @@ function applyPatch(domNode, patch)
 			domNode.elm_event_node_ref.tagger = patch.data;
 			return domNode;
 
-		case 'p-remove':
+		case 'p-remove-last':
 			var i = patch.data;
 			while (i--)
 			{
@@ -7043,12 +7496,80 @@ function applyPatch(domNode, patch)
 			}
 			return domNode;
 
-		case 'p-insert':
+		case 'p-append':
 			var newNodes = patch.data;
 			for (var i = 0; i < newNodes.length; i++)
 			{
 				domNode.appendChild(render(newNodes[i], patch.eventNode));
 			}
+			return domNode;
+
+		case 'p-remove':
+			var data = patch.data;
+			if (typeof data === 'undefined')
+			{
+				domNode.parentNode.removeChild(domNode);
+				return domNode;
+			}
+			var entry = data.entry;
+			if (typeof entry.index !== 'undefined')
+			{
+				domNode.parentNode.removeChild(domNode);
+			}
+			entry.data = applyPatchesHelp(domNode, data.patches);
+			return domNode;
+
+		case 'p-reorder':
+			var data = patch.data;
+
+			// end inserts
+			var endInserts = data.endInserts;
+			var end;
+			if (typeof endInserts !== 'undefined')
+			{
+				if (endInserts.length === 1)
+				{
+					var insert = endInserts[0];
+					var entry = insert.entry;
+					var end = entry.tag === 'move'
+						? entry.data
+						: render(entry.vnode, patch.eventNode);
+				}
+				else
+				{
+					end = document.createDocumentFragment();
+					for (var i = 0; i < endInserts.length; i++)
+					{
+						var insert = endInserts[i];
+						var entry = insert.entry;
+						var node = entry.tag === 'move'
+							? entry.data
+							: render(entry.vnode, patch.eventNode);
+						end.appendChild(node);
+					}
+				}
+			}
+
+			// removals
+			domNode = applyPatchesHelp(domNode, data.patches);
+
+			// inserts
+			var inserts = data.inserts;
+			for (var i = 0; i < inserts.length; i++)
+			{
+				var insert = inserts[i];
+				var entry = insert.entry;
+				var node = entry.tag === 'move'
+					? entry.data
+					: render(entry.vnode, patch.eventNode);
+				domNode.insertBefore(node, domNode.childNodes[insert.index]);
+			}
+
+			if (typeof end !== 'undefined')
+			{
+				domNode.appendChild(end);
+			}
+
 			return domNode;
 
 		case 'p-custom':
@@ -7112,12 +7633,14 @@ return {
 	lazy: F2(lazy),
 	lazy2: F3(lazy2),
 	lazy3: F4(lazy3),
+	keyedNode: F3(keyedNode),
 
 	programWithFlags: programWithFlags
 };
 
 }();
 var _elm_lang$virtual_dom$VirtualDom$programWithFlags = _elm_lang$virtual_dom$Native_VirtualDom.programWithFlags;
+var _elm_lang$virtual_dom$VirtualDom$keyedNode = _elm_lang$virtual_dom$Native_VirtualDom.keyedNode;
 var _elm_lang$virtual_dom$VirtualDom$lazy3 = _elm_lang$virtual_dom$Native_VirtualDom.lazy3;
 var _elm_lang$virtual_dom$VirtualDom$lazy2 = _elm_lang$virtual_dom$Native_VirtualDom.lazy2;
 var _elm_lang$virtual_dom$VirtualDom$lazy = _elm_lang$virtual_dom$Native_VirtualDom.lazy;
@@ -7247,6 +7770,36 @@ var _elm_lang$html$Html_Attributes$attribute = _elm_lang$virtual_dom$VirtualDom$
 var _elm_lang$html$Html_Attributes$contextmenu = function (value) {
 	return A2(_elm_lang$html$Html_Attributes$attribute, 'contextmenu', value);
 };
+var _elm_lang$html$Html_Attributes$draggable = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$attribute, 'draggable', value);
+};
+var _elm_lang$html$Html_Attributes$list = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$attribute, 'list', value);
+};
+var _elm_lang$html$Html_Attributes$maxlength = function (n) {
+	return A2(
+		_elm_lang$html$Html_Attributes$attribute,
+		'maxlength',
+		_elm_lang$core$Basics$toString(n));
+};
+var _elm_lang$html$Html_Attributes$datetime = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$attribute, 'datetime', value);
+};
+var _elm_lang$html$Html_Attributes$pubdate = function (value) {
+	return A2(_elm_lang$html$Html_Attributes$attribute, 'pubdate', value);
+};
+var _elm_lang$html$Html_Attributes$colspan = function (n) {
+	return A2(
+		_elm_lang$html$Html_Attributes$attribute,
+		'colspan',
+		_elm_lang$core$Basics$toString(n));
+};
+var _elm_lang$html$Html_Attributes$rowspan = function (n) {
+	return A2(
+		_elm_lang$html$Html_Attributes$attribute,
+		'rowspan',
+		_elm_lang$core$Basics$toString(n));
+};
 var _elm_lang$html$Html_Attributes$property = _elm_lang$virtual_dom$VirtualDom$property;
 var _elm_lang$html$Html_Attributes$stringProperty = F2(
 	function (name, string) {
@@ -7272,9 +7825,6 @@ var _elm_lang$html$Html_Attributes$accesskey = function ($char) {
 };
 var _elm_lang$html$Html_Attributes$dir = function (value) {
 	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'dir', value);
-};
-var _elm_lang$html$Html_Attributes$draggable = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'draggable', value);
 };
 var _elm_lang$html$Html_Attributes$dropzone = function (value) {
 	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'dropzone', value);
@@ -7375,19 +7925,10 @@ var _elm_lang$html$Html_Attributes$enctype = function (value) {
 var _elm_lang$html$Html_Attributes$formaction = function (value) {
 	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'formAction', value);
 };
-var _elm_lang$html$Html_Attributes$list = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'list', value);
-};
 var _elm_lang$html$Html_Attributes$minlength = function (n) {
 	return A2(
 		_elm_lang$html$Html_Attributes$stringProperty,
 		'minLength',
-		_elm_lang$core$Basics$toString(n));
-};
-var _elm_lang$html$Html_Attributes$maxlength = function (n) {
-	return A2(
-		_elm_lang$html$Html_Attributes$stringProperty,
-		'maxLength',
 		_elm_lang$core$Basics$toString(n));
 };
 var _elm_lang$html$Html_Attributes$method = function (value) {
@@ -7477,32 +8018,14 @@ var _elm_lang$html$Html_Attributes$ping = function (value) {
 var _elm_lang$html$Html_Attributes$rel = function (value) {
 	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'rel', value);
 };
-var _elm_lang$html$Html_Attributes$datetime = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'datetime', value);
-};
-var _elm_lang$html$Html_Attributes$pubdate = function (value) {
-	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'pubdate', value);
-};
 var _elm_lang$html$Html_Attributes$start = function (n) {
 	return A2(
 		_elm_lang$html$Html_Attributes$stringProperty,
 		'start',
 		_elm_lang$core$Basics$toString(n));
 };
-var _elm_lang$html$Html_Attributes$colspan = function (n) {
-	return A2(
-		_elm_lang$html$Html_Attributes$stringProperty,
-		'colSpan',
-		_elm_lang$core$Basics$toString(n));
-};
 var _elm_lang$html$Html_Attributes$headers = function (value) {
 	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'headers', value);
-};
-var _elm_lang$html$Html_Attributes$rowspan = function (n) {
-	return A2(
-		_elm_lang$html$Html_Attributes$stringProperty,
-		'rowSpan',
-		_elm_lang$core$Basics$toString(n));
 };
 var _elm_lang$html$Html_Attributes$scope = function (value) {
 	return A2(_elm_lang$html$Html_Attributes$stringProperty, 'scope', value);
@@ -8160,7 +8683,7 @@ var _elm_lang$core$Random$magicNum8 = 2147483562;
 var _elm_lang$core$Random$range = function (_p2) {
 	return {ctor: '_Tuple2', _0: 0, _1: _elm_lang$core$Random$magicNum8};
 };
-var _elm_lang$core$Random$magicNum7 = 2137383399;
+var _elm_lang$core$Random$magicNum7 = 2147483399;
 var _elm_lang$core$Random$magicNum6 = 2147483563;
 var _elm_lang$core$Random$magicNum5 = 3791;
 var _elm_lang$core$Random$magicNum4 = 40692;
@@ -8623,6 +9146,188 @@ var _elm_lang$html$Html_App$beginnerProgram = function (_p1) {
 		});
 };
 var _elm_lang$html$Html_App$map = _elm_lang$virtual_dom$VirtualDom$map;
+
+var _elm_lang$mouse$Mouse$onSelfMsg = F3(
+	function (router, _p0, state) {
+		var _p1 = _p0;
+		var _p2 = A2(_elm_lang$core$Dict$get, _p1.category, state);
+		if (_p2.ctor === 'Nothing') {
+			return _elm_lang$core$Task$succeed(state);
+		} else {
+			var send = function (tagger) {
+				return A2(
+					_elm_lang$core$Platform$sendToApp,
+					router,
+					tagger(_p1.position));
+			};
+			return A2(
+				_elm_lang$core$Task$andThen,
+				_elm_lang$core$Task$sequence(
+					A2(_elm_lang$core$List$map, send, _p2._0.taggers)),
+				function (_p3) {
+					return _elm_lang$core$Task$succeed(state);
+				});
+		}
+	});
+var _elm_lang$mouse$Mouse_ops = _elm_lang$mouse$Mouse_ops || {};
+_elm_lang$mouse$Mouse_ops['&>'] = F2(
+	function (t1, t2) {
+		return A2(
+			_elm_lang$core$Task$andThen,
+			t1,
+			function (_p4) {
+				return t2;
+			});
+	});
+var _elm_lang$mouse$Mouse$init = _elm_lang$core$Task$succeed(_elm_lang$core$Dict$empty);
+var _elm_lang$mouse$Mouse$categorizeHelpHelp = F2(
+	function (value, maybeValues) {
+		var _p5 = maybeValues;
+		if (_p5.ctor === 'Nothing') {
+			return _elm_lang$core$Maybe$Just(
+				_elm_lang$core$Native_List.fromArray(
+					[value]));
+		} else {
+			return _elm_lang$core$Maybe$Just(
+				A2(_elm_lang$core$List_ops['::'], value, _p5._0));
+		}
+	});
+var _elm_lang$mouse$Mouse$categorizeHelp = F2(
+	function (subs, subDict) {
+		categorizeHelp:
+		while (true) {
+			var _p6 = subs;
+			if (_p6.ctor === '[]') {
+				return subDict;
+			} else {
+				var _v4 = _p6._1,
+					_v5 = A3(
+					_elm_lang$core$Dict$update,
+					_p6._0._0,
+					_elm_lang$mouse$Mouse$categorizeHelpHelp(_p6._0._1),
+					subDict);
+				subs = _v4;
+				subDict = _v5;
+				continue categorizeHelp;
+			}
+		}
+	});
+var _elm_lang$mouse$Mouse$categorize = function (subs) {
+	return A2(_elm_lang$mouse$Mouse$categorizeHelp, subs, _elm_lang$core$Dict$empty);
+};
+var _elm_lang$mouse$Mouse$subscription = _elm_lang$core$Native_Platform.leaf('Mouse');
+var _elm_lang$mouse$Mouse$Position = F2(
+	function (a, b) {
+		return {x: a, y: b};
+	});
+var _elm_lang$mouse$Mouse$position = A3(
+	_elm_lang$core$Json_Decode$object2,
+	_elm_lang$mouse$Mouse$Position,
+	A2(_elm_lang$core$Json_Decode_ops[':='], 'pageX', _elm_lang$core$Json_Decode$int),
+	A2(_elm_lang$core$Json_Decode_ops[':='], 'pageY', _elm_lang$core$Json_Decode$int));
+var _elm_lang$mouse$Mouse$Watcher = F2(
+	function (a, b) {
+		return {taggers: a, pid: b};
+	});
+var _elm_lang$mouse$Mouse$Msg = F2(
+	function (a, b) {
+		return {category: a, position: b};
+	});
+var _elm_lang$mouse$Mouse$onEffects = F3(
+	function (router, newSubs, oldState) {
+		var rightStep = F3(
+			function (category, taggers, task) {
+				return A2(
+					_elm_lang$core$Task$andThen,
+					task,
+					function (state) {
+						return A2(
+							_elm_lang$core$Task$andThen,
+							_elm_lang$core$Process$spawn(
+								A3(
+									_elm_lang$dom$Dom_LowLevel$onDocument,
+									category,
+									_elm_lang$mouse$Mouse$position,
+									function (_p7) {
+										return A2(
+											_elm_lang$core$Platform$sendToSelf,
+											router,
+											A2(_elm_lang$mouse$Mouse$Msg, category, _p7));
+									})),
+							function (pid) {
+								return _elm_lang$core$Task$succeed(
+									A3(
+										_elm_lang$core$Dict$insert,
+										category,
+										A2(_elm_lang$mouse$Mouse$Watcher, taggers, pid),
+										state));
+							});
+					});
+			});
+		var bothStep = F4(
+			function (category, _p8, taggers, task) {
+				var _p9 = _p8;
+				return A2(
+					_elm_lang$core$Task$andThen,
+					task,
+					function (state) {
+						return _elm_lang$core$Task$succeed(
+							A3(
+								_elm_lang$core$Dict$insert,
+								category,
+								A2(_elm_lang$mouse$Mouse$Watcher, taggers, _p9.pid),
+								state));
+					});
+			});
+		var leftStep = F3(
+			function (category, _p10, task) {
+				var _p11 = _p10;
+				return A2(
+					_elm_lang$mouse$Mouse_ops['&>'],
+					_elm_lang$core$Process$kill(_p11.pid),
+					task);
+			});
+		return A6(
+			_elm_lang$core$Dict$merge,
+			leftStep,
+			bothStep,
+			rightStep,
+			oldState,
+			_elm_lang$mouse$Mouse$categorize(newSubs),
+			_elm_lang$core$Task$succeed(_elm_lang$core$Dict$empty));
+	});
+var _elm_lang$mouse$Mouse$MySub = F2(
+	function (a, b) {
+		return {ctor: 'MySub', _0: a, _1: b};
+	});
+var _elm_lang$mouse$Mouse$clicks = function (tagger) {
+	return _elm_lang$mouse$Mouse$subscription(
+		A2(_elm_lang$mouse$Mouse$MySub, 'click', tagger));
+};
+var _elm_lang$mouse$Mouse$moves = function (tagger) {
+	return _elm_lang$mouse$Mouse$subscription(
+		A2(_elm_lang$mouse$Mouse$MySub, 'mousemove', tagger));
+};
+var _elm_lang$mouse$Mouse$downs = function (tagger) {
+	return _elm_lang$mouse$Mouse$subscription(
+		A2(_elm_lang$mouse$Mouse$MySub, 'mousedown', tagger));
+};
+var _elm_lang$mouse$Mouse$ups = function (tagger) {
+	return _elm_lang$mouse$Mouse$subscription(
+		A2(_elm_lang$mouse$Mouse$MySub, 'mouseup', tagger));
+};
+var _elm_lang$mouse$Mouse$subMap = F2(
+	function (func, _p12) {
+		var _p13 = _p12;
+		return A2(
+			_elm_lang$mouse$Mouse$MySub,
+			_p13._0,
+			function (_p14) {
+				return func(
+					_p13._1(_p14));
+			});
+	});
+_elm_lang$core$Native_Platform.effectManagers['Mouse'] = {pkg: 'elm-lang/mouse', init: _elm_lang$mouse$Mouse$init, onEffects: _elm_lang$mouse$Mouse$onEffects, onSelfMsg: _elm_lang$mouse$Mouse$onSelfMsg, tag: 'sub', subMap: _elm_lang$mouse$Mouse$subMap};
 
 var _elm_lang$window$Native_Window = function()
 {
@@ -12854,18 +13559,17 @@ var _user$project$Tab$calcMainTableWidth = function (model) {
 	return model.browserDimension.width - widthDeductions;
 };
 var _user$project$Tab$emptyRowForm = function (model) {
-	var _p30 = A2(_elm_lang$core$Debug$log, 'creating emptyRow in form using ', model.tab.fields);
 	var row = A2(_user$project$Row$create, model.tab.fields, model.uid);
-	var _p31 = A2(
+	var _p30 = A2(
 		_user$project$Row$update,
 		_user$project$Row$ChangePresentation(_user$project$Presentation$Form),
 		row);
-	var updatedRow = _p31._0;
-	var _p32 = A2(
+	var updatedRow = _p30._0;
+	var _p31 = A2(
 		_user$project$Row$update,
 		_user$project$Row$ChangeMode(_user$project$Presentation$Edit),
 		updatedRow);
-	var updatedRow1 = _p32._0;
+	var updatedRow1 = _p31._0;
 	return updatedRow1;
 };
 var _user$project$Tab$defaultBrowserDimension = {width: 0, height: 0, scrollBarWidth: 13};
@@ -13195,8 +13899,8 @@ var _user$project$Tab$view = function (model) {
 	var rowShadowId = A2(_elm_lang$core$Basics_ops['++'], 'row_shadow-', model.tabId);
 	var columnShadowId = A2(_elm_lang$core$Basics_ops['++'], 'column_shadow-', model.tabId);
 	var tabView = function () {
-		var _p33 = model.presentation;
-		switch (_p33.ctor) {
+		var _p32 = model.presentation;
+		switch (_p32.ctor) {
 			case 'Form':
 				var focused = _user$project$Tab$focusedRow(model);
 				return A2(
@@ -13214,13 +13918,13 @@ var _user$project$Tab$view = function (model) {
 							_elm_lang$core$Native_List.fromArray(
 								[
 									function () {
-									var _p34 = focused;
-									if (_p34.ctor === 'Just') {
-										var _p35 = _p34._0;
+									var _p33 = focused;
+									if (_p33.ctor === 'Just') {
+										var _p34 = _p33._0;
 										return A2(
 											_elm_lang$html$Html_App$map,
-											_user$project$Tab$UpdateRow(_p35.rowId),
-											_user$project$Row$view(_p35));
+											_user$project$Tab$UpdateRow(_p34.rowId),
+											_user$project$Row$view(_p34));
 									} else {
 										return A2(
 											_elm_lang$html$Html_App$map,
@@ -13611,6 +14315,12 @@ var _user$project$DataWindow$updateAllTabs = F2(
 				tabMsg,
 				A2(_user$project$DataWindow$updateMainTab, tabMsg, model)));
 	});
+var _user$project$DataWindow$subscription = function () {
+	var _p10 = A2(_elm_lang$core$Debug$log, 'subscriptions in Datawindow', 'wohoo');
+	return _elm_lang$core$Platform_Sub$batch(
+		_elm_lang$core$Native_List.fromArray(
+			[]));
+}();
 var _user$project$DataWindow$calcTotalHeight = function (model) {
 	var windowHeightDeductions = 100;
 	return model.browserDimension.height - windowHeightDeductions;
@@ -13691,8 +14401,8 @@ var _user$project$DataWindow$updateWindow = F2(
 	});
 var _user$project$DataWindow$defaultFormRecordHeight = 200;
 var _user$project$DataWindow$updateAllocatedHeight = function (model) {
-	var _p10 = model.presentation;
-	switch (_p10.ctor) {
+	var _p11 = model.presentation;
+	switch (_p11.ctor) {
 		case 'Form':
 			return A2(
 				_user$project$DataWindow$updateMainTab,
@@ -13710,43 +14420,43 @@ var _user$project$DataWindow$updateAllocatedHeight = function (model) {
 };
 var _user$project$DataWindow$update = F2(
 	function (msg, model) {
-		var _p11 = msg;
-		switch (_p11.ctor) {
+		var _p12 = msg;
+		switch (_p12.ctor) {
 			case 'UpdateTab':
-				var _p17 = _p11._0;
-				var _p12 = A2(_elm_lang$core$Debug$log, 'Update tab', _p17);
-				var _p13 = _p17;
-				switch (_p13.ctor) {
+				var _p18 = _p12._0;
+				var _p13 = A2(_elm_lang$core$Debug$log, 'Update tab', _p18);
+				var _p14 = _p18;
+				switch (_p14.ctor) {
 					case 'ChangePresentation':
 						return {
 							ctor: '_Tuple2',
 							_0: _user$project$DataWindow$updateAllocatedHeight(
 								A2(
 									_user$project$DataWindow$updateAllMergedTab,
-									_p17,
+									_p18,
 									A2(
 										_user$project$DataWindow$updateMainTab,
-										_p17,
+										_p18,
 										_elm_lang$core$Native_Utils.update(
 											model,
-											{presentation: _p13._0})))),
+											{presentation: _p14._0})))),
 							_1: _elm_lang$core$Platform_Cmd$none
 						};
 					case 'UpdateRow':
-						var _p14 = _p13._1;
-						switch (_p14.ctor) {
+						var _p15 = _p14._1;
+						switch (_p15.ctor) {
 							case 'ChangePresentation':
-								var _p16 = _p14._0;
-								var _p15 = A2(_elm_lang$core$Debug$log, 'Window: Changing presentation to ', _p16);
+								var _p17 = _p15._0;
+								var _p16 = A2(_elm_lang$core$Debug$log, 'Window: Changing presentation to ', _p17);
 								return {
 									ctor: '_Tuple2',
 									_0: _user$project$DataWindow$updateAllocatedHeight(
 										A2(
 											_user$project$DataWindow$updateMainTab,
-											_p17,
+											_p18,
 											_elm_lang$core$Native_Utils.update(
 												model,
-												{presentation: _p16}))),
+												{presentation: _p17}))),
 									_1: _elm_lang$core$Platform_Cmd$none
 								};
 							case 'EditRecordInForm':
@@ -13755,7 +14465,7 @@ var _user$project$DataWindow$update = F2(
 									_0: _user$project$DataWindow$updateAllocatedHeight(
 										A2(
 											_user$project$DataWindow$updateMainTab,
-											_p17,
+											_p18,
 											_elm_lang$core$Native_Utils.update(
 												model,
 												{presentation: _user$project$Presentation$Form}))),
@@ -13764,7 +14474,7 @@ var _user$project$DataWindow$update = F2(
 							default:
 								return {
 									ctor: '_Tuple2',
-									_0: A2(_user$project$DataWindow$updateMainTab, _p17, model),
+									_0: A2(_user$project$DataWindow$updateMainTab, _p18, model),
 									_1: _elm_lang$core$Platform_Cmd$none
 								};
 						}
@@ -13774,7 +14484,7 @@ var _user$project$DataWindow$update = F2(
 							_0: _user$project$DataWindow$updateAllocatedHeight(
 								A2(
 									_user$project$DataWindow$updateMainTab,
-									_p17,
+									_p18,
 									_elm_lang$core$Native_Utils.update(
 										model,
 										{presentation: _user$project$Presentation$Table}))),
@@ -13783,25 +14493,25 @@ var _user$project$DataWindow$update = F2(
 					default:
 						return {
 							ctor: '_Tuple2',
-							_0: A2(_user$project$DataWindow$updateMainTab, _p17, model),
+							_0: A2(_user$project$DataWindow$updateMainTab, _p18, model),
 							_1: _elm_lang$core$Platform_Cmd$none
 						};
 				}
 			case 'WindowDetailReceived':
 				return {
 					ctor: '_Tuple2',
-					_0: A2(_user$project$DataWindow$updateWindow, _p11._0, model),
+					_0: A2(_user$project$DataWindow$updateWindow, _p12._0, model),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'WindowDataReceived':
 				return {
 					ctor: '_Tuple2',
 					_0: function () {
-						var _p18 = _elm_lang$core$List$head(_p11._0);
-						if (_p18.ctor === 'Just') {
+						var _p19 = _elm_lang$core$List$head(_p12._0);
+						if (_p19.ctor === 'Just') {
 							return A2(
 								_user$project$DataWindow$updateMainTab,
-								_user$project$Tab$TabDataReceived(_p18._0),
+								_user$project$Tab$TabDataReceived(_p19._0),
 								model);
 						} else {
 							return model;
@@ -13814,7 +14524,7 @@ var _user$project$DataWindow$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{mode: _p11._0}),
+						{mode: _p12._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'ChangePresentation':
@@ -13823,7 +14533,7 @@ var _user$project$DataWindow$update = F2(
 					_0: _user$project$DataWindow$updateAllocatedHeight(
 						_elm_lang$core$Native_Utils.update(
 							model,
-							{presentation: _p11._0})),
+							{presentation: _p12._0})),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'ActivateWindow':
@@ -13847,7 +14557,7 @@ var _user$project$DataWindow$update = F2(
 					ctor: '_Tuple2',
 					_0: A2(
 						_user$project$DataWindow$updateMainTab,
-						_user$project$Tab$LookupTabsReceived(_p11._0),
+						_user$project$Tab$LookupTabsReceived(_p12._0),
 						model),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
@@ -13856,7 +14566,7 @@ var _user$project$DataWindow$update = F2(
 					ctor: '_Tuple2',
 					_0: A2(
 						_user$project$DataWindow$updateMainTab,
-						_user$project$Tab$LookupDataReceived(_p11._0),
+						_user$project$Tab$LookupDataReceived(_p12._0),
 						model),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
@@ -13866,7 +14576,7 @@ var _user$project$DataWindow$update = F2(
 					_0: A3(
 						_user$project$DataWindow$updateHasManyMergedTab,
 						_user$project$Tab$Open,
-						_p11._0,
+						_p12._0,
 						A2(_user$project$DataWindow$updateAllMergedTab, _user$project$Tab$Close, model)),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
@@ -13874,37 +14584,37 @@ var _user$project$DataWindow$update = F2(
 				return {
 					ctor: '_Tuple2',
 					_0: _user$project$DataWindow$openFirstMergedTab(
-						A2(_user$project$DataWindow$hydrateAllMergedTab, _p11._1, model)),
+						A2(_user$project$DataWindow$hydrateAllMergedTab, _p12._1, model)),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'BrowserDimensionChanged':
-				var _p19 = _p11._0;
+				var _p20 = _p12._0;
 				return {
 					ctor: '_Tuple2',
 					_0: _user$project$DataWindow$updateAllocatedHeight(
 						A2(
 							_user$project$DataWindow$updateAllTabs,
-							_user$project$Tab$BrowserDimensionChanged(_p19),
+							_user$project$Tab$BrowserDimensionChanged(_p20),
 							_elm_lang$core$Native_Utils.update(
 								model,
-								{browserDimension: _p19}))),
+								{browserDimension: _p20}))),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'ToggleExtTab':
 				return {
 					ctor: '_Tuple2',
-					_0: A3(_user$project$DataWindow$updateExtTab, _user$project$Tab$Toggle, _p11._0, model),
+					_0: A3(_user$project$DataWindow$updateExtTab, _user$project$Tab$Toggle, _p12._0, model),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			case 'WindowDataNextPageReceived':
 				return {
 					ctor: '_Tuple2',
 					_0: function () {
-						var _p20 = _elm_lang$core$List$head(_p11._0);
-						if (_p20.ctor === 'Just') {
+						var _p21 = _elm_lang$core$List$head(_p12._0);
+						if (_p21.ctor === 'Just') {
 							return A2(
 								_user$project$DataWindow$updateMainTab,
-								_user$project$Tab$TabDataNextPageReceived(_p20._0),
+								_user$project$Tab$TabDataNextPageReceived(_p21._0),
 								model);
 						} else {
 							return model;
@@ -13912,12 +14622,15 @@ var _user$project$DataWindow$update = F2(
 					}(),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
-			default:
+			case 'ReceivedScrollBottomEvent':
 				return {
 					ctor: '_Tuple2',
 					_0: A2(_user$project$DataWindow$updateMainTab, _user$project$Tab$ReceivedScrollBottomEvent, model),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
+			default:
+				var _p22 = A2(_elm_lang$core$Debug$log, 'Starting resize..', _p12._0);
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 		}
 	});
 var _user$project$DataWindow$Model = function (a) {
@@ -13971,6 +14684,29 @@ var _user$project$DataWindow$windowDecoder = A9(
 		_elm_lang$core$Json_Decode_ops[':='],
 		'has_many_indirect_tabs',
 		_elm_lang$core$Json_Decode$list(_user$project$Tab$tabDecoder)));
+var _user$project$DataWindow$ResizeStart = function (a) {
+	return {ctor: 'ResizeStart', _0: a};
+};
+var _user$project$DataWindow$onMouseDown = A2(
+	_elm_lang$html$Html_Events$on,
+	'mousedown',
+	A2(_elm_lang$core$Json_Decode$map, _user$project$DataWindow$ResizeStart, _elm_lang$mouse$Mouse$position));
+var _user$project$DataWindow$separator = A2(
+	_elm_lang$html$Html$div,
+	_elm_lang$core$Native_List.fromArray(
+		[
+			_elm_lang$html$Html_Attributes$class('separator'),
+			_elm_lang$html$Html_Attributes$style(
+			_elm_lang$core$Native_List.fromArray(
+				[
+					{ctor: '_Tuple2', _0: 'border', _1: '1px solid #cf9'},
+					{ctor: '_Tuple2', _0: 'height', _1: '10px'},
+					{ctor: '_Tuple2', _0: 'cursor', _1: 'ns-resize'}
+				])),
+			_user$project$DataWindow$onMouseDown
+		]),
+	_elm_lang$core$Native_List.fromArray(
+		[]));
 var _user$project$DataWindow$ReceivedScrollBottomEvent = function (a) {
 	return {ctor: 'ReceivedScrollBottomEvent', _0: a};
 };
@@ -14220,8 +14956,8 @@ var _user$project$DataWindow$ChangeMode = function (a) {
 };
 var _user$project$DataWindow$toolbar = function (model) {
 	var deleteTooltip = function () {
-		var _p21 = model.presentation;
-		if (_p21.ctor === 'Table') {
+		var _p23 = model.presentation;
+		if (_p23.ctor === 'Table') {
 			return 'Click to delete record(s) from the database';
 		} else {
 			return 'Click to delete this record from the database';
@@ -14465,8 +15201,8 @@ var _user$project$DataWindow$view = function (model) {
 			[
 				_user$project$DataWindow$toolbar(model),
 				function () {
-				var _p22 = model.presentation;
-				switch (_p22.ctor) {
+				var _p24 = model.presentation;
+				switch (_p24.ctor) {
 					case 'Form':
 						return A2(
 							_elm_lang$html$Html$div,
@@ -14498,6 +15234,7 @@ var _user$project$DataWindow$view = function (model) {
 											_user$project$Tab$view(model.mainTab)),
 											_user$project$DataWindow$extensionTabView(model)
 										])),
+									_user$project$DataWindow$separator,
 									A2(
 									_elm_lang$html$Html$div,
 									_elm_lang$core$Native_List.fromArray(
@@ -15513,8 +16250,8 @@ var _user$project$Main$fetchFocusedRecordDetail = F3(
 					return _elm_lang$core$Native_Utils.crashCase(
 						'Main',
 						{
-							start: {line: 728, column: 21},
-							end: {line: 736, column: 54}
+							start: {line: 729, column: 21},
+							end: {line: 737, column: 54}
 						},
 						_p35)('No such row');
 				}
@@ -15522,8 +16259,8 @@ var _user$project$Main$fetchFocusedRecordDetail = F3(
 				return _elm_lang$core$Native_Utils.crashCase(
 					'Main',
 					{
-						start: {line: 726, column: 13},
-						end: {line: 738, column: 49}
+						start: {line: 727, column: 13},
+						end: {line: 739, column: 49}
 					},
 					_p34)('No such window');
 			}
@@ -15531,8 +16268,8 @@ var _user$project$Main$fetchFocusedRecordDetail = F3(
 			return _elm_lang$core$Native_Utils.crashCase(
 				'Main',
 				{
-					start: {line: 724, column: 5},
-					end: {line: 741, column: 63}
+					start: {line: 725, column: 5},
+					end: {line: 742, column: 63}
 				},
 				_p33)('No matching table for focused record');
 		}
@@ -15561,8 +16298,8 @@ var _user$project$Main$fetchLookupData = F2(
 			return _elm_lang$core$Native_Utils.crashCase(
 				'Main',
 				{
-					start: {line: 712, column: 5},
-					end: {line: 718, column: 54}
+					start: {line: 713, column: 5},
+					end: {line: 719, column: 54}
 				},
 				_p39)('Unable to get matching table');
 		}
@@ -15591,8 +16328,8 @@ var _user$project$Main$fetchLookupTabs = F2(
 			return _elm_lang$core$Native_Utils.crashCase(
 				'Main',
 				{
-					start: {line: 700, column: 5},
-					end: {line: 706, column: 54}
+					start: {line: 701, column: 5},
+					end: {line: 707, column: 54}
 				},
 				_p41)('Unable to get matching table');
 		}

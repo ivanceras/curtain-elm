@@ -15,6 +15,7 @@ import Settings
 import Row
 import Window as BrowserWindow
 import Dao
+import Mouse
 
 
 type alias Model =

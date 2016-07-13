@@ -16,6 +16,7 @@ import Presentation exposing
     ,Density(Compact, Medium, Expanded))
 
 import Dao exposing (TableDao)
+import Mouse
 
 
 type alias Model =
@@ -71,6 +72,7 @@ type Msg
     | ToggleExtTab Tab.Model
     | WindowDataNextPageReceived (List TableDao)
     | ReceivedScrollBottomEvent String 
+    | ResizeStart Mouse.Position
     
 type alias Window =
     { name: String
@@ -102,43 +104,62 @@ calcTotalHeight model =
     in
     model.browserDimension.height - windowHeightDeductions
 
+subscription: Sub Msg
+subscription =
+    let _ = Debug.log "subscriptions in Datawindow" "wohoo"
+    in Sub.batch []
+
 view: Model -> Html Msg
 view model = 
     let display = if model.isActive then "block" else "none"
     in
-        div [class "data_window_view"
-            ,style [("height", (toString (calcTotalHeight model))++"px")
-                    ,("display", display)
-                   ]
-            ] 
-                    [toolbar model
-                    ,case model.presentation of
-                        
-                        Form ->
-                            div[class "master-container"
-                               ] 
-                                [formRecordControls model
-                                ,div [style [("height", "400px")
-                                        ,("overflow", "auto")
-                                        ,("display", "block")
-                                        ,("padding", "20px")
-                                        ]
+    div [class "data_window_view"
+        ,style [("height", (toString (calcTotalHeight model))++"px")
+                ,("display", display)
+               ]
+        ] 
+                [toolbar model
+                ,case model.presentation of
+                    
+                    Form ->
+                        div[class "master-container"
+                           ] 
+                            [formRecordControls model
+                            ,div [style [("height", "400px")
+                                    ,("overflow", "auto")
+                                    ,("display", "block")
+                                    ,("padding", "20px")
                                     ]
-                                    [App.map UpdateTab(Tab.view model.mainTab) -- when in form view, main tab and extension table are in 1 scrollable container
-                                    ,extensionTabView model
-                                    ]
-                                 ,div [class "related-container"
-                                      ,style [("margin-top", "30px")]
-                                      ]
-                                      [hasManyTabView model]
                                 ]
-                        Table ->
-                            App.map UpdateTab(Tab.view model.mainTab) -- when in form view, main tab and extension table are in 1 scrollable container
-                        Grid ->
-                            App.map UpdateTab(Tab.view model.mainTab) 
-                    ]
-                              
-    --else text ""
+                                [App.map UpdateTab(Tab.view model.mainTab) -- when in form view, main tab and extension table are in 1 scrollable container
+                                ,extensionTabView model
+                                ]
+                             ,separator
+                             ,div [class "related-container"
+                                  ,style [("margin-top", "30px")
+                                         ]
+                                  ]
+                                  [hasManyTabView model]
+                            ]
+                    Table ->
+                        App.map UpdateTab(Tab.view model.mainTab) -- when in form view, main tab and extension table are in 1 scrollable container
+                    Grid ->
+                        App.map UpdateTab(Tab.view model.mainTab) 
+                ]
+
+
+onMouseDown : Attribute Msg
+onMouseDown =
+  on "mousedown" (Decode.map ResizeStart Mouse.position)                             
+
+separator = 
+     div [class "separator"
+          ,style [("border", "1px solid #cf9")
+                 ,("height", "10px")
+                 ,("cursor", "ns-resize")
+                 ]
+          ,onMouseDown 
+          ] []
 
 extensionTabView: Model -> Html Msg
 extensionTabView model =
@@ -370,6 +391,10 @@ update msg model =
         
         ReceivedScrollBottomEvent table ->
            (updateMainTab Tab.ReceivedScrollBottomEvent model, Cmd.none)
+
+        ResizeStart xy ->
+            let _ = Debug.log "Starting resize.." xy in
+            (model, Cmd.none)
 
 updateAllTabs: Tab.Msg -> Model -> Model
 updateAllTabs tabMsg model =
