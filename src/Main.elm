@@ -65,6 +65,7 @@ type Msg
     | CacheReset String
     | DbConnectionTested String
     | DbConnectionTestError Http.Error
+    | DataUpdated String
 
 appModel =
     { title = "Curtain UI"
@@ -423,6 +424,11 @@ update msg model =
             let _ = Debug.log "There is an error with this request" "" in
             (model, Cmd.none)
 
+        DataUpdated message ->
+            let _ = Debug.log "Data has been updated" ""
+            in
+            (model, Cmd.none)
+
 
 main = 
     App.program
@@ -624,6 +630,26 @@ httpGet model url =
     , body = Http.empty
     }
 
+
+httpPost model url =
+   let dbUrl = 
+        case model.dbUrl of
+            Just dbUrl ->   dbUrl
+            Nothing -> ""
+
+       apiServer = 
+         case model.apiServer of
+            Just apiServer -> apiServer
+            Nothing -> ""
+    in
+    Http.send Http.defaultSettings
+    { verb = "POST"
+    , headers = [("db_url", dbUrl)]
+    , url = apiServer ++ url
+    , body = Http.empty
+    }
+
+
 resetCache: Model -> Cmd Msg
 resetCache model =
     httpDelete model "/cache"
@@ -682,6 +708,13 @@ getWindowDataWithQuery model mainTable windowId query =
 getWindowDataPage: String -> Int -> Int -> Int -> Model -> Cmd Msg
 getWindowDataPage mainTable windowId page pageSize model =
     getWindowDataWithQuery model mainTable windowId (pageSizeQuery page pageSize)
+
+updateData: Model -> String -> Cmd Msg
+updateData model mainTable =
+    httpPost model  ("/app/"++mainTable)
+        |> Http.fromJson Decode.string
+        |> Task.perform FetchError DataUpdated
+    
 
 page: Int -> String
 page p =

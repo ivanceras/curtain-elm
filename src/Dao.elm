@@ -27,6 +27,25 @@ type alias DaoState =
     , focused: Bool
     }
 
+type alias Uuid = String
+
+type alias DaoInsert = 
+    { record_id: Uuid
+    , dao: Dao
+    }
+
+type alias DaoUpdate =
+    { original: Dao
+    , updated: Dao
+    }
+
+type alias ChangeSet = 
+    { table: String
+    , inserted: List DaoInsert
+    , deleted: List Dao
+    , updated: List DaoUpdate
+    }
+
 daoStateDecoder =
     Decode.object2 DaoState
         ("dao" := daoDecoder)
