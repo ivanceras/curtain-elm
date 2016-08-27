@@ -42,7 +42,6 @@ type alias RowId = Int
 type Msg
     = GetWindowList
     | WindowListReceived (List WindowList.WindowName) 
-    | LoadWindow String
     | CloseWindow WindowId
     | ActivateWindow WindowId
     | UpdateWindow WindowId DataWindow.Msg
@@ -101,15 +100,6 @@ createSettingsModel: Model -> Model
 createSettingsModel model =
     {model | settingsModel = Just (Settings.create model.dbUrl model.apiServer)}
 
-updateSettings: Settings.Msg -> Model -> Model
-updateSettings settingsMsg model =
-    {model | settingsModel = 
-        case model.settingsModel of
-            Just settingsModel ->
-                let (updatedSettings, _) = Settings.update settingsMsg settingsModel
-                in Just updatedSettings
-            Nothing -> Nothing
-    }
 
 saveSettings: Model -> Cmd msg 
 saveSettings model =
@@ -271,11 +261,14 @@ update msg model =
              , Cmd.none)
         
         UpdateWindowList msg ->
-            case msg of
-                WindowList.LoadWindow table ->
-                    (model, fetchWindowDetail model table)
-                _ ->
-                    (model, Cmd.none)
+            let (window_list, outmsg) =
+                WindowList.update msg model.windowList
+                model' = {model | windowList = window_list}
+            in
+            case outmsg of
+                Nothing -> (model', Cmd.none)
+                Just (WindowList.LoadWindow table) ->
+                    (model', fetchWindowDetail model' table)
         
         GetWindowList ->
             ( model, fetchWindowList model)
@@ -293,9 +286,6 @@ update msg model =
                 |> updateActivatedWindowList
             , getWindowData model window.table model.uid
             )
-
-        LoadWindow table ->
-            (model, fetchWindowDetail model table)
 
         GetWindowData table ->
             ( model, Cmd.none)
@@ -317,33 +307,35 @@ update msg model =
             ( { model | error = (toString e)::model.error }, Cmd.none )
 
         UpdateSettings settingsMsg ->
-            let _ = Debug.log "settings" settingsMsg
-            in
-            case settingsMsg of
-                Settings.CloseWindow ->
-                    (closeSettingsWindow model
-                        |> updateSettings settingsMsg
-                    , Cmd.none)
+            case model.settingsModel of
+                    Just settingsModel ->
+                        let (updatedSettings, outmsg) = Settings.update settingsMsg settingsModel
+                            model' = {model | settingsModel = Just updatedSettings}
+                        in
+                        case outmsg of
+                            Nothing ->
+                                (model', Cmd.none)
 
-                Settings.ChangeDbUrl dbUrl ->
-                    ({model | dbUrl = Just dbUrl}
-                        |> updateSettings settingsMsg
-                    , Cmd.none)
+                            Just settings_outmsg ->
+                                case settings_outmsg of
 
-                Settings.ChangeApiServer apiServer ->
-                    ({model | apiServer = Just apiServer}
-                        |> updateSettings settingsMsg
-                    , Cmd.none)
+                                    Settings.CloseWindow ->
+                                        (closeSettingsWindow model'
+                                        , Cmd.none)
 
-                Settings.ApplySettings ->
-                    let _ = Debug.log "Apllying the settings down...." ""
-                    in
-                    (model
-                        |> updateSettings settingsMsg
-                    ,Cmd.batch [testDbConnection model
-                               ,saveSettings model
-                               ])
-
+                                    Settings.ApplySettings settingsModel ->
+                                        let _ = Debug.log "Apllying the settings down...." ""
+                                            model'' = {model' | dbUrl = settingsModel.dbUrl
+                                            , apiServer = settingsModel.apiServer
+                                            }
+                                        in
+                                        ( model'' 
+                                        ,Cmd.batch [testDbConnection model''
+                                                   ,saveSettings model''
+                                                   ])
+                                
+                    Nothing -> 
+                        (model, Cmd.none)
 
         ToggleSettingsWindow ->
             ({model | isSettingsOpened = not model.isSettingsOpened}, Cmd.none)

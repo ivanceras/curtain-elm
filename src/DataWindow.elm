@@ -74,6 +74,8 @@ type Msg
     | ReceivedScrollBottomEvent String 
     | ResizeStart Mouse.Position
     
+type OutMsg = WhateverMainNeeds
+    
 type alias Window =
     { name: String
     , description: Maybe String
@@ -284,7 +286,7 @@ hasManyTabView model =
     else
         text ""
 
-update: Msg -> Model -> (Model, Cmd Msg)
+update: Msg -> Model -> (Model, Maybe OutMsg)
 update msg model =
     case msg of 
         UpdateTab tab_msg ->
@@ -296,7 +298,7 @@ update msg model =
                         |> updateMainTab tab_msg
                         |> updateAllMergedTab tab_msg
                         |> updateAllocatedHeight
-                    , Cmd.none
+                    , Nothing
                     ) 
 
                 Tab.UpdateRow rowId rowMsg ->
@@ -307,29 +309,29 @@ update msg model =
                             ({model | presentation = presentation}
                                |> updateMainTab tab_msg
                                |> updateAllocatedHeight
-                            , Cmd.none)
+                            , Nothing)
 
                         Row.EditRecordInForm ->
                             ({model | presentation = Form}
                                |> updateMainTab tab_msg
                                |> updateAllocatedHeight
-                            , Cmd.none)
+                            , Nothing)
 
                         _ ->
-                            (updateMainTab tab_msg model, Cmd.none)
+                            (updateMainTab tab_msg model, Nothing)
                 Tab.FormRecordClose ->
                     ({model | presentation = Table}
                         |> updateMainTab tab_msg
                         |> updateAllocatedHeight
-                    , Cmd.none)
+                    , Nothing)
                 
 
                 _ ->
-                    (updateMainTab tab_msg model, Cmd.none)
+                    (updateMainTab tab_msg model, Nothing)
         
         WindowDetailReceived window ->
             (updateWindow window model
-            ,Cmd.none
+            ,Nothing
             )
 
         WindowDataReceived listTableDao ->
@@ -337,48 +339,48 @@ update msg model =
                     Just tableDao -> 
                         updateMainTab (Tab.TabDataReceived tableDao) model
                     Nothing -> model 
-            ,Cmd.none
+            ,Nothing
             )
 
         ChangeMode mode ->
-            ({model | mode = mode}, Cmd.none)
+            ({model | mode = mode}, Nothing)
 
         ChangePresentation presentation ->
             ({model | presentation = presentation}
                 |> updateAllocatedHeight
-            , Cmd.none
+            , Nothing
             )
 
         ActivateWindow ->
-            ({model | isActive = True}, Cmd.none)
+            ({model | isActive = True}, Nothing)
 
         DeactivateWindow ->
-            ({model | isActive = False}, Cmd.none)
+            ({model | isActive = False}, Nothing)
 
         LookupTabsReceived tabList ->
-            (updateMainTab (Tab.LookupTabsReceived tabList) model, Cmd.none)
+            (updateMainTab (Tab.LookupTabsReceived tabList) model, Nothing)
         LookupDataReceived lookupDataList ->
-            (updateMainTab (Tab.LookupDataReceived lookupDataList) model, Cmd.none)
+            (updateMainTab (Tab.LookupDataReceived lookupDataList) model, Nothing)
 
         OpenHasManyTab table ->
             (updateAllMergedTab Tab.Close model
                 |> updateHasManyMergedTab Tab.Open table
-            , Cmd.none)
+            , Nothing)
 
         FocusedRecordDataReceived rowId tableDaoList ->
            (hydrateAllMergedTab tableDaoList model
                 |> openFirstMergedTab
-           , Cmd.none)
+           , Nothing)
 
         BrowserDimensionChanged browserDimension ->
             ( {model | browserDimension = browserDimension}
                 |> updateAllTabs (Tab.BrowserDimensionChanged browserDimension)
                 |> updateAllocatedHeight
-            , Cmd.none)
+            , Nothing)
         
         ToggleExtTab tab ->
             (updateExtTab Tab.Toggle tab model
-            ,Cmd.none
+            ,Nothing
             )
 
         WindowDataNextPageReceived listTableDao ->
@@ -386,15 +388,15 @@ update msg model =
                     Just tableDao -> 
                         updateMainTab (Tab.TabDataNextPageReceived tableDao) model
                     Nothing -> model 
-            ,Cmd.none
+            ,Nothing
             )
         
         ReceivedScrollBottomEvent table ->
-           (updateMainTab Tab.ReceivedScrollBottomEvent model, Cmd.none)
+           (updateMainTab Tab.ReceivedScrollBottomEvent model, Nothing)
 
         ResizeStart xy ->
             let _ = Debug.log "Starting resize.." xy in
-            (model, Cmd.none)
+            (model, Nothing)
 
 updateAllTabs: Tab.Msg -> Model -> Model
 updateAllTabs tabMsg model =

@@ -20,8 +20,11 @@ create dbUrl apiServer =
 
 type Msg = ChangeDbUrl String
          | ChangeApiServer String
-         | ApplySettings
-         | CloseWindow
+         | ClickedApplySettings
+         | ClickedCloseWindow
+
+type OutMsg = ApplySettings Model
+    | CloseWindow
 
 view: Model -> Html Msg
 view model =
@@ -54,7 +57,7 @@ view model =
             [div [class "tab-item active"]
                 [span 
                     [class "icon icon-cancel icon-close-tab"
-                    , onClick CloseWindow
+                    , onClick ClickedCloseWindow
                     ] []
                 ,text "Settings"
                 ]
@@ -81,7 +84,7 @@ view model =
                         ,onInput ChangeApiServer
                         ] []
                    ]
-            ,button [onClick ApplySettings
+            ,button [onClick ClickedApplySettings
                     ,style [("margin-top", "30px")]
                     ]
                     [text "Connect to Server"]
@@ -92,14 +95,16 @@ view model =
 
 
 
-update: Msg -> Model -> (Model, Cmd Msg)
+update: Msg -> Model -> (Model, Maybe OutMsg)
 update msg model =
     let _ = Debug.log "In Settings.update" "here..."
     in
     case msg of
         ChangeDbUrl dbUrl ->
-            ({model | dbUrl = Just dbUrl}, Cmd.none)
+            ({model | dbUrl = Just dbUrl}, Nothing)
         ChangeApiServer apiServer ->
-            ({model | apiServer = Just apiServer}, Cmd.none)
-        _ ->
-            (model, Cmd.none)
+            ({model | apiServer = Just apiServer}, Nothing)
+        ClickedApplySettings ->
+            ( model, Just (ApplySettings model))
+        ClickedCloseWindow ->
+            ( model, Just CloseWindow)

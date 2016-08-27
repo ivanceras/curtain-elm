@@ -116,6 +116,9 @@ type Msg
     | TabDataNextPageReceived TableDao
     | ReceivedScrollBottomEvent
 
+type OutMsg
+    = LoadNextPage
+
 create: Tab -> String -> Int -> Model
 create tab tabId height =
     { tab = tab
@@ -470,7 +473,7 @@ removeFocusedRecord model =
     }
 
 
-update: Msg -> Model -> (Model, Cmd Msg)
+update: Msg -> Model -> (Model, Maybe OutMsg)
 update msg model =
     case msg of
         UpdateRow rowId rowMsg ->
@@ -478,12 +481,12 @@ update msg model =
                 Row.FocusRecord ->
                     (updateFocusedRow rowId model
                         |> updateRow rowMsg rowId
-                    , Cmd.none)
+                    , Nothing)
 
                 Row.Selection checked ->
                     let updatedModel = removeFocusedRecord model
                     in
-                    ( updateRow rowMsg rowId updatedModel , Cmd.none)
+                    ( updateRow rowMsg rowId updatedModel , Nothing)
 
                 Row.EditRecordInForm ->
                     (updateFocusedRow rowId model
@@ -491,83 +494,83 @@ update msg model =
                         |> updateRow rowMsg rowId
                         |> updatePresentation Form
                         |> updateMode Edit
-                    ,Cmd.none)
+                    ,Nothing)
 
 
                 Row.EditRecordInPlace ->
                     (updateFocusedRow rowId model
                         |> updateRow (Row.ChangeMode Edit) rowId
                         |> updateRow rowMsg rowId
-                    ,Cmd.none)
+                    ,Nothing)
 
                 _ ->
-                    ( updateRow rowMsg rowId model , Cmd.none)
+                    ( updateRow rowMsg rowId model , Nothing)
 
         ChangeMode mode ->
-            (updateMode mode model, Cmd.none)
+            (updateMode mode model, Nothing)
 
         ChangePresentation presentation ->
-            (updatePresentation presentation model, Cmd.none)
+            (updatePresentation presentation model, Nothing)
 
         ChangeDensity density ->
             ({model | density = density }
                 |> updateAllRows (Row.ChangeDensity density)
-            , Cmd.none
+            , Nothing
             )
         TabReceived tab ->
-            ( {model | tab = tab}, Cmd.none )
+            ( {model | tab = tab}, Nothing )
 
         TabDataReceived tableDao ->
-            (setTabRows model tableDao, Cmd.none)
+            (setTabRows model tableDao, Nothing)
 
 
         SelectionAll checked ->
-            (updateAllRows (Row.Selection checked) model, Cmd.none)
+            (updateAllRows (Row.Selection checked) model, Nothing)
 
         LookupTabsReceived tabList ->
             let listLookupFields = buildLookupField tabList
             in
             (updateAllRows (Row.LookupTabsReceived listLookupFields) model
-            , Cmd.none
+            , Nothing
             )
 
         LookupDataReceived lookupDataList ->
             (updateAllRows (Row.LookupDataReceived lookupDataList) model
-            , Cmd.none
+            , Nothing
             )
 
         Open ->
-            ({model | isOpen = True}, Cmd.none)
+            ({model | isOpen = True}, Nothing)
 
         Close ->
-            ({model | isOpen = False}, Cmd.none)
+            ({model | isOpen = False}, Nothing)
 
         Toggle ->
-            ({ model | isOpen = not model.isOpen}, Cmd.none)
+            ({ model | isOpen = not model.isOpen}, Nothing)
 
         ChangeAllocatedHeight height ->
             ( {model | allocatedHeight = height}
-            , Cmd.none
+            , Nothing
             )
         
         FormRecordClose ->
             (updatePresentation Table model
-                |> updateMode Read, Cmd.none)
+                |> updateMode Read, Nothing)
 
         BrowserDimensionChanged browserDimension ->
             ({ model | browserDimension = browserDimension}
-            , Cmd.none)
+            , Nothing)
 
         TabDataNextPageReceived tableDao ->
             (addToRows model tableDao
-            , Cmd.none)
+            , Nothing)
 
 
         ReceivedScrollBottomEvent ->
             let _ = Debug.log "----> RECEIVED SCROLL BOTTOM EVENT" ".."
             in
             ({model | loadingPage = True
-            }, Cmd.none)
+            }, Nothing)
 
 
 

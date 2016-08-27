@@ -21,9 +21,11 @@ type alias WindowName =
 
 
 type Msg
-    = LoadWindow String
+    = WindowSelected String
     | WindowListReceived (List WindowName)
     | UpdateActivated String
+
+type OutMsg = LoadWindow String
 
 
 empty =
@@ -50,7 +52,7 @@ view model =
                 in
                 a [classList [("nav-group-item", True),("active", isActive)]
                   , href ("#"++w.table)
-                  , onClick (LoadWindow w.table)
+                  , onClick (WindowSelected w.table)
                   ] 
                       [ span [class "icon icon-list"] []
                       , text w.name
@@ -61,18 +63,18 @@ view model =
 
 
 
-update: Msg -> Model -> (Model, Cmd Msg)
+update: Msg -> Model -> (Model, Maybe OutMsg)
 update msg model =
     case msg of
         WindowListReceived windowList ->
             ({model | windowList = windowList}
-            , Cmd.none
+            , Nothing
             )
-        LoadWindow table -> -- will be caught by the main app
-            (model, Cmd.none)
+        WindowSelected table -> 
+            (model, Just (LoadWindow table))
 
         UpdateActivated table ->
-            ({model | activeWindow = Just table}, Cmd.none)
+            ({model | activeWindow = Just table}, Nothing)
  
 
 windowNameDecoder =

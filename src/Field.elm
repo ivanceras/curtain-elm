@@ -100,6 +100,8 @@ type Msg
     | LookupDataReceived (List LookupData)
     | ListScrolled Decode.Value 
 
+type OutMsg = RequestDataFromTable
+
 fieldDecoder = 
    Decode.succeed Field
          |: ("name" := Decode.string)
@@ -257,39 +259,39 @@ view model =
                                     [(fieldRead model)
                                     ]
 
-update: Msg -> Model -> (Model, Cmd Msg)
+update: Msg -> Model -> (Model, Maybe OutMsg)
 update msg model =
     case msg of
         ChangeValue v ->
-        ({model | value = Just (String v) }, Cmd.none)
+        ({model | value = Just (String v) }, Nothing)
         ChangeValueBool b ->
-        ({model | value = Just (Bool b)}, Cmd.none)
+        ({model | value = Just (Bool b)}, Nothing)
         ChangeMode mode ->
             case mode of
                 Edit ->
-                    ({model | mode = mode, focused = True }, Cmd.none)
+                    ({model | mode = mode, focused = True }, Nothing)
                 Read ->
-                    ({model | mode = mode }, Cmd.none)
+                    ({model | mode = mode }, Nothing)
 
         ChangePresentation presentation ->
-            ({model | presentation = presentation}, Cmd.none )
+            ({model | presentation = presentation}, Nothing )
         ChangeDensity density ->
-            ({model | density = density}, Cmd.none)
+            ({model | density = density}, Nothing)
         SetValue value ->
-            ({model | value = Just value}, Cmd.none)
+            ({model | value = Just value}, Nothing)
 
         LookupTabsReceived lookupTabList ->
             ({model | lookupTabs = lookupTabList}
-            , Cmd.none
+            , Nothing
             )
 
         LookupDataReceived lookupDataList ->
             ({model | lookupData = lookupDataList}
-            , Cmd.none
+            , Nothing
             )
 
         ListScrolled target ->
-            ( model, Cmd.none)
+            ( model, Nothing)
 
 
 

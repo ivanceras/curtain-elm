@@ -62,6 +62,8 @@ type Msg
     | CancelChanges
     | SaveChanges
 
+type OutMsg = Remove
+
 
 
 
@@ -189,7 +191,7 @@ tabularRecordControls model =
 
 
 
-update: Msg -> Model -> (Model, Cmd Msg)
+update: Msg -> Model -> (Model, Maybe OutMsg)
 update msg model =
     case msg of
         ChangeMode mode ->
@@ -199,7 +201,7 @@ update msg model =
                     let (mr,cmd) = Field.update (Field.ChangeMode mode) f
                     in mr
                   ) <| model.fieldModels
-              }, Cmd.none)
+              }, Nothing)
  
 
         ChangePresentation presentation ->
@@ -211,7 +213,7 @@ update msg model =
                                     ) <| model.fieldModels
                                  
              }
-             , Cmd.none
+             , Nothing
              )
 
         ChangeDensity density ->
@@ -222,7 +224,7 @@ update msg model =
                         in mr
                     ) <| model.fieldModels
              }
-             , Cmd.none
+             , Nothing
             )
 
         UpdateField column fieldMsg ->
@@ -233,7 +235,7 @@ update msg model =
                     in mr
                 else
                     f
-              ) }, Cmd.none)
+              ) }, Nothing)
 
         DaoStateReceived daoState ->
             let fieldModels =
@@ -251,50 +253,50 @@ update msg model =
             ({model | isFocused = daoState.focused
                     , fieldModels = fieldModels
               }
-            , Cmd.none
+            , Nothing
             )
 
         Selection checked ->
-            ({model | isSelected = checked}, Cmd.none)
+            ({model | isSelected = checked}, Nothing)
 
         ToggleSelect ->
-            ({model | isSelected = not model.isSelected}, Cmd.none)
+            ({model | isSelected = not model.isSelected}, Nothing)
 
         FocusRecord ->
-            ({model | isFocused = True}, Cmd.none)
+            ({model | isFocused = True}, Nothing)
         LooseFocusRecord ->
-            ({model | isFocused = False}, Cmd.none)
+            ({model | isFocused = False}, Nothing)
 
         LookupTabsReceived lookupTabFields ->
             (updateLookupFields (Field.LookupTabsReceived lookupTabFields) model
-            , Cmd.none
+            , Nothing
             ) 
         LookupDataReceived lookupDataList ->
             (updateLookupFields (Field.LookupDataReceived lookupDataList) model
-            , Cmd.none
+            , Nothing
             ) 
         EditRecordInForm -> -- tapped in Tab
             ({model | mode = Edit
              ,presentation = Form
              }
-             ,Cmd.none)
+             ,Nothing)
         EditRecordInPlace -> -- tapped in Tab
             ({model | mode = Edit
              ,presentation = Table
              }
-            ,Cmd.none)
+            ,Nothing)
 
         CancelChanges ->
             ({model | mode = Read
              ,presentation = Table
              }
-            , Cmd.none)
+            , Nothing)
 
         SaveChanges ->
             ({model | mode = Read
              ,presentation = Table
              }
-            , Cmd.none)
+            , Nothing)
 
 
 --add lookup fields only to those which needed it
