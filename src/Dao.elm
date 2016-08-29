@@ -3,6 +3,7 @@ module Dao exposing (..)
 import Dict
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode as Decode exposing ((:=)) 
+import Json.Encode as Encode
 import Json.Decode.Extra as Extra exposing ((|:))
 
 
@@ -74,78 +75,140 @@ type Value
     | DateTime String
     | Uuid String
 
+encodeValue: Value -> Encode.Value
+encodeValue value =
+    case value of
+        Bool v ->
+            Encode.object
+                [("variant", Encode.string "Bool")
+                ,("fields", Encode.list [Encode.bool v])
+                ]
+        I8 v ->
+            Encode.object
+                [("variant", Encode.string "I8")
+                ,("fields", Encode.list [Encode.int v])
+                ]
+        I16 v ->
+            Encode.object
+                [("variant", Encode.string "I16")
+                ,("fields", Encode.list [Encode.int v])
+                ]
+        I32 v ->
+            Encode.object
+                [("variant", Encode.string "I32")
+                ,("fields", Encode.list [Encode.int v])
+                ]
+        I64 v ->
+            Encode.object
+                [("variant", Encode.string "I64")
+                ,("fields", Encode.list [Encode.int v])
+                ]
+        U8 v ->
+            Encode.object
+                [("variant", Encode.string "U8")
+                ,("fields", Encode.list [Encode.int v])
+                ]
+        U16 v ->
+            Encode.object
+                [("variant", Encode.string "U16")
+                ,("fields", Encode.list [Encode.int v])
+                ]
+        U32 v ->
+            Encode.object
+                [("variant", Encode.string "U32")
+                ,("fields", Encode.list [Encode.int v])
+                ]
+        U64 v ->
+            Encode.object
+                [("variant", Encode.string "U64")
+                ,("fields", Encode.list [Encode.int v])
+                ]
+        F32 v ->
+            Encode.object
+                [("variant", Encode.string "F32")
+                ,("fields", Encode.list [Encode.float v])
+                ]
+        F64 v ->
+            Encode.object
+                [("variant", Encode.string "F64")
+                ,("fields", Encode.list [Encode.float v])
+                ]
+        String v ->
+            Encode.object
+                [("variant", Encode.string "String")
+                ,("fields", Encode.list [Encode.string v])
+                ]
+        Date v ->
+            Encode.object
+                [("variant", Encode.string "Date")
+                ,("fields", Encode.list [Encode.string v])
+                ]
+        DateTime v ->
+            Encode.object
+                [("variant", Encode.string "DateTime")
+                ,("fields", Encode.list [Encode.string v])
+                ]
+        Uuid v ->
+            Encode.object
+                [("variant", Encode.string "DateTime")
+                ,("fields", Encode.list [Encode.string v])
+                ]
+
+
+
 valueDecoder: Decode.Decoder Value
 valueDecoder = 
     ("variant" := Decode.string) `Decode.andThen` valueVariant
 
 valueVariant: String -> Decode.Decoder Value
-valueVariant tag =
-    case tag of 
+valueVariant variant =
+    case variant of 
         "Bool" ->
             Decode.map Bool
-                (("fields" := Decode.list Decode.bool)
-                    `Decode.andThen` firstValue False)
+                ("fields" := Decode.tuple1 ( \a -> a ) Decode.bool)
         "I8" ->
             Decode.map I8 
-                (("fields" := Decode.list Decode.int)
-                    `Decode.andThen` firstValue 0)
+                ("fields" := Decode.tuple1 ( \a -> a ) Decode.int)
         "I16" ->
             Decode.map I16 
-                (("fields" := Decode.list Decode.int)
-                    `Decode.andThen` firstValue 0)
+                ("fields" := Decode.tuple1 ( \a -> a ) Decode.int)
         "I32" ->
             Decode.map I32 
-                (("fields" := Decode.list Decode.int)
-                    `Decode.andThen` firstValue 0)
+                ("fields" := Decode.tuple1 ( \a -> a ) Decode.int)
         "I64" ->
             Decode.map I64 
-                (("fields" := Decode.list Decode.int)
-                    `Decode.andThen` firstValue 0)
+                ("fields" := Decode.tuple1 ( \a -> a ) Decode.int)
         "U8" ->
             Decode.map U8 
-                (("fields" := Decode.list Decode.int)
-                    `Decode.andThen` firstValue 0)
+                ("fields" := Decode.tuple1 ( \a -> a ) Decode.int)
         "U16" ->
             Decode.map U16 
-                (("fields" := Decode.list Decode.int)
-                    `Decode.andThen` firstValue 0)
+                ("fields" := Decode.tuple1 ( \a -> a ) Decode.int)
         "U32" ->
             Decode.map U32 
-                (("fields" := Decode.list Decode.int)
-                    `Decode.andThen` firstValue 0)
+                ("fields" := Decode.tuple1 ( \a -> a ) Decode.int)
         "U64" ->
             Decode.map U64 
-                (("fields" := Decode.list Decode.int)
-                    `Decode.andThen` firstValue 0)
+                ("fields" := Decode.tuple1 ( \a -> a ) Decode.int)
         "F32" ->
             Decode.map F32 
-                (("fields" := Decode.list Decode.float)
-                    `Decode.andThen` firstValue 0)
+                ("fields" := Decode.tuple1 ( \a -> a ) Decode.float)
         "F64" ->
             Decode.map F64 
-                (("fields" := Decode.list Decode.float)
-                    `Decode.andThen` firstValue 0)
+                ("fields" := Decode.tuple1 ( \a -> a ) Decode.float)
         "String" ->
             Decode.map String 
-                (("fields" := Decode.list Decode.string)
-                    `Decode.andThen` firstValue "")
+                ("fields" := Decode.tuple1 ( \a -> a ) Decode.string)
         "Date" ->
             Decode.map Date 
-                (("fields" := Decode.list Decode.string)
-                    `Decode.andThen` firstValue "")
+                ("fields" := Decode.tuple1 ( \a -> a ) Decode.string)
         "DateTime" ->
             Decode.map DateTime 
-                (("fields" := Decode.list Decode.string)
-                    `Decode.andThen` firstValue "")
+                ("fields" := Decode.tuple1 ( \a -> a ) Decode.string)
 
         _ ->
             Decode.map String 
-                (("fields" := Decode.list Decode.string)
-                    `Decode.andThen` firstValue "")
-
-firstValue: a -> List a -> Decode.Decoder a
-firstValue default args =
-    Decode.succeed (Maybe.withDefault default (List.head args))
+                ("fields" := Decode.tuple1 ( \a -> a ) Decode.string)
 
 
 stringValue: Value -> String
