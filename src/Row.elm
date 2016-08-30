@@ -28,7 +28,7 @@ type alias Model =
 
 
 
-
+-- get the Dao which also contain the changes
 getDao: Model -> Dao.Dao
 getDao model =
     let kv  = 
@@ -38,6 +38,21 @@ getDao model =
                 Nothing -> Nothing
                 Just value ->
                     Just (f.field.column, value)
+        ) model.fieldModels
+        _ = Debug.log "keyvalue pair" kv
+     in
+     Dict.fromList kv
+
+-- get the original Dao, used for deletion
+getOrigDao: Model -> Dao.Dao
+getOrigDao model =
+    let kv  = 
+        List.filterMap(
+            \f ->
+            case f.orig_value of
+                Nothing -> Nothing
+                Just orig_value ->
+                    Just (f.field.column, orig_value)
         ) model.fieldModels
         _ = Debug.log "keyvalue pair" kv
      in
@@ -251,8 +266,9 @@ update msg model =
                         in
                         case value of
                             Just value ->
-                                let (mo, cmd) = Field.update (Field.SetValue value) f
-                                in mo
+                                let (field', outmsg') = Field.update (Field.SetValue value) f
+                                in 
+                                    field'
                             Nothing -> f
                 ) model.fieldModels
             in

@@ -26,6 +26,7 @@ import Utils
 type alias Model = 
     { field: Field
     , value: Maybe Value
+    , orig_value: Maybe Value -- the original value, useful for Undo, this is read-only
     , mode: Mode
     , presentation: Presentation
     , focused: Bool
@@ -37,6 +38,7 @@ type alias Model =
 create field =
     { field = field
     , value = Nothing
+    , orig_value = Nothing
     , mode = Read
     , presentation = Table
     , focused = False
@@ -95,7 +97,7 @@ type Msg
     | ChangeMode Mode 
     | ChangePresentation Presentation
     | ChangeDensity Density
-    | SetValue Value
+    | SetValue Value -- The value gotten from the server, don't use this when changing the value, since it also sets the orig_value
     | LookupTabsReceived (List LookupTab)
     | LookupDataReceived (List LookupData)
     | ListScrolled Decode.Value 
@@ -280,7 +282,9 @@ update msg model =
         ChangeDensity density ->
             ({model | density = density}, Nothing)
         SetValue value ->
-            ({model | value = Just value}, Nothing)
+            ({model | value = Just value
+                , orig_value = Just value
+             }, Nothing)
 
         LookupTabsReceived lookupTabList ->
             ({model | lookupTabs = lookupTabList}

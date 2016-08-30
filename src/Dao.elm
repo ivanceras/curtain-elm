@@ -1,8 +1,7 @@
 module Dao exposing (..)
 
 import Dict
-import Json.Decode as Decode exposing (Decoder)
-import Json.Decode as Decode exposing ((:=)) 
+import Json.Decode as Decode exposing (Decoder, (:=))
 import Json.Encode as Encode
 import Json.Decode.Extra as Extra exposing ((|:))
 
@@ -155,12 +154,28 @@ encodeValue value =
                 ]
 
 
+encodeDao: Dao -> Encode.Value
+encodeDao dao =
+    Dict.toList dao
+        |> List.map
+            (\(k, v) ->
+                (k, encodeValue v)
+            )
+        |> Encode.object
 
-valueDecoder: Decode.Decoder Value
+encodeDaoList: List Dao -> Encode.Value
+encodeDaoList dao_list =
+    List.map(
+        \d ->
+            encodeDao d
+    ) dao_list
+      |> Encode.list
+
+valueDecoder: Decoder Value
 valueDecoder = 
     ("variant" := Decode.string) `Decode.andThen` valueVariant
 
-valueVariant: String -> Decode.Decoder Value
+valueVariant: String -> Decoder Value
 valueVariant variant =
     case variant of 
         "Bool" ->

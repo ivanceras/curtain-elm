@@ -403,36 +403,21 @@ update msg model =
 
         DeleteRecords ->
             let _ = Debug.log "Deleting records" ""
-                selectedDao = getSelectedRecords model
-                _ = Debug.log "selected rows" (Encode.encode 0 (encodeDaoList selectedDao))
+                selectedDao = getSelectedOrigRecords model
+                encoded = Encode.encode 0 (Dao.encodeDaoList selectedDao)
+                _ = Debug.log "selected rows" encoded
             in 
             (model, Nothing)
 
 
-encodeDao: Dao.Dao -> Encode.Value
-encodeDao dao =
-    Dict.toList dao
-        |> List.map
-            (\(k, v) ->
-                (k, Dao.encodeValue v)
-            )
-        |> Encode.object
-
-encodeDaoList: List Dao.Dao -> Encode.Value
-encodeDaoList dao_list =
-    List.map(
-        \d ->
-            encodeDao d
-    ) dao_list
-      |> Encode.list
     
-getSelectedRecords: Model -> List Dao.Dao
-getSelectedRecords model =
+getSelectedOrigRecords: Model -> List Dao.Dao
+getSelectedOrigRecords model =
     let sel_rows = Tab.selectedRows model.mainTab
         sel_dao = 
             List.map(
                 \r ->
-                    Row.getDao r
+                    Row.getOrigDao r
             ) sel_rows
     in sel_dao
 
