@@ -26,6 +26,23 @@ type alias Model =
     , isSelected: Bool
     }
 
+
+
+
+getDao: Model -> Dao.Dao
+getDao model =
+    let kv  = 
+        List.filterMap(
+            \f ->
+            case f.value of
+                Nothing -> Nothing
+                Just value ->
+                    Just (f.field.column, value)
+        ) model.fieldModels
+        _ = Debug.log "keyvalue pair" kv
+     in
+     Dict.fromList kv
+
 empty =
     { rowId = 0 
     , fieldModels = []
@@ -59,10 +76,14 @@ type Msg
     | LookupDataReceived (List Field.LookupData)
     | EditRecordInForm
     | EditRecordInPlace
-    | CancelChanges
-    | SaveChanges
+    | ClickedCancelChanges
+    | ClickedSaveChanges
 
 type OutMsg = Remove
+    | TabChangePresentation Presentation
+    | CancelChanges
+    | SaveChanges
+    | TabEditRecordInForm Int
 
 
 
@@ -165,7 +186,7 @@ tabularRecordControls model =
                 Read ->
                     td [class "record_control"] 
                         [div [class "icon icon-menu tooltip"
-                              ,onClick EditRecordInForm] 
+                              ,onClickNoPropagate EditRecordInForm] 
                                [span [class "tooltiptext"] [text "Click to open record in a form"]
                                ]
                         ,div [class "icon icon-pencil tooltip"
@@ -176,11 +197,11 @@ tabularRecordControls model =
                 Edit ->
                     td [class "record_control"] 
                                 [div [class "icon icon-block tooltip"
-                                      ,onClick CancelChanges] 
+                                      ,onClick ClickedCancelChanges] 
                                     [span [class "tooltiptext"][text "Click to cancel your changes"]
                                     ]
                                 ,div [class "icon icon-floppy tooltip"
-                                        ,onClick SaveChanges]
+                                        ,onClick ClickedSaveChanges]
                                     [span [class "tooltiptext"][text "Click to save your changes to the database"]
                                     ]
                                 ]
@@ -195,35 +216,20 @@ update: Msg -> Model -> (Model, Maybe OutMsg)
 update msg model =
     case msg of
         ChangeMode mode ->
-            ({model | mode = mode 
-                    , fieldModels = 
-                 List.map (\f -> 
-                    let (mr,cmd) = Field.update (Field.ChangeMode mode) f
-                    in mr
-                  ) <| model.fieldModels
-              }, Nothing)
+            ({ model | mode = mode }
+                |> updateFields (Field.ChangeMode mode)
+              ,Nothing)
  
 
         ChangePresentation presentation ->
-            ({ model | presentation = presentation
-                     , fieldModels = 
-                           List.map (\f ->
-                                     let (mr,cmd) = Field.update (Field.ChangePresentation presentation) f
-                                     in mr
-                                    ) <| model.fieldModels
-                                 
-             }
+            ({ model | presentation = presentation }
+                |> updateFields (Field.ChangePresentation presentation) 
              , Nothing
              )
 
         ChangeDensity density ->
-            ({model | density = density
-                , fieldModels =
-                    List.map (
-                        \f -> let (mr, cmd) = Field.update (Field.ChangeDensity density) f
-                        in mr
-                    ) <| model.fieldModels
-             }
+            ({model | density = density }
+                |> updateFields (Field.ChangeDensity density)
              , Nothing
             )
 
@@ -276,27 +282,32 @@ update msg model =
             , Nothing
             ) 
         EditRecordInForm -> -- tapped in Tab
-            ({model | mode = Edit
+            ({ model | mode = Edit
              ,presentation = Form
              }
-             ,Nothing)
+                |> updateFields (Field.ChangeMode Edit)
+                |> updateFields (Field.ChangePresentation Form)
+             ,Just (TabEditRecordInForm model.rowId)
+            )
         EditRecordInPlace -> -- tapped in Tab
             ({model | mode = Edit
              ,presentation = Table
-             }
-            ,Nothing)
+              }
+                |> updateFields (Field.ChangeMode Edit)
+                |> updateFields (Field.ChangePresentation Table)
+            , Nothing)
 
-        CancelChanges ->
+        ClickedCancelChanges ->
             ({model | mode = Read
              ,presentation = Table
              }
-            , Nothing)
+            , Just CancelChanges)
 
-        SaveChanges ->
+        ClickedSaveChanges ->
             ({model | mode = Read
              ,presentation = Table
              }
-            , Nothing)
+            , Just SaveChanges)
 
 
 --add lookup fields only to those which needed it
@@ -318,7 +329,7 @@ updateFields fieldMsg model =
     let updatedFields = 
            List.map (
                 \f ->
-                    let (updatedField, cmd) = Field.update fieldMsg f
+                    let (updatedField, outmsg) = Field.update fieldMsg f
                     in updatedField
            ) model.fieldModels 
     in

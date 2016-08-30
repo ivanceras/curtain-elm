@@ -118,6 +118,9 @@ type Msg
 
 type OutMsg
     = LoadNextPage
+    | WindowChangePresentation Presentation
+    | FormClose
+
 
 create: Tab -> String -> Int -> Model
 create tab tabId height =
@@ -306,8 +309,12 @@ theadView model =
             )
         ]
 
+selectedRows: Model -> List Row.Model
+selectedRows model =
+    List.filter (\r-> r.isSelected) model.rows
+
 numberOfSelectedRecords model = 
-    List.filter (\r -> r.isSelected) model.rows |> List.length
+    selectedRows model |> List.length
 
 
 filterStatusView model = 
@@ -397,24 +404,17 @@ areAllRecordSelected model =
 
 
 
-updatePresentation: Presentation -> Model -> Model
-updatePresentation presentation model =
-    {model | presentation = presentation
-             , rows = 
-                (List.map (\r ->
-                    let (mr, cmd) = Row.update (Row.ChangePresentation presentation ) r
-                    in mr
-                )model.rows)}
 
-
-updateMode: Mode -> Model -> Model
-updateMode mode model =
-     {model | mode = mode
-            , rows = 
-            (List.map (\r -> 
-                    let (mr,cmd) = Row.update (Row.ChangeMode mode) r 
-                    in mr
-                ) model.rows) }
+updateRows: Row.Msg -> Model -> Model
+updateRows row_msg model =
+    { model | rows =
+        List.map (
+            \r ->
+                let (row, out_msg) =
+                    Row.update row_msg r
+                 in row
+        ) model.rows
+    }
 
 focusFirstRecord: Model -> Maybe Row.Model
 focusFirstRecord model =
@@ -442,79 +442,47 @@ updateSelectionAllRecords model checked =
     {model | rows = rows}
     
 
-updateFocusedRow: Int -> Model -> Model
-updateFocusedRow rowId model =
-    let model = updateSelectionAllRecords model False
-        updatedRows = 
-            List.map (
-                \r -> 
-                    if r.rowId == rowId then
-                        let (mo,cmd) = Row.update Row.FocusRecord r
-                        in mo
-                    else
-                        let (mo,cmd) = Row.update Row.LooseFocusRecord r 
-                        in mo
-            ) model.rows
-    in
-    {model | rows = updatedRows
-    ,focusedRow = Just rowId
-    }
         
-removeFocusedRecord model =
-    let updatedRows = 
-        List.map(
-            \r ->
-                let (mo, cmd) = Row.update Row.LooseFocusRecord r
-                in mo
-        ) model.rows
-    in
-    { model | rows = updatedRows
-    , focusedRow = Nothing
-    }
-
 
 update: Msg -> Model -> (Model, Maybe OutMsg)
 update msg model =
     case msg of
         UpdateRow rowId rowMsg ->
-            case rowMsg of
-                Row.FocusRecord ->
-                    (updateFocusedRow rowId model
-                        |> updateRow rowMsg rowId
-                    , Nothing)
+            let (model',outmsg) = updateRow rowMsg rowId model
+            in case outmsg of
+                Nothing -> (model', Nothing)
+                Just outmsg -> 
+                    case outmsg of
+                        Row.TabChangePresentation presentation ->
+                            ({model' | presentation = presentation}
+                                |> updateRows (Row.ChangePresentation presentation) 
+                            , Just (WindowChangePresentation presentation))
+                        Row.TabEditRecordInForm rowId ->
+                            ({model' | presentation = Form}
+                                |> setFocusedRow rowId
+                            , Just (WindowChangePresentation Form))
+                            
+                        Row.CancelChanges ->
+                            (model', Nothing)
+                        Row.SaveChanges ->
+                            (model', Nothing)
+                        Row.Remove ->
+                            (model', Nothing)
 
-                Row.Selection checked ->
-                    let updatedModel = removeFocusedRecord model
-                    in
-                    ( updateRow rowMsg rowId updatedModel , Nothing)
-
-                Row.EditRecordInForm ->
-                    (updateFocusedRow rowId model
-                        |> updateRow (Row.ChangePresentation Form) rowId
-                        |> updateRow rowMsg rowId
-                        |> updatePresentation Form
-                        |> updateMode Edit
-                    ,Nothing)
-
-
-                Row.EditRecordInPlace ->
-                    (updateFocusedRow rowId model
-                        |> updateRow (Row.ChangeMode Edit) rowId
-                        |> updateRow rowMsg rowId
-                    ,Nothing)
-
-                _ ->
-                    ( updateRow rowMsg rowId model , Nothing)
-
+                    
         ChangeMode mode ->
-            (updateMode mode model, Nothing)
+            ({ model | mode = mode}
+                |> updateRows (Row.ChangeMode mode)
+            , Nothing)
 
         ChangePresentation presentation ->
-            (updatePresentation presentation model, Nothing)
+            ({model | presentation = presentation}
+                |> updateRows (Row.ChangePresentation presentation)
+            , Nothing)
 
         ChangeDensity density ->
             ({model | density = density }
-                |> updateAllRows (Row.ChangeDensity density)
+                |> updateRows (Row.ChangeDensity density)
             , Nothing
             )
         TabReceived tab ->
@@ -525,17 +493,17 @@ update msg model =
 
 
         SelectionAll checked ->
-            (updateAllRows (Row.Selection checked) model, Nothing)
+            (updateRows (Row.Selection checked) model, Nothing)
 
         LookupTabsReceived tabList ->
             let listLookupFields = buildLookupField tabList
             in
-            (updateAllRows (Row.LookupTabsReceived listLookupFields) model
+            (updateRows (Row.LookupTabsReceived listLookupFields) model
             , Nothing
             )
 
         LookupDataReceived lookupDataList ->
-            (updateAllRows (Row.LookupDataReceived lookupDataList) model
+            (updateRows (Row.LookupDataReceived lookupDataList) model
             , Nothing
             )
 
@@ -554,8 +522,11 @@ update msg model =
             )
         
         FormRecordClose ->
-            (updatePresentation Table model
-                |> updateMode Read, Nothing)
+            ( {model | presentation = Table
+                , mode = Read
+                }
+                |> updateRows (Row.ChangeMode Read)
+             , Just FormClose)
 
         BrowserDimensionChanged browserDimension ->
             ({ model | browserDimension = browserDimension}
@@ -567,10 +538,11 @@ update msg model =
 
 
         ReceivedScrollBottomEvent ->
-            let _ = Debug.log "----> RECEIVED SCROLL BOTTOM EVENT" ".."
-            in
-            ({model | loadingPage = True
-            }, Nothing)
+            if not model.loadingPage then
+                ({model | loadingPage = True
+                }, Just LoadNextPage)
+            else
+                (model, Nothing)
 
 
 
@@ -646,18 +618,18 @@ buildLookupField tabList =
            
     ) tabList
 
-updateRow: Row.Msg -> Int -> Model -> Model
+updateRow: Row.Msg -> Int -> Model -> (Model, Maybe Row.OutMsg)
 updateRow rowMsg rowId model =
-    let rows = 
+    let rows_out  = 
         List.map (\r -> 
             if r.rowId == rowId then
-                let (mr,cmd) = Row.update rowMsg r 
-                in mr
+                Row.update rowMsg r 
              else
-                r
+                (r,Nothing)
             ) model.rows 
+        (rows,outmsgs) = List.unzip rows_out
      in
-     { model | rows = rows }
+     ({ model | rows = rows }, Utils.fstNoneEmpty outmsgs)
 
 getRow: Model -> Int -> Maybe Row.Model
 getRow model rowId =
@@ -666,14 +638,4 @@ getRow model rowId =
             r.rowId == rowId
         ) model.rows
         |> List.head
-
-updateAllRows: Row.Msg -> Model -> Model
-updateAllRows rowMsg model =
-    let rows = 
-        List.map (\r -> 
-                let (mr,cmd) = Row.update rowMsg r 
-                in mr
-            ) model.rows 
-     in
-     { model | rows = rows }
 

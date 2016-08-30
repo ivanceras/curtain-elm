@@ -16,6 +16,7 @@ import Row
 import Window as BrowserWindow
 import Dao
 import Mouse
+import Utils
 
 
 type alias Model =
@@ -197,17 +198,6 @@ settingsButton =
             ]
          ]
 
-shallLoadNextPage: Int -> Model -> Cmd Msg
-shallLoadNextPage windowId model =
-    case getWindow model windowId of
-        Just window ->
-            if not window.mainTab.loadingPage then
-                loadNextPage windowId model
-            else
-                let _ = Debug.log "Ignoring LoadNextPage request" ""
-                in Cmd.none
-        Nothing ->
-            Cmd.none
 
 loadNextPage: Int -> Model -> Cmd Msg
 loadNextPage windowId model =
@@ -240,13 +230,7 @@ update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         UpdateWindow windowId windowMsg -> 
-              case msg of 
-                    UpdateWindow windowId (DataWindow.UpdateTab (Tab.UpdateRow rowId Row.FocusRecord)) ->
-                        (updateWindow model windowMsg windowId
-                        ,fetchFocusedRecordDetail model windowId rowId)
-
-                    _ -> 
-                        (updateWindow model windowMsg windowId, Cmd.none)
+              (updateWindow model windowMsg windowId, Cmd.none)
 
         CloseWindow windowId ->
             (closeWindow model windowId 
@@ -368,9 +352,15 @@ update msg model =
             let _ = Debug.log "main received scrollbottom event" table in
             case model.activeWindow of
                 Just windowId ->
-                    (updateActiveWindow (DataWindow.ReceivedScrollBottomEvent table) model
-                     ,shallLoadNextPage windowId model
-                    )
+                    let (model', outmsg) =
+                        updateActiveWindow (DataWindow.ReceivedScrollBottomEvent table) model
+                    in case outmsg of
+                        Nothing ->
+                            (model', Cmd.none)
+                        Just outmsg ->
+                            case outmsg of
+                                DataWindow.LoadNextPage tab_model ->
+                                    (model', loadNextPage windowId model)
 
                 Nothing -> 
                      (model,Cmd.none)
@@ -477,7 +467,8 @@ updateWindow model windowMsg windowId =
         List.map(
             \w ->
                 if w.windowId == windowId then
-                    let (mo, cmd) = DataWindow.update windowMsg w
+                    let (mo, outmsg) = DataWindow.update windowMsg w
+                        _ = Debug.log "Main outmsg" outmsg
                     in mo
                 else
                     w
@@ -497,19 +488,23 @@ updateAllWindow windowMsg model =
     in
     {model | openedWindows = updatedWindows}
 
-updateActiveWindow: DataWindow.Msg -> Model -> Model
+updateActiveWindow: DataWindow.Msg -> Model -> (Model, Maybe DataWindow.OutMsg)
 updateActiveWindow windowMsg model =
     let updatedWindows = 
         List.map(
             \w ->
                 if model.activeWindow == Just w.windowId then
-                    let (updatedWindow, _) = DataWindow.update windowMsg w
-                    in updatedWindow
+                    let (updatedWindow, outmsg) = DataWindow.update windowMsg w
+                        _ = Debug.log "Main active window outmsg" outmsg
+                    in (updatedWindow,outmsg)
                 else
-                    w 
+                    (w,Nothing) 
         ) model.openedWindows
+        (openedWindows, outmsgs) = List.unzip (updatedWindows)
     in
-    {model | openedWindows = updatedWindows}
+    ({model | openedWindows = openedWindows}
+    , Utils.fstNoneEmpty outmsgs
+    )
 
 activateFirstWindow: Model -> Model
 activateFirstWindow model =

@@ -35,3 +35,14 @@ toList arg =
 msgToCmd msg =
     --Task.perform (always msg) (always msg) (Task.succeed msg)
     Task.Extra.performFailproof identity (Task.succeed msg)
+
+
+fstNoneEmpty: List (Maybe a) -> Maybe a
+fstNoneEmpty outmsgs =
+    let ne = 
+        List.filter (\o -> o /= Nothing) outmsgs
+          |> List.head
+    in
+        case ne of
+            Nothing -> Nothing
+            Just outmsg -> outmsg

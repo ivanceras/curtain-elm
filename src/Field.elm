@@ -267,9 +267,11 @@ update msg model =
         ChangeValueBool b ->
         ({model | value = Just (Bool b)}, Nothing)
         ChangeMode mode ->
+            let _ = Debug.log "Field change mode" mode
+            in
             case mode of
                 Edit ->
-                    ({model | mode = mode, focused = True }, Nothing)
+                    ({model | mode = mode }, Nothing)
                 Read ->
                     ({model | mode = mode }, Nothing)
 
@@ -291,7 +293,7 @@ update msg model =
             )
 
         ListScrolled target ->
-            ( model, Nothing)
+            ( model, Just RequestDataFromTable)
 
 
 
