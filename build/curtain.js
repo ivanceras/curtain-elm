@@ -13670,7 +13670,7 @@ var _user$project$Tab$onTableScroll = function (msg) {
 		A2(_elm_lang$core$Json_Decode$map, msg, _elm_lang$core$Json_Decode$value));
 };
 var _user$project$Tab$calcMainTableWidth = function (model) {
-	var widthDeductions = 330;
+	var widthDeductions = 325;
 	return model.browserDimension.width - widthDeductions;
 };
 var _user$project$Tab$emptyRowForm = function (model) {

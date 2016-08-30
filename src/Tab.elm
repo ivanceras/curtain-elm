@@ -252,7 +252,7 @@ view model =
                 
 
 calcMainTableWidth model =  
-    let widthDeductions = 330
+    let widthDeductions = 325
     in
     model.browserDimension.width - widthDeductions
 
