@@ -75,9 +75,10 @@ type Msg
     | WindowDataNextPageReceived (List TableDao)
     | ReceivedScrollBottomEvent String 
     | ResizeStart Mouse.Position
-    | DeleteRecords
+    | ClickedDeleteRecords
     
 type OutMsg = LoadNextPage Tab.Model
+    | DeleteRecords String String
     
 type alias Window =
     { name: String
@@ -247,7 +248,7 @@ toolbar model=
                 ,span [class "tooltiptext"] [text "Cancel changes and return to the last saved state"]
                 ]
             ,button [class "btn btn-large btn-default tooltip"
-                    , onClick DeleteRecords
+                    , onClick ClickedDeleteRecords
                     ]
                 [span [class "icon icon-trash icon-text"] []
                 ,text "Delete"
@@ -401,13 +402,14 @@ update msg model =
             let _ = Debug.log "Starting resize.." xy in
             (model, Nothing)
 
-        DeleteRecords ->
+        ClickedDeleteRecords ->
             let _ = Debug.log "Deleting records" ""
-                selectedDao = getSelectedOrigRecords model
-                encoded = Encode.encode 0 (Dao.encodeDaoList selectedDao)
+                selected_dao = getSelectedOrigRecords model
+                changeset = Dao.deletedChangeSet model.mainTab.tab.table selected_dao
+                encoded = Encode.encode 0 (Dao.encodeChangeSetList changeset)
                 _ = Debug.log "selected rows" encoded
             in 
-            (model, Nothing)
+            (model, Just (DeleteRecords model.mainTab.tab.table encoded))
 
 
     

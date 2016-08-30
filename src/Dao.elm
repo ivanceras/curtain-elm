@@ -46,6 +46,33 @@ type alias ChangeSet =
     , updated: List DaoUpdate
     }
 
+encodeChangeSet: ChangeSet -> Encode.Value
+encodeChangeSet changeset =
+   Encode.object
+       [("table", Encode.string changeset.table)
+       ,("deleted", encodeDaoList changeset.deleted)
+       ,("inserted", Encode.list [])
+       ,("updated", Encode.list [])
+       ]
+
+encodeChangeSetList: List ChangeSet -> Encode.Value
+encodeChangeSetList changelist =
+    List.map(
+        \c ->
+         encodeChangeSet c
+    ) changelist
+        |> Encode.list
+
+
+deletedChangeSet: String -> List Dao -> List ChangeSet
+deletedChangeSet table dao_list =
+    [{ table = table
+    , inserted = []
+    , deleted = dao_list
+    , updated = []
+    }]
+    
+
 daoStateDecoder =
     Decode.object2 DaoState
         ("dao" := daoDecoder)
@@ -149,7 +176,7 @@ encodeValue value =
                 ]
         Uuid v ->
             Encode.object
-                [("variant", Encode.string "DateTime")
+                [("variant", Encode.string "Uuid")
                 ,("fields", Encode.list [Encode.string v])
                 ]
 
@@ -219,6 +246,10 @@ valueVariant variant =
                 ("fields" := Decode.tuple1 ( \a -> a ) Decode.string)
         "DateTime" ->
             Decode.map DateTime 
+                ("fields" := Decode.tuple1 ( \a -> a ) Decode.string)
+
+        "Uuid" ->
+            Decode.map Uuid 
                 ("fields" := Decode.tuple1 ( \a -> a ) Decode.string)
 
         _ ->

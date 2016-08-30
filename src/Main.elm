@@ -66,6 +66,8 @@ type Msg
     | DbConnectionTested String
     | DbConnectionTestError Http.Error
     | DataUpdated String
+    | RecordsDeleted WindowId String
+
 
 appModel =
     { title = "Curtain UI"
@@ -230,7 +232,18 @@ update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         UpdateWindow windowId windowMsg -> 
-              (updateWindow model windowMsg windowId, Cmd.none)
+            let (model', outmsg) = updateWindow model windowMsg windowId
+            in 
+                case outmsg of
+                    Nothing ->
+                        (model', Cmd.none)
+                    Just outmsg ->
+                        case outmsg of
+                            DataWindow.DeleteRecords main_table changeset ->
+                                (model', httpDeleteRecords model' windowId  main_table changeset)
+
+                            DataWindow.LoadNextPage tab_model ->
+                                (model', loadNextPage windowId model)
 
         CloseWindow windowId ->
             (closeWindow model windowId 
@@ -276,16 +289,20 @@ update msg model =
 
         WindowDataReceived windowId tableDaoList ->
             (updateWindow model (DataWindow.WindowDataReceived tableDaoList) windowId
+                |> fst
             ,fetchLookupTabs model windowId
             )
         
         LookupTabsReceived windowId tabList -> --update the window and propage the data down to the fields
             (updateWindow model (DataWindow.LookupTabsReceived tabList) windowId
+                |> fst
             , fetchLookupData model windowId
             )
 
         LookupDataReceived windowId lookupData ->
-            (updateWindow model (DataWindow.LookupDataReceived lookupData) windowId, Cmd.none)
+            (updateWindow model (DataWindow.LookupDataReceived lookupData) windowId
+                |> fst
+            , Cmd.none)
 
         FetchError e ->
             ( { model | error = (toString e)::model.error }, Cmd.none )
@@ -325,7 +342,9 @@ update msg model =
             ({model | isSettingsOpened = not model.isSettingsOpened}, Cmd.none)
 
         FocusedRecordDataReceived windowId rowId tableDaoList ->
-            (updateWindow model (DataWindow.FocusedRecordDataReceived rowId tableDaoList) windowId, Cmd.none)
+            (updateWindow model (DataWindow.FocusedRecordDataReceived rowId tableDaoList) windowId
+                |> fst
+            , Cmd.none)
 
         WindowResize size ->
             let dimension = model.browserDimension
@@ -361,6 +380,8 @@ update msg model =
                             case outmsg of
                                 DataWindow.LoadNextPage tab_model ->
                                     (model', loadNextPage windowId model)
+                                DataWindow.DeleteRecords main_table body ->
+                                    (model', httpDeleteRecords model' windowId main_table body)
 
                 Nothing -> 
                      (model,Cmd.none)
@@ -369,6 +390,7 @@ update msg model =
             let _ = Debug.log "got next page for " windowId
             in
             (updateWindow model (DataWindow.WindowDataNextPageReceived tableDaoList) windowId
+                |> fst
             ,Cmd.none
             )
 
@@ -408,6 +430,11 @@ update msg model =
 
         DataUpdated message ->
             let _ = Debug.log "Data has been updated" ""
+            in
+            (model, Cmd.none)
+
+        RecordsDeleted main_table message ->
+            let _ = Debug.log "Records has been delete" message
             in
             (model, Cmd.none)
 
@@ -461,20 +488,25 @@ closeWindow model windowId =
     }
 
 
-updateWindow: Model -> DataWindow.Msg -> WindowId -> Model
+updateWindow: Model -> DataWindow.Msg -> WindowId -> (Model, Maybe DataWindow.OutMsg)
 updateWindow model windowMsg windowId =
-    let updatedWindows = 
+    let updated_outmsgs = 
         List.map(
             \w ->
                 if w.windowId == windowId then
-                    let (mo, outmsg) = DataWindow.update windowMsg w
+                    let (window', outmsg) = DataWindow.update windowMsg w
                         _ = Debug.log "Main outmsg" outmsg
-                    in mo
+                    in 
+                        (window', outmsg) 
+                                    
                 else
-                    w
+                    (w, Nothing)
         ) model.openedWindows
+
+        (windows, outmsgs) = List.unzip updated_outmsgs
     in
-    {model | openedWindows = updatedWindows}
+    ({model | openedWindows = windows}
+    , Utils.fstNoneEmpty outmsgs)
 
 
 updateAllWindow: DataWindow.Msg -> Model -> Model
@@ -618,7 +650,7 @@ httpGet model url =
     }
 
 
-httpPost model url =
+httpPost model body url =
    let dbUrl = 
         case model.dbUrl of
             Just dbUrl ->   dbUrl
@@ -633,13 +665,13 @@ httpPost model url =
     { verb = "POST"
     , headers = [("db_url", dbUrl)]
     , url = apiServer ++ url
-    , body = Http.empty
+    , body = body
     }
 
 
 resetCache: Model -> Cmd Msg
 resetCache model =
-    httpDelete model "/cache"
+    httpDelete model Http.empty "/cache"
         |> Http.fromJson Decode.string
         |> Task.perform FetchError CacheReset
 
@@ -649,7 +681,14 @@ testDbConnection model =
         |> Http.fromJson Decode.string
         |> Task.perform DbConnectionTestError DbConnectionTested
 
-httpDelete model url =
+httpDeleteRecords: Model -> WindowId -> String -> String -> Cmd Msg
+httpDeleteRecords model window_id main_table body =
+    httpPost model (Http.string body) ("/app/"++main_table)
+        |> Http.fromJson Decode.string
+        |> Task.perform FetchError (RecordsDeleted window_id)
+
+httpDelete: Model -> Http.Body -> String -> Task.Task Http.RawError Http.Response
+httpDelete model body url =
    let dbUrl = 
         case model.dbUrl of
             Just dbUrl ->   dbUrl
@@ -664,7 +703,7 @@ httpDelete model url =
     { verb = "DELETE"
     , headers = [("db_url", dbUrl)]
     , url = apiServer ++ url
-    , body = Http.empty
+    , body = body
     }
 
 
@@ -698,7 +737,7 @@ getWindowDataPage mainTable windowId page pageSize model =
 
 updateData: Model -> String -> Cmd Msg
 updateData model mainTable =
-    httpPost model  ("/app/"++mainTable)
+    httpPost model  Http.empty ("/app/"++mainTable)
         |> Http.fromJson Decode.string
         |> Task.perform FetchError DataUpdated
     
