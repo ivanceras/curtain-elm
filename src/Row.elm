@@ -141,7 +141,11 @@ view model =
         Table ->
             tr [onDoubleClick EditRecordInForm
                ,onClick FocusRecord
-               ,classList [("focused", model.isFocused), ("selected", model.isSelected)]
+               ,classList [
+                     ("focused", model.isFocused)
+                    ,("selected", model.isSelected)
+                    ,("modified", isModified model)
+                   ]
                ,style [("height", "35px")]
                ] 
                (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| fieldModels)
@@ -171,7 +175,11 @@ rowShadowRecordControls: Model -> Html Msg
 rowShadowRecordControls model =
     tr [onDoubleClick EditRecordInForm
        ,onClick FocusRecord
-       ,classList [("focused", model.isFocused), ("selected", model.isSelected)]
+       ,classList [
+             ("focused", model.isFocused)
+            ,("selected", model.isSelected)
+            ,("modified", isModified model)
+            ]
        ,style [("height", "35px")]
        ] 
        (tabularRecordControls model)
@@ -317,6 +325,7 @@ update msg model =
             ({model | mode = Read
              ,presentation = Table
              }
+                |> updateFields Field.CancelChanges
             , Just CancelChanges)
 
         ClickedSaveChanges ->
@@ -324,6 +333,15 @@ update msg model =
              ,presentation = Table
              }
             , Just SaveChanges)
+
+
+--determine whether at least 1 field of the row is modified
+isModified: Model -> Bool
+isModified model =
+    List.any
+        (\f ->
+            Field.isModified f 
+        ) model.fieldModels
 
 
 --add lookup fields only to those which needed it

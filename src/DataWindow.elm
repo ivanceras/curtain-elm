@@ -216,12 +216,38 @@ formRecordControls model =
 
 toolbar: Model ->Html Msg
 toolbar model= 
-    let deleteTooltip = 
-        case model.presentation of
-            Table ->
-                "Click to delete record(s) from the database"
-            _ ->
-                "Click to delete this record from the database"
+    let 
+        selectedRowCount = Tab.selectedRowCount model.mainTab
+        modifiedRowCount = Tab.modifiedRowCount model.mainTab
+        deleteTooltip = 
+            case model.presentation of
+                Table ->
+                    let
+                        records = 
+                            if selectedRowCount > 1 then
+                                "records"
+                            else 
+                                "record"
+                    in
+                        if selectedRowCount == 0 then
+                            "No selected records to delete"
+                        else
+                            "Delete " ++ (toString  selectedRowCount) ++ " " ++ records ++ " from the database"
+                _ ->
+                    "Delete this record from the database"
+
+        saveTooltip =
+           let
+                records =
+                    if modifiedRowCount > 1 then
+                        "records"
+                    else 
+                        "record"
+            in
+                if modifiedRowCount == 0 then
+                    "No changes to save"
+                else
+                    "Save "++(toString modifiedRowCount)++" "++records++" into the database"
     in    
         div [class "btn-group"]
             [button [class "btn btn-large btn-default tooltip"]
@@ -236,10 +262,12 @@ toolbar model=
                 ,span [class "tooltiptext"] [text "Insert row"]
                 ]
             ,button [class "btn btn-large btn-default tooltip"
-                    , onClick (ChangeMode Read)]
+                    , onClick (ChangeMode Read)
+                    , disabled <| modifiedRowCount == 0
+                    ]
                 [span [class "icon icon-floppy icon-text"] []
                 ,text "Save"
-                ,span [class "tooltiptext"] [text "Save record into the database"]
+                ,span [class "tooltiptext"] [text saveTooltip]
                 ]
             ,button [class "btn btn-large btn-default tooltip"
                     , onClick (ChangePresentation Table)]
@@ -249,6 +277,7 @@ toolbar model=
                 ]
             ,button [class "btn btn-large btn-default tooltip"
                     , onClick ClickedDeleteRecords
+                    , disabled <| selectedRowCount == 0
                     ]
                 [span [class "icon icon-trash icon-text"] []
                 ,text "Delete"
@@ -412,7 +441,7 @@ update msg model =
             (model, Just (DeleteRecords model.mainTab.tab.table encoded))
 
 
-    
+
 getSelectedOrigRecords: Model -> List Dao.Dao
 getSelectedOrigRecords model =
     let sel_rows = Tab.selectedRows model.mainTab

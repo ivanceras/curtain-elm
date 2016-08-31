@@ -69,6 +69,30 @@ type alias Tab =
     }
 
 
+type Msg
+    = ChangeMode Mode
+    | ChangePresentation Presentation
+    | ChangeDensity Density
+    | UpdateRow Int Row.Msg
+    | TabReceived Tab
+    | TabDataReceived TableDao
+    | SelectionAll Bool
+    | LookupTabsReceived (List Tab)
+    | LookupDataReceived (List Field.LookupData)
+    | Open
+    | Close
+    | Toggle
+    | ChangeAllocatedHeight Int
+    | FormRecordClose
+    | BrowserDimensionChanged BrowserDimension
+    | TabDataNextPageReceived TableDao
+    | ReceivedScrollBottomEvent
+
+type OutMsg
+    = LoadNextPage
+    | WindowChangePresentation Presentation
+    | FormClose
+
 
 tabDecoder: Decode.Decoder Tab
 tabDecoder = 
@@ -96,30 +120,6 @@ lookupDataDecoder =
         |: ("table" := Decode.string)
         |: ("dao_list" := Decode.list Dao.daoDecoder)
 
-
-type Msg
-    = ChangeMode Mode
-    | ChangePresentation Presentation
-    | ChangeDensity Density
-    | UpdateRow Int Row.Msg
-    | TabReceived Tab
-    | TabDataReceived TableDao
-    | SelectionAll Bool
-    | LookupTabsReceived (List Tab)
-    | LookupDataReceived (List Field.LookupData)
-    | Open
-    | Close
-    | Toggle
-    | ChangeAllocatedHeight Int
-    | FormRecordClose
-    | BrowserDimensionChanged BrowserDimension
-    | TabDataNextPageReceived TableDao
-    | ReceivedScrollBottomEvent
-
-type OutMsg
-    = LoadNextPage
-    | WindowChangePresentation Presentation
-    | FormClose
 
 
 create: Tab -> String -> Int -> Model
@@ -309,17 +309,24 @@ theadView model =
             )
         ]
 
+modifiedRows: Model -> List Row.Model
+modifiedRows model =
+    List.filter (\r -> Row.isModified r) model.rows
+
+modifiedRowCount model =
+    List.length <| modifiedRows model
+
 selectedRows: Model -> List Row.Model
 selectedRows model =
     List.filter (\r-> r.isSelected) model.rows
 
-numberOfSelectedRecords model = 
+selectedRowCount model = 
     selectedRows model |> List.length
 
 
 filterStatusView model = 
     let rows = List.length model.rows
-        selected = numberOfSelectedRecords model
+        selected = selectedRowCount model
         rowCountText = 
             case model.tab.estimatedRowCount of
                 Just estimate ->
@@ -396,7 +403,7 @@ recordControlsHead model =
 
 areAllRecordSelected: Model -> Bool
 areAllRecordSelected model =
-    let selected = numberOfSelectedRecords model 
+    let selected = selectedRowCount model 
         rows = List.length model.rows
     in 
     rows > 0 && selected == rows
@@ -493,7 +500,8 @@ update msg model =
 
 
         SelectionAll checked ->
-            (updateRows (Row.Selection checked) model, Nothing)
+            (updateRows (Row.Selection checked) model
+            , Nothing)
 
         LookupTabsReceived tabList ->
             let listLookupFields = buildLookupField tabList
@@ -543,7 +551,6 @@ update msg model =
                 }, Just LoadNextPage)
             else
                 (model, Nothing)
-
 
 
 

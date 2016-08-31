@@ -101,6 +101,7 @@ type Msg
     | LookupTabsReceived (List LookupTab)
     | LookupDataReceived (List LookupData)
     | ListScrolled Decode.Value 
+    | CancelChanges
 
 type OutMsg = RequestDataFromTable
 
@@ -265,9 +266,15 @@ update: Msg -> Model -> (Model, Maybe OutMsg)
 update msg model =
     case msg of
         ChangeValue v ->
-        ({model | value = Just (String v) }, Nothing)
+            ({model | value = Just (String v) }
+            , Nothing)
         ChangeValueBool b ->
-        ({model | value = Just (Bool b)}, Nothing)
+            ({model | value = Just (Bool b)}
+            , Nothing)
+        CancelChanges ->
+            ({ model | value = model.orig_value}
+            , Nothing
+            )
         ChangeMode mode ->
             let _ = Debug.log "Field change mode" mode
             in
@@ -563,6 +570,13 @@ onSelectionChange msg =
     Decode.map msg targetValue
         |> on "change"
 
+-- determine if the field has been touched and modified
+isModified: Model -> Bool
+isModified model =
+    if model.value /= model.orig_value then
+        True
+    else
+        False
 
 createCompactListField: List Field -> List Dao -> Model ->Html Msg
 createCompactListField fieldList daoList model =

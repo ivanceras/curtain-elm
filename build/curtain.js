@@ -11777,8 +11777,8 @@ var _user$project$Field$createSelectedReadRow = F4(
 						return _elm_lang$core$Native_Utils.crashCase(
 							'Field',
 							{
-								start: {line: 625, column: 13},
-								end: {line: 637, column: 46}
+								start: {line: 639, column: 13},
+								end: {line: 651, column: 46}
 							},
 							_p9)('no keyfield');
 					}
@@ -11792,6 +11792,9 @@ var _user$project$Field$allNonAuxilliaryNonKeyFields = function (fieldList) {
 			return _elm_lang$core$Basics$not(f.isAuxilliary) && _elm_lang$core$Basics$not(f.isKeyfield);
 		},
 		fieldList);
+};
+var _user$project$Field$isModified = function (model) {
+	return (!_elm_lang$core$Native_Utils.eq(model.value, model.orig_value)) ? true : false;
 };
 var _user$project$Field$onSelectionChange = function (msg) {
 	return A2(
@@ -12307,6 +12310,7 @@ var _user$project$Field$fieldDecoder = A2(
 			A2(_elm_lang$core$Json_Decode_ops[':='], 'display_length', _elm_lang$core$Json_Decode$int))),
 	_elm_lang$core$Json_Decode$maybe(
 		A2(_elm_lang$core$Json_Decode_ops[':='], 'default_value', _elm_lang$core$Json_Decode$string)));
+var _user$project$Field$CancelChanges = {ctor: 'CancelChanges'};
 var _user$project$Field$ListScrolled = function (a) {
 	return {ctor: 'ListScrolled', _0: a};
 };
@@ -12854,6 +12858,14 @@ var _user$project$Field$update = F2(
 						}),
 					_1: _elm_lang$core$Maybe$Nothing
 				};
+			case 'CancelChanges':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{value: model.orig_value}),
+					_1: _elm_lang$core$Maybe$Nothing
+				};
 			case 'ChangeMode':
 				var _p48 = _p45._0;
 				var _p46 = A2(_elm_lang$core$Debug$log, 'Field change mode', _p48);
@@ -13015,6 +13027,14 @@ var _user$project$Row$updateLookupFields = F2(
 			model,
 			{fieldModels: updatedFields});
 	});
+var _user$project$Row$isModified = function (model) {
+	return A2(
+		_elm_lang$core$List$any,
+		function (f) {
+			return _user$project$Field$isModified(f);
+		},
+		model.fieldModels);
+};
 var _user$project$Row$onDoubleClickNoPropagate = function (msg) {
 	return A3(
 		_elm_lang$html$Html_Events$onWithOptions,
@@ -13299,7 +13319,12 @@ var _user$project$Row$rowShadowRecordControls = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						{ctor: '_Tuple2', _0: 'focused', _1: model.isFocused},
-						{ctor: '_Tuple2', _0: 'selected', _1: model.isSelected}
+						{ctor: '_Tuple2', _0: 'selected', _1: model.isSelected},
+						{
+						ctor: '_Tuple2',
+						_0: 'modified',
+						_1: _user$project$Row$isModified(model)
+					}
 					])),
 				_elm_lang$html$Html_Attributes$style(
 				_elm_lang$core$Native_List.fromArray(
@@ -13364,7 +13389,12 @@ var _user$project$Row$view = function (model) {
 						_elm_lang$core$Native_List.fromArray(
 							[
 								{ctor: '_Tuple2', _0: 'focused', _1: model.isFocused},
-								{ctor: '_Tuple2', _0: 'selected', _1: model.isSelected}
+								{ctor: '_Tuple2', _0: 'selected', _1: model.isSelected},
+								{
+								ctor: '_Tuple2',
+								_0: 'modified',
+								_1: _user$project$Row$isModified(model)
+							}
 							])),
 						_elm_lang$html$Html_Attributes$style(
 						_elm_lang$core$Native_List.fromArray(
@@ -13595,9 +13625,12 @@ var _user$project$Row$update = F2(
 			case 'ClickedCancelChanges':
 				return {
 					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{mode: _user$project$Presentation$Read, presentation: _user$project$Presentation$Table}),
+					_0: A2(
+						_user$project$Row$updateFields,
+						_user$project$Field$CancelChanges,
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{mode: _user$project$Presentation$Read, presentation: _user$project$Presentation$Table})),
 					_1: _elm_lang$core$Maybe$Just(_user$project$Row$CancelChanges)
 				};
 			default:
@@ -13868,12 +13901,12 @@ var _user$project$Tab$selectedRows = function (model) {
 		},
 		model.rows);
 };
-var _user$project$Tab$numberOfSelectedRecords = function (model) {
+var _user$project$Tab$selectedRowCount = function (model) {
 	return _elm_lang$core$List$length(
 		_user$project$Tab$selectedRows(model));
 };
 var _user$project$Tab$filterStatusView = function (model) {
-	var selected = _user$project$Tab$numberOfSelectedRecords(model);
+	var selected = _user$project$Tab$selectedRowCount(model);
 	var selectedStr = (_elm_lang$core$Native_Utils.cmp(selected, 0) > 0) ? _elm_lang$core$Basics$toString(selected) : '';
 	var rows = _elm_lang$core$List$length(model.rows);
 	var rowCountText = function () {
@@ -13940,8 +13973,20 @@ var _user$project$Tab$filterStatusView = function (model) {
 };
 var _user$project$Tab$areAllRecordSelected = function (model) {
 	var rows = _elm_lang$core$List$length(model.rows);
-	var selected = _user$project$Tab$numberOfSelectedRecords(model);
+	var selected = _user$project$Tab$selectedRowCount(model);
 	return (_elm_lang$core$Native_Utils.cmp(rows, 0) > 0) && _elm_lang$core$Native_Utils.eq(selected, rows);
+};
+var _user$project$Tab$modifiedRows = function (model) {
+	return A2(
+		_elm_lang$core$List$filter,
+		function (r) {
+			return _user$project$Row$isModified(r);
+		},
+		model.rows);
+};
+var _user$project$Tab$modifiedRowCount = function (model) {
+	return _elm_lang$core$List$length(
+		_user$project$Tab$modifiedRows(model));
 };
 var _user$project$Tab$theadView = function (model) {
 	var filteredFields = _user$project$Row$excludeKeyfields(
@@ -15431,12 +15476,37 @@ var _user$project$DataWindow$ChangeMode = function (a) {
 	return {ctor: 'ChangeMode', _0: a};
 };
 var _user$project$DataWindow$toolbar = function (model) {
+	var modifiedRowCount = _user$project$Tab$modifiedRowCount(model.mainTab);
+	var saveTooltip = function () {
+		var records = (_elm_lang$core$Native_Utils.cmp(modifiedRowCount, 1) > 0) ? 'records' : 'record';
+		return _elm_lang$core$Native_Utils.eq(modifiedRowCount, 0) ? 'No changes to save' : A2(
+			_elm_lang$core$Basics_ops['++'],
+			'Save ',
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				_elm_lang$core$Basics$toString(modifiedRowCount),
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					' ',
+					A2(_elm_lang$core$Basics_ops['++'], records, ' into the database'))));
+	}();
+	var selectedRowCount = _user$project$Tab$selectedRowCount(model.mainTab);
 	var deleteTooltip = function () {
 		var _p12 = model.presentation;
 		if (_p12.ctor === 'Table') {
-			return 'Click to delete record(s) from the database';
+			var records = (_elm_lang$core$Native_Utils.cmp(selectedRowCount, 1) > 0) ? 'records' : 'record';
+			return _elm_lang$core$Native_Utils.eq(selectedRowCount, 0) ? 'No selected records to delete' : A2(
+				_elm_lang$core$Basics_ops['++'],
+				'Delete ',
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(selectedRowCount),
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						' ',
+						A2(_elm_lang$core$Basics_ops['++'], records, ' from the database'))));
 		} else {
-			return 'Click to delete this record from the database';
+			return 'Delete this record from the database';
 		}
 	}();
 	return A2(
@@ -15511,7 +15581,9 @@ var _user$project$DataWindow$toolbar = function (model) {
 					[
 						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
 						_elm_lang$html$Html_Events$onClick(
-						_user$project$DataWindow$ChangeMode(_user$project$Presentation$Read))
+						_user$project$DataWindow$ChangeMode(_user$project$Presentation$Read)),
+						_elm_lang$html$Html_Attributes$disabled(
+						_elm_lang$core$Native_Utils.eq(modifiedRowCount, 0))
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -15532,7 +15604,7 @@ var _user$project$DataWindow$toolbar = function (model) {
 							]),
 						_elm_lang$core$Native_List.fromArray(
 							[
-								_elm_lang$html$Html$text('Save record into the database')
+								_elm_lang$html$Html$text(saveTooltip)
 							]))
 					])),
 				A2(
@@ -15570,7 +15642,9 @@ var _user$project$DataWindow$toolbar = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
-						_elm_lang$html$Html_Events$onClick(_user$project$DataWindow$ClickedDeleteRecords)
+						_elm_lang$html$Html_Events$onClick(_user$project$DataWindow$ClickedDeleteRecords),
+						_elm_lang$html$Html_Attributes$disabled(
+						_elm_lang$core$Native_Utils.eq(selectedRowCount, 0))
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
