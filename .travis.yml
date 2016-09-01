@@ -1,8 +1,8 @@
-sudo: false # force container-based infrastructure
+sudo: false 
 language: node_js
 node_js:
   - "4.3"
   install:
     - npm install -g elm@0.17
     script:
-      - make all
+      - make
