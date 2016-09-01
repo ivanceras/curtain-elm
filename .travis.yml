@@ -1,7 +1,7 @@
 sudo: false 
 language: node_js
 node_js:
-  - "4.3"
+  - "6"
 install:
  - npm install -g elm@0.17
 script:
