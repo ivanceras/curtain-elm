@@ -573,10 +573,16 @@ onSelectionChange msg =
 -- determine if the field has been touched and modified
 isModified: Model -> Bool
 isModified model =
-    if model.value /= model.orig_value then
-        True
-    else
-        False
+    model.value /= model.orig_value
+
+-- determine if the field instantiated via new record
+isNew: Model -> Bool
+isNew model =
+    case model.orig_value of
+        Just value ->
+            False
+        Nothing ->
+            True
 
 createCompactListField: List Field -> List Dao -> Model ->Html Msg
 createCompactListField fieldList daoList model =

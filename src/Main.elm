@@ -66,7 +66,7 @@ type Msg
     | DbConnectionTested String
     | DbConnectionTestError Http.Error
     | DataUpdated String
-    | RecordsDeleted WindowId String
+    | RecordsUpdated WindowId String
 
 
 appModel =
@@ -239,8 +239,8 @@ update msg model =
                         (model', Cmd.none)
                     Just outmsg ->
                         case outmsg of
-                            DataWindow.DeleteRecords main_table changeset ->
-                                (model', httpDeleteRecords model' windowId  main_table changeset)
+                            DataWindow.UpdateRecords main_table changeset ->
+                                (model', httpUpdateRecords model' windowId  main_table changeset)
 
                             DataWindow.LoadNextPage tab_model ->
                                 (model', loadNextPage windowId model)
@@ -380,8 +380,8 @@ update msg model =
                             case outmsg of
                                 DataWindow.LoadNextPage tab_model ->
                                     (model', loadNextPage windowId model)
-                                DataWindow.DeleteRecords main_table body ->
-                                    (model', httpDeleteRecords model' windowId main_table body)
+                                DataWindow.UpdateRecords main_table body ->
+                                    (model', httpUpdateRecords model' windowId main_table body)
 
                 Nothing -> 
                      (model,Cmd.none)
@@ -433,7 +433,7 @@ update msg model =
             in
             (model, Cmd.none)
 
-        RecordsDeleted main_table message ->
+        RecordsUpdated main_table message ->
             let _ = Debug.log "Records has been delete" message
             in
             (model, Cmd.none)
@@ -632,42 +632,22 @@ getWindowTable model windowId =
 
 
 httpGet model url =
-   let dbUrl = 
-        case model.dbUrl of
-            Just dbUrl ->   dbUrl
-            Nothing -> ""
-
-       apiServer = 
-         case model.apiServer of
-            Just apiServer -> apiServer
-            Nothing -> ""
-    in
-    Http.send Http.defaultSettings
-    { verb = "GET"
-    , headers = [("db_url", dbUrl)]
-    , url = apiServer ++ url
-    , body = Http.empty
-    }
+    httpRequest "GET" model Http.empty url
 
 
 httpPost model body url =
-   let dbUrl = 
-        case model.dbUrl of
-            Just dbUrl ->   dbUrl
-            Nothing -> ""
+     httpRequest "POST" model body url
+    
+httpDelete model body url =
+    httpRequest "DELETE" model body url
 
-       apiServer = 
-         case model.apiServer of
-            Just apiServer -> apiServer
-            Nothing -> ""
-    in
+httpRequest verb model body url =
     Http.send Http.defaultSettings
-    { verb = "POST"
-    , headers = [("db_url", dbUrl)]
-    , url = apiServer ++ url
+    { verb = verb
+    , headers = [("db_url", Utils.unwrap model.dbUrl)]
+    , url = (Utils.unwrap model.apiServer) ++ url
     , body = body
     }
-
 
 resetCache: Model -> Cmd Msg
 resetCache model =
@@ -681,30 +661,12 @@ testDbConnection model =
         |> Http.fromJson Decode.string
         |> Task.perform DbConnectionTestError DbConnectionTested
 
-httpDeleteRecords: Model -> WindowId -> String -> String -> Cmd Msg
-httpDeleteRecords model window_id main_table body =
+httpUpdateRecords: Model -> WindowId -> String -> String -> Cmd Msg
+httpUpdateRecords model window_id main_table body =
     httpPost model (Http.string body) ("/app/"++main_table)
         |> Http.fromJson Decode.string
-        |> Task.perform FetchError (RecordsDeleted window_id)
+        |> Task.perform FetchError (RecordsUpdated window_id)
 
-httpDelete: Model -> Http.Body -> String -> Task.Task Http.RawError Http.Response
-httpDelete model body url =
-   let dbUrl = 
-        case model.dbUrl of
-            Just dbUrl ->   dbUrl
-            Nothing -> ""
-
-       apiServer = 
-         case model.apiServer of
-            Just apiServer -> apiServer
-            Nothing -> ""
-    in
-    Http.send Http.defaultSettings
-    { verb = "DELETE"
-    , headers = [("db_url", dbUrl)]
-    , url = apiServer ++ url
-    , body = body
-    }
 
 
 fetchWindowList: Model -> Cmd Msg
@@ -741,6 +703,7 @@ updateData model mainTable =
         |> Http.fromJson Decode.string
         |> Task.perform FetchError DataUpdated
     
+
 
 page: Int -> String
 page p =

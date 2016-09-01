@@ -76,9 +76,10 @@ type Msg
     | ReceivedScrollBottomEvent String 
     | ResizeStart Mouse.Position
     | ClickedDeleteRecords
+    | ClickedSaveChanges
     
 type OutMsg = LoadNextPage Tab.Model
-    | DeleteRecords String String
+    | UpdateRecords String String
     
 type alias Window =
     { name: String
@@ -262,7 +263,7 @@ toolbar model=
                 ,span [class "tooltiptext"] [text "Insert row"]
                 ]
             ,button [class "btn btn-large btn-default tooltip"
-                    , onClick (ChangeMode Read)
+                    , onClick ClickedSaveChanges
                     , disabled <| modifiedRowCount == 0
                     ]
                 [span [class "icon icon-floppy icon-text"] []
@@ -433,24 +434,51 @@ update msg model =
 
         ClickedDeleteRecords ->
             let _ = Debug.log "Deleting records" ""
-                selected_dao = getSelectedOrigRecords model
-                changeset = Dao.deletedChangeSet model.mainTab.tab.table selected_dao
-                encoded = Encode.encode 0 (Dao.encodeChangeSetList changeset)
+                selectedDao = getSelectedOrigRecords model
+                table = model.mainTab.tab.table
+                changeset = Dao.deletedChangeSet table selectedDao False
+                encoded = Encode.encode 0 (Dao.changeSetListEncoder changeset)
                 _ = Debug.log "selected rows" encoded
             in 
-            (model, Just (DeleteRecords model.mainTab.tab.table encoded))
+            (model, Just (UpdateRecords table encoded))
 
+         -- updated and inserted records
+        ClickedSaveChanges ->
+            let _ = Debug.log "Saving changes" ""
+                updatedDao = getUpdatedRecords model
+                insertedDao = getInsertedRecords model
+                table = model.mainTab.tab.table
+                changeset = Dao.forSaveChangeset table updatedDao insertedDao 
+                encoded = Encode.encode 0 (Dao.changeSetListEncoder changeset)
+                _ = Debug.log "For save" encoded
+             in 
+                (model, Just (UpdateRecords table encoded))
 
 
 getSelectedOrigRecords: Model -> List Dao.Dao
 getSelectedOrigRecords model =
-    let sel_rows = Tab.selectedRows model.mainTab
-        sel_dao = 
-            List.map(
-                \r ->
-                    Row.getOrigDao r
-            ) sel_rows
-    in sel_dao
+    Tab.selectedRows model.mainTab
+        |> List.map(
+            \r ->
+                Row.getOrigDao r
+        ) 
+
+getInsertedRecords: Model -> List Dao.DaoInsert
+getInsertedRecords model =
+    Tab.insertedRows model.mainTab
+        |> List.map(
+            \r ->
+                Row.getDaoInsert r
+        )
+
+getUpdatedRecords: Model -> List Dao.DaoUpdate
+getUpdatedRecords model =
+    Tab.modifiedRows model.mainTab
+        |> List.map (
+            \r ->
+                Row.getDaoUpdate r
+        )
+        
 
 updateAllTabs: Tab.Msg -> Model -> Model
 updateAllTabs tabMsg model =

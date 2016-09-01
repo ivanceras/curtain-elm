@@ -36,7 +36,6 @@ type alias Model =
     , totalRecords: Maybe Int
     , totalPage: Maybe Int
     , uid: Int -- used for tracking row number
-    , focusedRow: Maybe Int
     , tabId: String
     , allocatedHeight: Int
     , browserDimension: BrowserDimension
@@ -135,7 +134,6 @@ create tab tabId height =
     , totalRecords = Nothing
     , totalPage = Nothing
     , uid = 0 --will be incremented every row added
-    , focusedRow = Nothing
     , tabId = tabId
     , allocatedHeight = height
     , browserDimension = defaultBrowserDimension
@@ -320,6 +318,10 @@ selectedRows: Model -> List Row.Model
 selectedRows model =
     List.filter (\r-> r.isSelected) model.rows
 
+insertedRows: Model -> List Row.Model
+insertedRows model =
+    List.filter (\r -> Row.isNew r ) model.rows
+
 selectedRowCount model = 
     selectedRows model |> List.length
 
@@ -427,17 +429,22 @@ focusFirstRecord: Model -> Maybe Row.Model
 focusFirstRecord model =
     List.head model.rows
 
-setFocusedRow: Int -> Model -> Model
-setFocusedRow rowId model =
-    {model | focusedRow = Just rowId}
 
-focusedRow: Model -> Maybe Row.Model
-focusedRow model =
-    case model.focusedRow of
-        Nothing -> focusFirstRecord model
-        Just row ->
-            List.filter (\r -> r.rowId == row) model.rows
-                        |> List.head
+updateFocusedRow: Int -> Model -> Model
+updateFocusedRow rowId model =
+    {model | rows =
+        List.map
+            (\r ->
+                if r.rowId == rowId then
+                   Row.update Row.FocusRecord r 
+                    |> fst
+                else
+                   Row.update Row.LooseFocusRecord r
+                    |> fst
+            ) model.rows
+     }
+        
+
 
 updateSelectionAllRecords: Model -> Bool -> Model
 updateSelectionAllRecords model checked =
@@ -464,9 +471,9 @@ update msg model =
                             ({model' | presentation = presentation}
                                 |> updateRows (Row.ChangePresentation presentation) 
                             , Just (WindowChangePresentation presentation))
-                        Row.TabEditRecordInForm rowId ->
+                        Row.TabEditRecordInForm ->
                             ({model' | presentation = Form}
-                                |> setFocusedRow rowId
+                                |> updateFocusedRow rowId
                             , Just (WindowChangePresentation Form))
                             
                         Row.CancelChanges ->
@@ -475,6 +482,8 @@ update msg model =
                             (model', Nothing)
                         Row.Remove ->
                             (model', Nothing)
+                        Row.FocusChanged ->
+                            (updateFocusedRow rowId model', Nothing)
 
                     
         ChangeMode mode ->
@@ -553,6 +562,13 @@ update msg model =
                 (model, Nothing)
 
 
+focusedRow: Model -> Maybe Row.Model
+focusedRow model =
+    List.filter
+        (\r ->
+            r.isFocused
+        ) model.rows
+        |> List.head
 
 createRows: Model -> List DaoState -> List Row.Model
 createRows model listDaoState =

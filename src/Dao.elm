@@ -30,7 +30,7 @@ type alias DaoState =
 type alias Uuid = String
 
 type alias DaoInsert = 
-    { record_id: Uuid
+    { recordId: Uuid
     , dao: Dao
     }
 
@@ -44,34 +44,64 @@ type alias ChangeSet =
     , inserted: List DaoInsert
     , deleted: List Dao
     , updated: List DaoUpdate
+    , deleteReferring: Bool -- whether or not delete referring records too
     }
 
-encodeChangeSet: ChangeSet -> Encode.Value
-encodeChangeSet changeset =
+type alias UpdateResponse =
+    { inserted: List Dao
+    , deletedCount: Int
+    , updated: List Dao
+    , totalRecords: Int -- total records on table
+    }
+
+changeSetEncoder: ChangeSet -> Encode.Value
+changeSetEncoder changeset =
    Encode.object
        [("table", Encode.string changeset.table)
-       ,("deleted", encodeDaoList changeset.deleted)
-       ,("inserted", Encode.list [])
-       ,("updated", Encode.list [])
+       ,("deleted", daoListEncoder changeset.deleted)
+       ,("inserted",  listEncoder daoInsertEncoder changeset.inserted)
+       ,("updated", listEncoder daoUpdateEncoder changeset.updated)
+       ,("delete_referring", Encode.bool changeset.deleteReferring)
        ]
 
-encodeChangeSetList: List ChangeSet -> Encode.Value
-encodeChangeSetList changelist =
+changeSetListEncoder: List ChangeSet -> Encode.Value
+changeSetListEncoder changelist =
     List.map(
         \c ->
-         encodeChangeSet c
+         changeSetEncoder c
     ) changelist
         |> Encode.list
 
 
-deletedChangeSet: String -> List Dao -> List ChangeSet
-deletedChangeSet table dao_list =
-    [{ table = table
+deletedChangeSet: String -> List Dao -> Bool -> List ChangeSet
+deletedChangeSet table daoList force =
+    [{table = table
     , inserted = []
-    , deleted = dao_list
+    , deleted = daoList
     , updated = []
+    , deleteReferring = force
+    }]
+
+forSaveChangeset: String -> List DaoUpdate -> List DaoInsert -> List ChangeSet
+forSaveChangeset table daoUpdateList daoInsertList =
+    [{table = table
+    , inserted = daoInsertList
+    , deleted = []
+    , updated = daoUpdateList
+    , deleteReferring = False
     }]
     
+
+daoInsertEncoder daoInsert =
+    Encode.object
+        [("dao", daoEncoder daoInsert.dao)
+        ,("record_id", Encode.string daoInsert.recordId)
+        ]
+daoUpdateEncoder daoUpdate =
+    Encode.object
+        [("original", daoEncoder daoUpdate.original)
+        ,("updated", daoEncoder daoUpdate.updated)
+        ]
 
 daoStateDecoder =
     Decode.object2 DaoState
@@ -181,8 +211,8 @@ encodeValue value =
                 ]
 
 
-encodeDao: Dao -> Encode.Value
-encodeDao dao =
+daoEncoder: Dao -> Encode.Value
+daoEncoder dao =
     Dict.toList dao
         |> List.map
             (\(k, v) ->
@@ -190,13 +220,25 @@ encodeDao dao =
             )
         |> Encode.object
 
-encodeDaoList: List Dao -> Encode.Value
-encodeDaoList dao_list =
-    List.map(
-        \d ->
-            encodeDao d
-    ) dao_list
-      |> Encode.list
+daoListEncoder: List Dao -> Encode.Value
+daoListEncoder daoList =
+    listEncoder daoEncoder daoList
+
+daoInsertListEncoder: List DaoInsert -> Encode.Value
+daoInsertListEncoder daoInsertList =
+    listEncoder daoInsertEncoder daoInsertList
+
+daoUpdateListEncoder: List DaoUpdate -> Encode.Value
+daoUpdateListEncoder daoUpdateList =
+    listEncoder daoUpdateEncoder daoUpdateList
+
+listEncoder: ( a -> Encode.Value ) -> List a  -> Encode.Value
+listEncoder encoder payload =
+    List.map (
+        \p ->
+            encoder p
+    ) payload
+        |> Encode.list
 
 valueDecoder: Decoder Value
 valueDecoder = 
