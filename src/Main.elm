@@ -141,7 +141,7 @@ view: Model -> Html Msg
 view model =
     div [class "window"] 
          [ header [class "toolbar toolbar-header"]
-                [h1 [class "title"] [text "Curtain"]
+                [{--h1 [class "title"] [text "Curtain"]--}
                 ]
           ,div [class "window-content"]
                [div [class "pane-group"] 
@@ -184,8 +184,8 @@ view model =
                          ]
                    ]
                 ]
-          ,footer [class "toolbar toolbar-footer"]
-                [span [class "pull-right"] [text (toString model.error)]]
+          --,footer [class "toolbar toolbar-footer"]
+          --      [span [class "pull-right"] [text (toString model.error)]]
           ]
 
 settingsButton: Html Msg

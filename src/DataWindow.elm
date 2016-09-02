@@ -105,10 +105,6 @@ windowDecoder =
         ("has_many_tabs" := Decode.list Tab.tabDecoder)
         ("has_many_indirect_tabs" := Decode.list Tab.tabDecoder)
 
-calcTotalHeight model =
-    let windowHeightDeductions = 100 --window tabs and footer
-    in
-    model.browserDimension.height - windowHeightDeductions
 
 subscription: Sub Msg
 subscription =
@@ -120,8 +116,7 @@ view model =
     let display = if model.isActive then "block" else "none"
     in
     div [class "data_window_view"
-        ,style [("height", (toString (calcTotalHeight model))++"px")
-                ,("display", display)
+        ,style [("display", display)
                ]
         ] 
                 [toolbar model
@@ -453,7 +448,9 @@ updateExtTab tabMsg tabModel model=
     }
 
 calcMainTableHeight model = 
-    let heightDeductions = 190
+    let 
+        footerHeight = 37
+        heightDeductions = (190 - footerHeight)
     in
     model.browserDimension.height - heightDeductions
 
