@@ -1,5 +1,7 @@
 ## Curtain
 
+![Build Status](https://travis-ci.org/ivanceras/curtain-elm.svg)
+
 Curtain is data administration tool targetes not only for programmers.
 It uses the modern approach of interpreting the data in such a way it is presented in a usable and meaningful way.
 

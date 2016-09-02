@@ -36,7 +36,6 @@ type alias Model =
     , totalRecords: Maybe Int
     , totalPage: Maybe Int
     , uid: Int -- used for tracking row number
-    , focusedRow: Maybe Int
     , tabId: String
     , allocatedHeight: Int
     , browserDimension: BrowserDimension
@@ -69,6 +68,30 @@ type alias Tab =
     }
 
 
+type Msg
+    = ChangeMode Mode
+    | ChangePresentation Presentation
+    | ChangeDensity Density
+    | UpdateRow Int Row.Msg
+    | TabReceived Tab
+    | TabDataReceived TableDao
+    | SelectionAll Bool
+    | LookupTabsReceived (List Tab)
+    | LookupDataReceived (List Field.LookupData)
+    | Open
+    | Close
+    | Toggle
+    | ChangeAllocatedHeight Int
+    | FormRecordClose
+    | BrowserDimensionChanged BrowserDimension
+    | TabDataNextPageReceived TableDao
+    | ReceivedScrollBottomEvent
+
+type OutMsg
+    = LoadNextPage
+    | WindowChangePresentation Presentation
+    | FormClose
+
 
 tabDecoder: Decode.Decoder Tab
 tabDecoder = 
@@ -97,30 +120,6 @@ lookupDataDecoder =
         |: ("dao_list" := Decode.list Dao.daoDecoder)
 
 
-type Msg
-    = ChangeMode Mode
-    | ChangePresentation Presentation
-    | ChangeDensity Density
-    | UpdateRow Int Row.Msg
-    | TabReceived Tab
-    | TabDataReceived TableDao
-    | SelectionAll Bool
-    | LookupTabsReceived (List Tab)
-    | LookupDataReceived (List Field.LookupData)
-    | Open
-    | Close
-    | Toggle
-    | ChangeAllocatedHeight Int
-    | FormRecordClose
-    | BrowserDimensionChanged BrowserDimension
-    | TabDataNextPageReceived TableDao
-    | ReceivedScrollBottomEvent
-
-type OutMsg
-    = LoadNextPage
-    | WindowChangePresentation Presentation
-    | FormClose
-
 
 create: Tab -> String -> Int -> Model
 create tab tabId height =
@@ -135,7 +134,6 @@ create tab tabId height =
     , totalRecords = Nothing
     , totalPage = Nothing
     , uid = 0 --will be incremented every row added
-    , focusedRow = Nothing
     , tabId = tabId
     , allocatedHeight = height
     , browserDimension = defaultBrowserDimension
@@ -309,17 +307,28 @@ theadView model =
             )
         ]
 
+modifiedRows: Model -> List Row.Model
+modifiedRows model =
+    List.filter (\r -> Row.isModified r) model.rows
+
+modifiedRowCount model =
+    List.length <| modifiedRows model
+
 selectedRows: Model -> List Row.Model
 selectedRows model =
     List.filter (\r-> r.isSelected) model.rows
 
-numberOfSelectedRecords model = 
+insertedRows: Model -> List Row.Model
+insertedRows model =
+    List.filter (\r -> Row.isNew r ) model.rows
+
+selectedRowCount model = 
     selectedRows model |> List.length
 
 
 filterStatusView model = 
     let rows = List.length model.rows
-        selected = numberOfSelectedRecords model
+        selected = selectedRowCount model
         rowCountText = 
             case model.tab.estimatedRowCount of
                 Just estimate ->
@@ -396,7 +405,7 @@ recordControlsHead model =
 
 areAllRecordSelected: Model -> Bool
 areAllRecordSelected model =
-    let selected = numberOfSelectedRecords model 
+    let selected = selectedRowCount model 
         rows = List.length model.rows
     in 
     rows > 0 && selected == rows
@@ -420,17 +429,22 @@ focusFirstRecord: Model -> Maybe Row.Model
 focusFirstRecord model =
     List.head model.rows
 
-setFocusedRow: Int -> Model -> Model
-setFocusedRow rowId model =
-    {model | focusedRow = Just rowId}
 
-focusedRow: Model -> Maybe Row.Model
-focusedRow model =
-    case model.focusedRow of
-        Nothing -> focusFirstRecord model
-        Just row ->
-            List.filter (\r -> r.rowId == row) model.rows
-                        |> List.head
+updateFocusedRow: Int -> Model -> Model
+updateFocusedRow rowId model =
+    {model | rows =
+        List.map
+            (\r ->
+                if r.rowId == rowId then
+                   Row.update Row.FocusRecord r 
+                    |> fst
+                else
+                   Row.update Row.LooseFocusRecord r
+                    |> fst
+            ) model.rows
+     }
+        
+
 
 updateSelectionAllRecords: Model -> Bool -> Model
 updateSelectionAllRecords model checked =
@@ -457,9 +471,9 @@ update msg model =
                             ({model' | presentation = presentation}
                                 |> updateRows (Row.ChangePresentation presentation) 
                             , Just (WindowChangePresentation presentation))
-                        Row.TabEditRecordInForm rowId ->
+                        Row.TabEditRecordInForm ->
                             ({model' | presentation = Form}
-                                |> setFocusedRow rowId
+                                |> updateFocusedRow rowId
                             , Just (WindowChangePresentation Form))
                             
                         Row.CancelChanges ->
@@ -468,6 +482,8 @@ update msg model =
                             (model', Nothing)
                         Row.Remove ->
                             (model', Nothing)
+                        Row.FocusChanged ->
+                            (updateFocusedRow rowId model', Nothing)
 
                     
         ChangeMode mode ->
@@ -493,7 +509,8 @@ update msg model =
 
 
         SelectionAll checked ->
-            (updateRows (Row.Selection checked) model, Nothing)
+            (updateRows (Row.Selection checked) model
+            , Nothing)
 
         LookupTabsReceived tabList ->
             let listLookupFields = buildLookupField tabList
@@ -545,7 +562,13 @@ update msg model =
                 (model, Nothing)
 
 
-
+focusedRow: Model -> Maybe Row.Model
+focusedRow model =
+    List.filter
+        (\r ->
+            r.isFocused
+        ) model.rows
+        |> List.head
 
 createRows: Model -> List DaoState -> List Row.Model
 createRows model listDaoState =

@@ -46,3 +46,10 @@ fstNoneEmpty outmsgs =
         case ne of
             Nothing -> Nothing
             Just outmsg -> outmsg
+ 
+unwrap: Maybe String -> String
+unwrap v =
+    case v of
+        Nothing -> ""
+        Just v -> v
+

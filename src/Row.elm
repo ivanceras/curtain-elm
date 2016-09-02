@@ -31,32 +31,40 @@ type alias Model =
 -- get the Dao which also contain the changes
 getDao: Model -> Dao.Dao
 getDao model =
-    let kv  = 
-        List.filterMap(
-            \f ->
-            case f.value of
-                Nothing -> Nothing
-                Just value ->
-                    Just (f.field.column, value)
-        ) model.fieldModels
-        _ = Debug.log "keyvalue pair" kv
-     in
-     Dict.fromList kv
+    List.filterMap(
+        \f ->
+        case f.value of
+            Nothing -> Nothing
+            Just value ->
+                Just (f.field.column, value)
+    ) model.fieldModels
+        |> Dict.fromList
+
+
+getDaoUpdate: Model -> Dao.DaoUpdate
+getDaoUpdate model =
+    { original = getOrigDao model
+    , updated = getDao model
+    }
+
+getDaoInsert: Model -> Dao.DaoInsert
+getDaoInsert model =
+    { recordId = "00000000-0000-0000-0000-000000000000"
+    , dao = getDao model
+    }
 
 -- get the original Dao, used for deletion
 getOrigDao: Model -> Dao.Dao
 getOrigDao model =
-    let kv  = 
-        List.filterMap(
-            \f ->
-            case f.orig_value of
-                Nothing -> Nothing
-                Just orig_value ->
-                    Just (f.field.column, orig_value)
-        ) model.fieldModels
-        _ = Debug.log "keyvalue pair" kv
-     in
-     Dict.fromList kv
+    List.filterMap(
+        \f ->
+        case f.orig_value of
+            Nothing -> Nothing
+            Just orig_value ->
+                Just (f.field.column, orig_value)
+    ) model.fieldModels
+        |> Dict.fromList
+
 
 empty =
     { rowId = 0 
@@ -98,7 +106,8 @@ type OutMsg = Remove
     | TabChangePresentation Presentation
     | CancelChanges
     | SaveChanges
-    | TabEditRecordInForm Int
+    | TabEditRecordInForm
+    | FocusChanged
 
 
 
@@ -141,7 +150,12 @@ view model =
         Table ->
             tr [onDoubleClick EditRecordInForm
                ,onClick FocusRecord
-               ,classList [("focused", model.isFocused), ("selected", model.isSelected)]
+               ,classList [
+                     ("focused", model.isFocused)
+                    ,("selected", model.isSelected)
+                    ,("modified", isModified model)
+                    ,("inserted", isNew model)
+                   ]
                ,style [("height", "35px")]
                ] 
                (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| fieldModels)
@@ -171,7 +185,12 @@ rowShadowRecordControls: Model -> Html Msg
 rowShadowRecordControls model =
     tr [onDoubleClick EditRecordInForm
        ,onClick FocusRecord
-       ,classList [("focused", model.isFocused), ("selected", model.isSelected)]
+       ,classList [
+             ("focused", model.isFocused)
+            ,("selected", model.isSelected)
+            ,("modified", isModified model)
+            ,("inserted", isNew model)
+            ]
        ,style [("height", "35px")]
        ] 
        (tabularRecordControls model)
@@ -285,7 +304,7 @@ update msg model =
             ({model | isSelected = not model.isSelected}, Nothing)
 
         FocusRecord ->
-            ({model | isFocused = True}, Nothing)
+            ({model | isFocused = True}, Just FocusChanged)
         LooseFocusRecord ->
             ({model | isFocused = False}, Nothing)
 
@@ -303,7 +322,7 @@ update msg model =
              }
                 |> updateFields (Field.ChangeMode Edit)
                 |> updateFields (Field.ChangePresentation Form)
-             ,Just (TabEditRecordInForm model.rowId)
+             ,Just TabEditRecordInForm
             )
         EditRecordInPlace -> -- tapped in Tab
             ({model | mode = Edit
@@ -317,6 +336,7 @@ update msg model =
             ({model | mode = Read
              ,presentation = Table
              }
+                |> updateFields Field.CancelChanges
             , Just CancelChanges)
 
         ClickedSaveChanges ->
@@ -324,6 +344,23 @@ update msg model =
              ,presentation = Table
              }
             , Just SaveChanges)
+
+
+--determine whether at least 1 field of the row is modified
+isModified: Model -> Bool
+isModified model =
+    List.any
+        (\f ->
+            Field.isModified f 
+        ) model.fieldModels
+
+-- if all of the fields is new then this is a new record
+isNew: Model -> Bool
+isNew model =
+    List.all
+        (\f ->
+            Field.isNew f
+        ) model.fieldModels
 
 
 --add lookup fields only to those which needed it

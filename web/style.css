@@ -71,6 +71,9 @@ tr.focused{
 tr.selected{
     background-color: #eee;
 }
+tr.modified{
+    background-color: #cf9;
+}
 
 tr,th,td{
   -webkit-user-select: text;
