@@ -140,10 +140,10 @@ onClickNoPropagate msg =
 view: Model -> Html Msg
 view model =
     div [class "window"] 
-         [ header [class "toolbar toolbar-header"]
+         [{-- header [class "toolbar toolbar-header"]
                 [{--h1 [class "title"] [text "Curtain"]--}
                 ]
-          ,div [class "window-content"]
+          ,--}div [class "window-content"]
                [div [class "pane-group"] 
                    [ div [class "pane pane-sm sidebar"]
                          [ settingsButton
