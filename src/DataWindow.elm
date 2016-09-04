@@ -34,6 +34,7 @@ type alias Model =
     , mainTableHeight: Int
     , detailTableHeight: Int
     , browserDimension: Tab.BrowserDimension
+    , alert: Maybe String
     }
 
 defaultFormRecordHeight = 200
@@ -56,6 +57,8 @@ create window windowId =
     , mainTableHeight = 0
     , detailTableHeight = 0
     , browserDimension = Tab.defaultBrowserDimension
+    --, alert = Just "An error occurred"
+    , alert = Nothing
     }
 
 type Msg
@@ -121,10 +124,18 @@ view model =
                ]
         ] 
                 [toolbar model
+                ,case model.alert of
+                    Just alert ->
+                        div [class "alert"
+                            ,style [("height", "70px")]
+                            ] [text alert]
+                    Nothing ->
+                        span [] []
+
                 ,case model.presentation of
                     
                     Form ->
-                        div[class "master-container"
+                        div[class "master_container"
                            ] 
                             [formRecordControls model
                             ,div [style [("height", "400px")
@@ -507,8 +518,14 @@ updateExtTab tabMsg tabModel model=
 calcMainTableHeight model = 
     let 
         heightDeductions = 132
+        alertHeight = 
+            case model.alert of
+                Just alert ->
+                    70
+                Nothing ->
+                    0
     in
-    model.browserDimension.height - heightDeductions
+    model.browserDimension.height - (heightDeductions + alertHeight)
 
 
 updateAllocatedHeight: Model -> Model

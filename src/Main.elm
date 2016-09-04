@@ -21,17 +21,15 @@ import Utils
 
 type alias Model =
     { title: String
-    , dbUrl: Maybe String
-    , apiServer: Maybe String
     , windowList: WindowList.Model
     , openedWindows: List DataWindow.Model
-    , error: List String
+    , error: Maybe String
     , uid: Int -- id for the opened windows
     , activeWindow: Maybe Int
     , isSettingsOpened: Bool
     , browserDimension: Tab.BrowserDimension
     , defaultPageSize: Int
-    , settingsModel: Maybe Settings.Model
+    , settings: Settings.Model
     }
 
 
@@ -71,11 +69,9 @@ type Msg
 
 appModel =
     { title = "Curtain UI"
-    , dbUrl = Nothing
-    , apiServer = Nothing
     , windowList = WindowList.empty 
     , openedWindows = []
-    , error = []
+    , error = Nothing 
     , uid = 0
     , activeWindow = Nothing
     , isSettingsOpened = True 
@@ -85,33 +81,29 @@ appModel =
         , scrollBarWidth = 13
         }
     , defaultPageSize = 40
-    , settingsModel = Nothing
+    , settings = Settings.create Nothing Nothing
     }
 
 
 init: (Model, Cmd Msg)
 init = 
     (appModel
-        |> createSettingsModel
        ,Cmd.batch[getScrollbarWidth ()
                  ,setWindowSize
                  ,getSettingsDbUrl ()
                  ,getSettingsApiServer ()
                  ])
 
-createSettingsModel: Model -> Model
-createSettingsModel model =
-    {model | settingsModel = Just (Settings.create model.dbUrl model.apiServer)}
 
 
 saveSettings: Model -> Cmd msg 
 saveSettings model =
    Cmd.batch[
-     case model.dbUrl of
+     case model.settings.dbUrl of
         Just dbUrl -> saveSettingsDbUrl dbUrl
         Nothing -> Cmd.none
 
-    ,case model.apiServer of
+    ,case model.settings.apiServer of
         Just apiServer -> saveSettingsApiServer apiServer
         Nothing -> Cmd.none
 
@@ -140,21 +132,15 @@ onClickNoPropagate msg =
 view: Model -> Html Msg
 view model =
     div [class "window"] 
-         [{-- header [class "toolbar toolbar-header"]
-                [{--h1 [class "title"] [text "Curtain"]--}
-                ]
-          ,--}div [class "window-content"]
+         [div [class "window-content"]
                [div [class "pane-group"] 
                    [ div [class "pane pane-sm sidebar"]
                          [ settingsButton
                          , (App.map UpdateWindowList (WindowList.view model.windowList))
                          ]
                    , if model.isSettingsOpened then
-                        case model.settingsModel of
-                            Just settingsModel ->
-                                 Settings.view settingsModel
-                                    |> App.map UpdateSettings
-                            Nothing -> text "No settings.."
+                         Settings.view model.settings
+                            |> App.map UpdateSettings
                      else
                         div [class "pane main_container"] 
                              [ div [class "tab-group"] 
@@ -184,8 +170,6 @@ view model =
                          ]
                    ]
                 ]
-          --,footer [class "toolbar toolbar-footer"]
-          --      [span [class "pull-right"] [text (toString model.error)]]
           ]
 
 settingsButton: Html Msg
@@ -305,38 +289,31 @@ update msg model =
             , Cmd.none)
 
         FetchError e ->
-            ( { model | error = (toString e)::model.error }, Cmd.none )
+            ( { model | error = Just (toString e)}, Cmd.none )
 
         UpdateSettings settingsMsg ->
-            case model.settingsModel of
-                    Just settingsModel ->
-                        let (updatedSettings, outmsg) = Settings.update settingsMsg settingsModel
-                            model' = {model | settingsModel = Just updatedSettings}
-                        in
-                        case outmsg of
-                            Nothing ->
-                                (model', Cmd.none)
+            let (updatedSettings, outmsg) = Settings.update settingsMsg model.settings
+                model' = {model | settings = updatedSettings}
+            in
+            case outmsg of
+                Nothing ->
+                    (model', Cmd.none)
 
-                            Just settings_outmsg ->
-                                case settings_outmsg of
+                Just settings_outmsg ->
+                    case settings_outmsg of
 
-                                    Settings.CloseWindow ->
-                                        (closeSettingsWindow model'
-                                        , Cmd.none)
+                        Settings.CloseWindow ->
+                            (closeSettingsWindow model'
+                            , Cmd.none)
 
-                                    Settings.ApplySettings settingsModel ->
-                                        let _ = Debug.log "Apllying the settings down...." ""
-                                            model'' = {model' | dbUrl = settingsModel.dbUrl
-                                            , apiServer = settingsModel.apiServer
-                                            }
-                                        in
-                                        ( model'' 
-                                        ,Cmd.batch [testDbConnection model''
-                                                   ,saveSettings model''
-                                                   ])
-                                
-                    Nothing -> 
-                        (model, Cmd.none)
+                        Settings.ApplySettings settings ->
+                            let _ = Debug.log "Apllying the settings down...." ""
+                            in
+                            ( model' 
+                            ,Cmd.batch [testDbConnection model'
+                                       ,saveSettings model'
+                                       ])
+                    
 
         ToggleSettingsWindow ->
             ({model | isSettingsOpened = not model.isSettingsOpened}, Cmd.none)
@@ -403,30 +380,52 @@ update msg model =
 
         ReceivedSettingsDbUrl dbUrl ->
             let _ = Debug.log "received settings db_url" dbUrl in
-            ({model | dbUrl = Just dbUrl}
-                |> createSettingsModel 
+            ({model | settings =
+                Settings.update (Settings.ChangeDbUrl dbUrl) model.settings
+                |> fst
+              }
             , Cmd.none
             )
 
         ReceivedSettingsApiServer apiServer ->
             let _ = Debug.log "received settings api_server" apiServer in
-            ({model | apiServer = Just apiServer}
-                |> createSettingsModel
+            ({model | settings =
+                Settings.update (Settings.ChangeApiServer apiServer) model.settings  
+                    |> fst
+              }
             , Cmd.none
             )
         
         DbConnectionTested result ->
             let _ = Debug.log "Database connection tested" result in
             if result == "OK" then
-                (model, resetCache model)
+                ({model | settings =
+                    Settings.update Settings.DbConnectionTested model.settings
+                        |> fst
+                 }
+                , resetCache model)
             else
                 let _ = Debug.log "Unable to connect to database"
                 in
                 (model, Cmd.none)
 
         DbConnectionTestError error ->
-            let _ = Debug.log "There is an error with this request" "" in
-            (model, Cmd.none)
+            let _ = Debug.log "There is an error with this request" error in
+            case error of
+                Http.NetworkError ->
+                    ({model | settings =
+                        Settings.update Settings.NetworkError model.settings
+                            |> fst
+                      }
+                     , Cmd.none)
+
+                _ ->
+                    ({model | settings = 
+                        Settings.update Settings.DbConnectionTestError model.settings
+                            |> fst
+                     }
+                     , Cmd.none)
+
 
         DataUpdated message ->
             let _ = Debug.log "Data has been updated" ""
@@ -644,8 +643,8 @@ httpDelete model body url =
 httpRequest verb model body url =
     Http.send Http.defaultSettings
     { verb = verb
-    , headers = [("db_url", Utils.unwrap model.dbUrl)]
-    , url = (Utils.unwrap model.apiServer) ++ url
+    , headers = [("db_url", Utils.unwrap model.settings.dbUrl)]
+    , url = (Utils.unwrap model.settings.apiServer) ++ url
     , body = body
     }
 

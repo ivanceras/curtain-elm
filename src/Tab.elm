@@ -229,6 +229,13 @@ view model =
                                 )
                                 ]
                             ]
+                        , case model.loadingPage of
+                            True ->
+                                div [style [("margin-top", "-50px")]]
+                                    [i [class "fa fa-spinner fa-pulse fa-3x fa-fw"] []
+                                    ]
+                            False ->
+                                text "" 
                          ]
                     ]
 
