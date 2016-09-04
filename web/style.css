@@ -1,3 +1,6 @@
+button {
+  -webkit-app-region: no-drag;
+  }
 
 .indent {
  margin-left: 222px!important

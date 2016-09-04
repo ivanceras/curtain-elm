@@ -506,8 +506,7 @@ updateExtTab tabMsg tabModel model=
 
 calcMainTableHeight model = 
     let 
-        footerHeight = 37
-        heightDeductions = (190 - footerHeight)
+        heightDeductions = 132
     in
     model.browserDimension.height - heightDeductions
 
