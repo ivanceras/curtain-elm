@@ -14758,7 +14758,8 @@ var _user$project$Tab$view = function (model) {
 													_elm_lang$core$Native_List.fromArray(
 														[
 															{ctor: '_Tuple2', _0: 'margin-top', _1: '-50px'}
-														]))
+														])),
+													_elm_lang$html$Html_Attributes$class('animated slideInUp')
 												]),
 											_elm_lang$core$Native_List.fromArray(
 												[
@@ -16537,9 +16538,12 @@ var _user$project$Settings$view = function (model) {
 							return A2(
 								_elm_lang$html$Html$div,
 								_elm_lang$core$Native_List.fromArray(
-									[]),
+									[
+										_elm_lang$html$Html_Attributes$class('animated slideInRight')
+									]),
 								_elm_lang$core$Native_List.fromArray(
 									[
+										_elm_lang$html$Html$text('Connecting...'),
 										A2(
 										_elm_lang$html$Html$i,
 										_elm_lang$core$Native_List.fromArray(
@@ -16560,7 +16564,7 @@ var _user$project$Settings$view = function (model) {
 								_elm_lang$html$Html$div,
 								_elm_lang$core$Native_List.fromArray(
 									[
-										_elm_lang$html$Html_Attributes$class('alert')
+										_elm_lang$html$Html_Attributes$class('alert animated zoomInDown')
 									]),
 								_elm_lang$core$Native_List.fromArray(
 									[

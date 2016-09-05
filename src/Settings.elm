@@ -97,15 +97,16 @@ view model =
                     [text "Connect to Server"]
             , case model.processing of
                 True ->
-                    div []
-                        [i [class "fa fa-cog fa-spin fa-3x fa-fw"] []
+                    div [class "animated slideInRight"]
+                        [text "Connecting..."
+                        ,i [class "fa fa-cog fa-spin fa-3x fa-fw"] []
                         ]
                 False ->
                     text ""
 
             , case model.error of
                 Just error ->
-                    div [class "alert"]
+                    div [class "alert animated zoomInDown"]
                         [text error]
                 Nothing ->
                     span [] []

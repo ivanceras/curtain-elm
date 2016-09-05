@@ -231,7 +231,9 @@ view model =
                             ]
                         , case model.loadingPage of
                             True ->
-                                div [style [("margin-top", "-50px")]]
+                                div [style [("margin-top", "-50px")]
+                                    ,class "animated slideInUp"
+                                    ]
                                     [i [class "fa fa-spinner fa-pulse fa-3x fa-fw"] []
                                     ]
                             False ->
