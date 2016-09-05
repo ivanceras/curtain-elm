@@ -272,7 +272,11 @@ toolbar model=
                     , onClick ClickedSaveChanges
                     , disabled <| modifiedRowCount == 0
                     ]
-                [span [class "icon icon-floppy icon-text"] []
+                [if modifiedRowCount > 0 then 
+                    span [class "badge badge-changes"] 
+                        [text (toString modifiedRowCount)]
+                 else text ""
+                ,span [class "icon icon-floppy icon-text"] []
                 ,text "Save"
                 ,span [class "tooltiptext"] [text saveTooltip]
                 ]
@@ -286,7 +290,12 @@ toolbar model=
                     , onClick ClickedDeleteRecords
                     , disabled <| selectedRowCount == 0
                     ]
-                [span [class "icon icon-trash icon-text"] []
+                [if selectedRowCount > 0 then 
+                    span [class "badge"] 
+                        [text (toString selectedRowCount)]
+                 else text ""
+                ,span [class "icon icon-trash icon-text"] 
+                      [                      ]
                 ,text "Delete"
                 ,span [class "tooltiptext"] [text deleteTooltip] 
                 ]
@@ -442,7 +451,7 @@ update msg model =
             let _ = Debug.log "Deleting records" ""
                 selectedDao = getSelectedOrigRecords model
                 table = model.mainTab.tab.table
-                changeset = Dao.deletedChangeSet table selectedDao False
+                changeset = Dao.deletedChangeset table selectedDao False
                 encoded = Encode.encode 0 (Dao.changeSetListEncoder changeset)
                 _ = Debug.log "selected rows" encoded
             in 

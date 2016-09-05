@@ -1,3 +1,17 @@
+.badge {
+	position: absolute;
+	background: #ff4081;
+	min-width: 15px;
+	text-align: center;
+	border-radius: 50%;
+	color: white;
+	left: 20px;
+	top: -3px;
+    font-size: 9px;
+}
+.badge-changes{
+    background:#5fba7d;
+}
 .alert{
     background-color:#cf9;
 }
