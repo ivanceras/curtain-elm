@@ -39,7 +39,7 @@ type alias DaoUpdate =
     , updated: Dao
     }
 
-type alias ChangeSet = 
+type alias Changeset = 
     { table: String
     , inserted: List DaoInsert
     , deleted: List Dao
@@ -47,14 +47,18 @@ type alias ChangeSet =
     , deleteReferring: Bool -- whether or not delete referring records too
     }
 
-type alias UpdateResponse =
-    { inserted: List Dao
-    , deletedCount: Int
-    , updated: List Dao
-    , totalRecords: Int -- total records on table
+-- Changeset responses
+type alias ChangesetResponse =
+    { inserted: List Dao -- records that are inserted successfully
+    , insertedError: List Dao -- the records that has trouble inserting
+    , deleteError: List Dao -- records that have trouble deleting
+    , deletedCount: Int -- number of deleted records
+    , updated: List Dao -- records that was sucessfully deleted
+    , updatedError: List Dao -- records that have trouble updating
+    , totalRecords: Int -- total records on table, after the deletion, insertion, updating
     }
 
-changeSetEncoder: ChangeSet -> Encode.Value
+changeSetEncoder: Changeset -> Encode.Value
 changeSetEncoder changeset =
    Encode.object
        [("table", Encode.string changeset.table)
@@ -64,7 +68,7 @@ changeSetEncoder changeset =
        ,("delete_referring", Encode.bool changeset.deleteReferring)
        ]
 
-changeSetListEncoder: List ChangeSet -> Encode.Value
+changeSetListEncoder: List Changeset -> Encode.Value
 changeSetListEncoder changelist =
     List.map(
         \c ->
@@ -73,8 +77,8 @@ changeSetListEncoder changelist =
         |> Encode.list
 
 
-deletedChangeSet: String -> List Dao -> Bool -> List ChangeSet
-deletedChangeSet table daoList force =
+deletedChangeset: String -> List Dao -> Bool -> List Changeset
+deletedChangeset table daoList force =
     [{table = table
     , inserted = []
     , deleted = daoList
@@ -82,7 +86,7 @@ deletedChangeSet table daoList force =
     , deleteReferring = force
     }]
 
-forSaveChangeset: String -> List DaoUpdate -> List DaoInsert -> List ChangeSet
+forSaveChangeset: String -> List DaoUpdate -> List DaoInsert -> List Changeset
 forSaveChangeset table daoUpdateList daoInsertList =
     [{table = table
     , inserted = daoInsertList

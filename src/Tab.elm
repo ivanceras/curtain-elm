@@ -376,6 +376,7 @@ tabFilters model filteredFields =
                     [input [style [("width", (toString width)++"px")]
                             ,type' "text"
                             ,Field.alignment f
+                            ,placeholder ("Search "++f.column++"...")
                            ] []
                     ]
             ) filteredFields
