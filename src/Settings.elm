@@ -106,7 +106,11 @@ view model =
 
             , case model.error of
                 Just error ->
-                    div [class "alert animated zoomInDown"]
+                    div [class "alert animated fadeIn"
+                        ,style [("width", "300px")
+                               ,("margin-top", "30px")
+                               ]
+                        ]
                         [text error]
                 Nothing ->
                     span [] []

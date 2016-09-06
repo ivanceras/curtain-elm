@@ -127,7 +127,7 @@ view model =
                 [toolbar model
                 ,case model.alert of
                     Just alert ->
-                        div [class "alert animated fadeInUp"
+                        div [class "alert animated fadeIn"
                             ,style [("height", "70px")]
                             ] 
                             [text alert
@@ -295,7 +295,7 @@ toolbar model=
                     , disabled <| selectedRowCount == 0
                     ]
                 [if selectedRowCount > 0 then 
-                    span [class "badge animated flash"] 
+                    span [class "badge animated fadeIn"] 
                         [text (toString selectedRowCount)]
                  else text ""
                 ,span [class "icon icon-trash icon-text"] 

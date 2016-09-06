@@ -15837,7 +15837,7 @@ var _user$project$DataWindow$toolbar = function (model) {
 						_elm_lang$html$Html$span,
 						_elm_lang$core$Native_List.fromArray(
 							[
-								_elm_lang$html$Html_Attributes$class('badge animated flash')
+								_elm_lang$html$Html_Attributes$class('badge animated fadeIn')
 							]),
 						_elm_lang$core$Native_List.fromArray(
 							[
@@ -15945,7 +15945,7 @@ var _user$project$DataWindow$view = function (model) {
 						_elm_lang$html$Html$div,
 						_elm_lang$core$Native_List.fromArray(
 							[
-								_elm_lang$html$Html_Attributes$class('alert animated fadeInUp'),
+								_elm_lang$html$Html_Attributes$class('alert animated fadeIn'),
 								_elm_lang$html$Html_Attributes$style(
 								_elm_lang$core$Native_List.fromArray(
 									[
@@ -16611,7 +16611,13 @@ var _user$project$Settings$view = function (model) {
 								_elm_lang$html$Html$div,
 								_elm_lang$core$Native_List.fromArray(
 									[
-										_elm_lang$html$Html_Attributes$class('alert animated zoomInDown')
+										_elm_lang$html$Html_Attributes$class('alert animated fadeIn'),
+										_elm_lang$html$Html_Attributes$style(
+										_elm_lang$core$Native_List.fromArray(
+											[
+												{ctor: '_Tuple2', _0: 'width', _1: '300px'},
+												{ctor: '_Tuple2', _0: 'margin-top', _1: '30px'}
+											]))
 									]),
 								_elm_lang$core$Native_List.fromArray(
 									[
