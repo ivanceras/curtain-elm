@@ -97,7 +97,7 @@ view model =
                     [text "Connect to Server"]
             , case model.processing of
                 True ->
-                    div [class "animated slideInRight"]
+                    div [class "animated slideInLeft"]
                         [text "Connecting..."
                         ,i [class "fa fa-cog fa-spin fa-3x fa-fw"] []
                         ]

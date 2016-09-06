@@ -57,8 +57,8 @@ create window windowId =
     , mainTableHeight = 0
     , detailTableHeight = 0
     , browserDimension = Tab.defaultBrowserDimension
-    --, alert = Just "An error occurred"
-    , alert = Nothing
+    , alert = Just "An error occurred, but I don't know what :)"
+    --, alert = Nothing
     }
 
 type Msg
@@ -80,6 +80,7 @@ type Msg
     | ResizeStart Mouse.Position
     | ClickedDeleteRecords
     | ClickedSaveChanges
+    | ClickedCloseAlert
     
 type OutMsg = LoadNextPage Tab.Model
     | UpdateRecords String String
@@ -126,9 +127,12 @@ view model =
                 [toolbar model
                 ,case model.alert of
                     Just alert ->
-                        div [class "alert"
+                        div [class "alert animated fadeInUp"
                             ,style [("height", "70px")]
-                            ] [text alert]
+                            ] 
+                            [text alert
+                            , button [onClick ClickedCloseAlert] [text "Ok"]
+                            ]
                     Nothing ->
                         span [] []
 
@@ -273,7 +277,7 @@ toolbar model=
                     , disabled <| modifiedRowCount == 0
                     ]
                 [if modifiedRowCount > 0 then 
-                    span [class "badge badge-changes"] 
+                    span [class "badge badge-changes animated flash"] 
                         [text (toString modifiedRowCount)]
                  else text ""
                 ,span [class "icon icon-floppy icon-text"] []
@@ -291,7 +295,7 @@ toolbar model=
                     , disabled <| selectedRowCount == 0
                     ]
                 [if selectedRowCount > 0 then 
-                    span [class "badge"] 
+                    span [class "badge animated flash"] 
                         [text (toString selectedRowCount)]
                  else text ""
                 ,span [class "icon icon-trash icon-text"] 
@@ -468,6 +472,12 @@ update msg model =
                 _ = Debug.log "For save" encoded
              in 
                 (model, Just (UpdateRecords table encoded))
+
+        ClickedCloseAlert ->
+            ( {model | alert = Nothing}
+                |> updateAllocatedHeight
+            , Nothing
+            )
 
 
 getSelectedOrigRecords: Model -> List Dao.Dao
