@@ -11014,6 +11014,14 @@ var _user$project$Dao$UpdateResponse = F7(
 	function (a, b, c, d, e, f, g) {
 		return {inserted: a, inserteError: b, deleted: c, deleteError: d, updated: e, updateError: f, totalRecords: g};
 	});
+var _user$project$Dao$DaoResponse = F2(
+	function (a, b) {
+		return {daoList: a, errored: b};
+	});
+var _user$project$Dao$UpdateResponses = F5(
+	function (a, b, c, d, e) {
+		return {inserted: a, deleted: b, updated: c, totalRecords: d, table: e};
+	});
 var _user$project$Dao$Uuid = function (a) {
 	return {ctor: 'Uuid', _0: a};
 };

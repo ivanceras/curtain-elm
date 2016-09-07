@@ -61,12 +61,7 @@ type alias UpdateResponse =
 
 type alias DaoResponse =
     { daoList: List Dao
-    , errored: List DaoError
-    }
-
-type alias DaoError =
-    { dao: Dao
-    , error: String
+    , errored: List (Dao, String)
     }
 
 type alias UpdateResponses =
