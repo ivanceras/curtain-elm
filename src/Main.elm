@@ -81,7 +81,7 @@ appModel =
         , scrollBarWidth = 13
         }
     , defaultPageSize = 40
-    , settings = Settings.create Nothing Nothing
+    , settings = Settings.init "" "" 
     }
 
 
@@ -99,14 +99,8 @@ init =
 saveSettings: Model -> Cmd msg 
 saveSettings model =
    Cmd.batch[
-     case model.settings.dbUrl of
-        Just dbUrl -> saveSettingsDbUrl dbUrl
-        Nothing -> Cmd.none
-
-    ,case model.settings.apiServer of
-        Just apiServer -> saveSettingsApiServer apiServer
-        Nothing -> Cmd.none
-
+        saveSettingsDbUrl model.settings.dbUrl
+       ,saveSettingsApiServer model.settings.apiServer
    ] 
 
 closeSettingsWindow: Model -> Model
@@ -643,8 +637,8 @@ httpDelete model body url =
 httpRequest verb model body url =
     Http.send Http.defaultSettings
     { verb = verb
-    , headers = [("db_url", Utils.unwrap model.settings.dbUrl)]
-    , url = (Utils.unwrap model.settings.apiServer) ++ url
+    , headers = [("db_url", model.settings.dbUrl)]
+    , url = model.settings.apiServer ++ url
     , body = body
     }
 

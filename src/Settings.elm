@@ -5,15 +5,15 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
 type alias Model =
-    { dbUrl: Maybe String
-    , apiServer: Maybe String
+    { dbUrl: String
+    , apiServer: String
     , error: Maybe String
     , processing: Bool
     }
 
 
-create: Maybe String -> Maybe String -> Model
-create dbUrl apiServer =
+init: String -> String -> Model
+init dbUrl apiServer =
     { dbUrl = dbUrl
     , apiServer = apiServer
     , error = Nothing
@@ -35,14 +35,7 @@ type OutMsg = ApplySettings Model
 
 view: Model -> Html Msg
 view model =
-   let  dbUrl = case model.dbUrl of
-            Just dbUrl -> dbUrl
-            Nothing -> ""
-        
-        apiServer = case model.apiServer of
-            Just apiServer -> apiServer
-            Nothing -> ""
-
+   let  
         labelStyle = style [ ("width", "200px") 
                             , ("text-align", "left")
                             , ("padding-top", "5px")
@@ -79,7 +72,7 @@ view model =
                         ,textStyle
                         ,placeholder "db url"
                         ,onInput ChangeDbUrl
-                        ,value dbUrl
+                        ,value model.dbUrl
                         ] []
                  ]
             ,div []
@@ -87,7 +80,7 @@ view model =
                  ,input [type' "text"
                         ,placeholder "api server"
                         ,textStyle
-                        ,value apiServer
+                        ,value model.apiServer
                         ,onInput ChangeApiServer
                         ] []
                    ]
@@ -128,9 +121,9 @@ update msg model =
     in
     case msg of
         ChangeDbUrl dbUrl ->
-            ({model | dbUrl = Just dbUrl}, Nothing)
+            ({model | dbUrl = dbUrl}, Nothing)
         ChangeApiServer apiServer ->
-            ({model | apiServer = Just apiServer}, Nothing)
+            ({model | apiServer = apiServer}, Nothing)
         ClickedConnect ->
             ({ model | error = Nothing
                 ,processing = True
