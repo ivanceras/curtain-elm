@@ -63,8 +63,8 @@ type Msg
     | CacheReset String
     | DbConnectionTested String
     | DbConnectionTestError Http.Error
-    | DataUpdated String
-    | RecordsUpdated WindowId String
+    | RecordsUpdated WindowId (List Dao.UpdateResponse)
+    | UpdateError WindowId Http.Error
 
 
 appModel =
@@ -217,8 +217,10 @@ update msg model =
                         (model', Cmd.none)
                     Just outmsg ->
                         case outmsg of
-                            DataWindow.UpdateRecords main_table changeset ->
-                                (model', httpUpdateRecords model' windowId  main_table changeset)
+                            DataWindow.UpdateRecords mainTable changeset ->
+                                let _ = Debug.log "Calling httpUpdateRecords..." mainTable
+                                in
+                                (model', httpUpdateRecords model' windowId  mainTable changeset)
 
                             DataWindow.LoadNextPage tab_model ->
                                 (model', loadNextPage windowId model)
@@ -283,6 +285,8 @@ update msg model =
             , Cmd.none)
 
         FetchError e ->
+            let _ = Debug.log "There was an error fetching records" e
+            in
             ( { model | error = Just (toString e)}, Cmd.none )
 
         UpdateSettings settingsMsg ->
@@ -351,8 +355,8 @@ update msg model =
                             case outmsg of
                                 DataWindow.LoadNextPage tab_model ->
                                     (model', loadNextPage windowId model)
-                                DataWindow.UpdateRecords main_table body ->
-                                    (model', httpUpdateRecords model' windowId main_table body)
+                                DataWindow.UpdateRecords mainTable body ->
+                                    (model', httpUpdateRecords model' windowId mainTable body)
 
                 Nothing -> 
                      (model,Cmd.none)
@@ -421,15 +425,17 @@ update msg model =
                      , Cmd.none)
 
 
-        DataUpdated message ->
-            let _ = Debug.log "Data has been updated" ""
+        RecordsUpdated mainTable updateResponse ->
+            let _ = Debug.log "Update response: " updateResponse 
             in
             (model, Cmd.none)
 
-        RecordsUpdated main_table message ->
-            let _ = Debug.log "Records has been delete" message
+        UpdateError windowId error ->
+            let _ = Debug.log "Update error" error
             in
-            (model, Cmd.none)
+            (updateWindow model (DataWindow.SetAlert (toString error)) windowId
+                |> fst
+            , Cmd.none)
 
 
 main = 
@@ -655,10 +661,11 @@ testDbConnection model =
         |> Task.perform DbConnectionTestError DbConnectionTested
 
 httpUpdateRecords: Model -> WindowId -> String -> String -> Cmd Msg
-httpUpdateRecords model window_id main_table body =
-    httpPost model (Http.string body) ("/app/"++main_table)
-        |> Http.fromJson Decode.string
-        |> Task.perform FetchError (RecordsUpdated window_id)
+httpUpdateRecords model windowId mainTable body =
+    Debug.log "httpUpdateRecords"
+    httpPost model (Http.string body) ("/app/"++mainTable)
+        |> Http.fromJson (Decode.list Dao.updateResponseDecoder)
+        |> Task.perform (UpdateError windowId) (RecordsUpdated windowId)
 
 
 
@@ -690,12 +697,6 @@ getWindowDataPage: String -> Int -> Int -> Int -> Model -> Cmd Msg
 getWindowDataPage mainTable windowId page pageSize model =
     getWindowDataWithQuery model mainTable windowId (pageSizeQuery page pageSize)
 
-updateData: Model -> String -> Cmd Msg
-updateData model mainTable =
-    httpPost model  Http.empty ("/app/"++mainTable)
-        |> Http.fromJson Decode.string
-        |> Task.perform FetchError DataUpdated
-    
 
 
 page: Int -> String

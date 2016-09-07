@@ -47,16 +47,47 @@ type alias Changeset =
     , deleteReferring: Bool -- whether or not delete referring records too
     }
 
--- Changeset responses
-type alias ChangesetResponse =
+-- Update responses
+type alias UpdateResponse =
     { inserted: List Dao -- records that are inserted successfully
-    , insertedError: List Dao -- the records that has trouble inserting
-    , deleteError: List Dao -- records that have trouble deleting
-    , deletedCount: Int -- number of deleted records
+    , inserteError: List (Dao, String) -- the records that has trouble inserting
+    , deleted: List Dao -- number of deleted records
+    , deleteError: List (Dao, String)  -- records that have trouble deleting
     , updated: List Dao -- records that was sucessfully deleted
-    , updatedError: List Dao -- records that have trouble updating
+    , updateError: List (Dao, String) -- records that have trouble updating
     , totalRecords: Int -- total records on table, after the deletion, insertion, updating
     }
+
+
+type alias DaoResponse =
+    { daoList: List Dao
+    , errored: List DaoError
+    }
+
+type alias DaoError =
+    { dao: Dao
+    , error: String
+    }
+
+type alias UpdateResponses =
+    { inserted: DaoResponse
+    , deleted: DaoResponse
+    , updated: DaoResponse
+    , totalRecords: Int
+    , table: String
+    }
+ 
+updateResponseDecoder: Decoder UpdateResponse
+updateResponseDecoder =
+    Decode.object7 UpdateResponse
+        ("inserted" := Decode.list daoDecoder)
+        ("insert_error" := Decode.list (Decode.tuple2 (,) daoDecoder Decode.string) )
+        ("deleted" := Decode.list daoDecoder )
+        ("delete_error" := Decode.list (Decode.tuple2 (,) daoDecoder Decode.string) )
+        ("updated" := Decode.list daoDecoder)
+        ("update_error" := Decode.list (Decode.tuple2 (,) daoDecoder Decode.string) )
+        ("total_records" := Decode.int)
+
 
 changeSetEncoder: Changeset -> Encode.Value
 changeSetEncoder changeset =

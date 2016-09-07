@@ -81,6 +81,7 @@ type Msg
     | ClickedDeleteRecords
     | ClickedSaveChanges
     | ClickedCloseAlert
+    | SetAlert String
     
 type OutMsg = LoadNextPage Tab.Model
     | UpdateRecords String String
@@ -477,6 +478,11 @@ update msg model =
             ( {model | alert = Nothing}
                 |> updateAllocatedHeight
             , Nothing
+            )
+        
+        SetAlert alert ->
+            ({ model | alert = Just alert }
+             , Nothing
             )
 
 
