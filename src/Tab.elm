@@ -340,9 +340,9 @@ filterStatusView model =
     let rows = List.length model.rows
         selected = selectedRowCount model
         rowCountText = 
-            case model.tab.estimatedRowCount of
-                Just estimate ->
-                    text (toString estimate)
+            case model.totalRecords of
+                Just totalRecords ->
+                    text (toString totalRecords)
                 Nothing ->
                     text (toString rows)
 
@@ -575,7 +575,7 @@ update msg model =
         RecordsUpdated updateResponse ->
             let model' = updateRecordFromResponse model updateResponse
             in
-            if shallLoadNextPage model' updateResponse then
+            if shallLoadNextPage model' then
                 ({ model' | loadingPage = True }
                 , Just LoadNextPage
                 )
@@ -583,14 +583,25 @@ update msg model =
                 ( model', Nothing)
 
 -- load next page if current model.rows < pageSize && totalPage > model.rows
-shallLoadNextPage: Model -> Dao.UpdateResponse -> Bool
-shallLoadNextPage model updateResponse =
+shallLoadNextPage: Model -> Bool
+shallLoadNextPage model =
     let 
-        _ = Debug.log "Deciding whether to load Next Page" ""
-        rowLength = 
-           Debug.log "rowLength"  <| List.length model.rows
+        rowLength = List.length model.rows
+        totalRecords = 
+            case model.totalRecords of
+                Just totalRecords ->
+                    totalRecords
+                Nothing ->
+                   -1 
     in
-    Debug.log "shallLoad" (rowLength < 40 && updateResponse.totalRecords > rowLength)
+    case model.pageSize of
+        Just pageSize ->
+                rowLength < pageSize  
+                && totalRecords > rowLength 
+                && not model.loadingPage
+
+        Nothing ->
+            False
         
 
 -- retain only what's not in deleted
@@ -602,6 +613,7 @@ updateRecordFromResponse model ur =
                 \row ->
                 not (inDeleted ur row)
             ) model.rows
+            , totalRecords = Just ur.totalRecords
         }
 
 

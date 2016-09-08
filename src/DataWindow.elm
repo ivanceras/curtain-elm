@@ -57,8 +57,7 @@ create window windowId =
     , mainTableHeight = 0
     , detailTableHeight = 0
     , browserDimension = Tab.defaultBrowserDimension
-    , alert = Just "An error occurred, but I don't know what :)"
-    --, alert = Nothing
+    , alert = Nothing
     }
 
 type Msg
@@ -473,13 +472,25 @@ update msg model =
             in
             case mainResponse of
                 Just mainResponse ->
-                    let (model', outmsg) =
-                        updateMainTab (Tab.RecordsUpdated mainResponse) model
+                    let
+                        error = getError mainResponse
+                        model' = { model | alert = error } 
+                                    |> updateAllocatedHeight
+                        (model'', outmsg) =
+                            updateMainTab (Tab.RecordsUpdated mainResponse) model'
                     in
-                        handleOutMsg model' outmsg
+                        handleOutMsg model'' outmsg
                 Nothing ->
                     ( model, Nothing)
 
+getError updateResponse =
+    let deleteErrorCount = 
+        List.length updateResponse.deleteError
+    in
+        if deleteErrorCount > 0 then
+            Just ("There was error deleting "++(toString deleteErrorCount)++" records")
+        else
+            Nothing
 
 handleOutMsg model' outmsg =
     let _ = Debug.log "Datawindow handlingOutMsg" outmsg in
