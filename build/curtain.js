@@ -391,7 +391,7 @@ function eqHelp(x, y, depth, stack)
 		return true;
 	}
 
-	if (x.ctor !== y.ctor)
+	if (!eqHelp(x.ctor, y.ctor, depth + 1, stack))
 	{
 		return false;
 	}
@@ -673,20 +673,14 @@ function toString(v)
 			return '[]';
 		}
 
-		if (v.ctor === 'RBNode_elm_builtin' || v.ctor === 'RBEmpty_elm_builtin' || v.ctor === 'Set_elm_builtin')
+		if (v.ctor === 'Set_elm_builtin')
 		{
-			var name, list;
-			if (v.ctor === 'Set_elm_builtin')
-			{
-				name = 'Set';
-				list = _elm_lang$core$Set$toList(v._0);
-			}
-			else
-			{
-				name = 'Dict';
-				list = _elm_lang$core$Dict$toList(v);
-			}
-			return name + '.fromList ' + toString(list);
+			return 'Set.fromList ' + toString(_elm_lang$core$Set$toList(v));
+		}
+
+		if (v.ctor === 'RBNode_elm_builtin' || v.ctor === 'RBEmpty_elm_builtin')
+		{
+			return 'Dict.fromList ' + toString(_elm_lang$core$Dict$toList(v));
 		}
 
 		var output = '';
@@ -1524,22 +1518,124 @@ var _elm_lang$core$List$intersperse = F2(
 			return A2(_elm_lang$core$List_ops['::'], _p21._0, spersed);
 		}
 	});
-var _elm_lang$core$List$take = F2(
+var _elm_lang$core$List$takeReverse = F3(
+	function (n, list, taken) {
+		takeReverse:
+		while (true) {
+			if (_elm_lang$core$Native_Utils.cmp(n, 0) < 1) {
+				return taken;
+			} else {
+				var _p22 = list;
+				if (_p22.ctor === '[]') {
+					return taken;
+				} else {
+					var _v23 = n - 1,
+						_v24 = _p22._1,
+						_v25 = A2(_elm_lang$core$List_ops['::'], _p22._0, taken);
+					n = _v23;
+					list = _v24;
+					taken = _v25;
+					continue takeReverse;
+				}
+			}
+		}
+	});
+var _elm_lang$core$List$takeTailRec = F2(
 	function (n, list) {
+		return _elm_lang$core$List$reverse(
+			A3(
+				_elm_lang$core$List$takeReverse,
+				n,
+				list,
+				_elm_lang$core$Native_List.fromArray(
+					[])));
+	});
+var _elm_lang$core$List$takeFast = F3(
+	function (ctr, n, list) {
 		if (_elm_lang$core$Native_Utils.cmp(n, 0) < 1) {
 			return _elm_lang$core$Native_List.fromArray(
 				[]);
 		} else {
-			var _p22 = list;
-			if (_p22.ctor === '[]') {
-				return list;
-			} else {
-				return A2(
-					_elm_lang$core$List_ops['::'],
-					_p22._0,
-					A2(_elm_lang$core$List$take, n - 1, _p22._1));
-			}
+			var _p23 = {ctor: '_Tuple2', _0: n, _1: list};
+			_v26_5:
+			do {
+				_v26_1:
+				do {
+					if (_p23.ctor === '_Tuple2') {
+						if (_p23._1.ctor === '[]') {
+							return list;
+						} else {
+							if (_p23._1._1.ctor === '::') {
+								switch (_p23._0) {
+									case 1:
+										break _v26_1;
+									case 2:
+										return _elm_lang$core$Native_List.fromArray(
+											[_p23._1._0, _p23._1._1._0]);
+									case 3:
+										if (_p23._1._1._1.ctor === '::') {
+											return _elm_lang$core$Native_List.fromArray(
+												[_p23._1._0, _p23._1._1._0, _p23._1._1._1._0]);
+										} else {
+											break _v26_5;
+										}
+									default:
+										if ((_p23._1._1._1.ctor === '::') && (_p23._1._1._1._1.ctor === '::')) {
+											var _p28 = _p23._1._1._1._0;
+											var _p27 = _p23._1._1._0;
+											var _p26 = _p23._1._0;
+											var _p25 = _p23._1._1._1._1._0;
+											var _p24 = _p23._1._1._1._1._1;
+											return (_elm_lang$core$Native_Utils.cmp(ctr, 1000) > 0) ? A2(
+												_elm_lang$core$List_ops['::'],
+												_p26,
+												A2(
+													_elm_lang$core$List_ops['::'],
+													_p27,
+													A2(
+														_elm_lang$core$List_ops['::'],
+														_p28,
+														A2(
+															_elm_lang$core$List_ops['::'],
+															_p25,
+															A2(_elm_lang$core$List$takeTailRec, n - 4, _p24))))) : A2(
+												_elm_lang$core$List_ops['::'],
+												_p26,
+												A2(
+													_elm_lang$core$List_ops['::'],
+													_p27,
+													A2(
+														_elm_lang$core$List_ops['::'],
+														_p28,
+														A2(
+															_elm_lang$core$List_ops['::'],
+															_p25,
+															A3(_elm_lang$core$List$takeFast, ctr + 1, n - 4, _p24)))));
+										} else {
+											break _v26_5;
+										}
+								}
+							} else {
+								if (_p23._0 === 1) {
+									break _v26_1;
+								} else {
+									break _v26_5;
+								}
+							}
+						}
+					} else {
+						break _v26_5;
+					}
+				} while(false);
+				return _elm_lang$core$Native_List.fromArray(
+					[_p23._1._0]);
+			} while(false);
+			return list;
 		}
+	});
+var _elm_lang$core$List$take = F2(
+	function (n, list) {
+		return A3(_elm_lang$core$List$takeFast, 0, n, list);
 	});
 var _elm_lang$core$List$repeatHelp = F3(
 	function (result, n, value) {
@@ -1548,12 +1644,12 @@ var _elm_lang$core$List$repeatHelp = F3(
 			if (_elm_lang$core$Native_Utils.cmp(n, 0) < 1) {
 				return result;
 			} else {
-				var _v23 = A2(_elm_lang$core$List_ops['::'], value, result),
-					_v24 = n - 1,
-					_v25 = value;
-				result = _v23;
-				n = _v24;
-				value = _v25;
+				var _v27 = A2(_elm_lang$core$List_ops['::'], value, result),
+					_v28 = n - 1,
+					_v29 = value;
+				result = _v27;
+				n = _v28;
+				value = _v29;
 				continue repeatHelp;
 			}
 		}
@@ -2230,17 +2326,40 @@ var incomingPortMap = F2(function subMap(tagger, finalTagger)
 
 function setupIncomingPort(name, callback)
 {
+	var sentBeforeInit = [];
 	var subs = _elm_lang$core$Native_List.Nil;
 	var converter = effectManagers[name].converter;
+	var currentOnEffects = preInitOnEffects;
+	var currentSend = preInitSend;
 
 	// CREATE MANAGER
 
 	var init = _elm_lang$core$Native_Scheduler.succeed(null);
 
-	function onEffects(router, subList, state)
+	function preInitOnEffects(router, subList, state)
+	{
+		var postInitResult = postInitOnEffects(router, subList, state);
+
+		for(var i = 0; i < sentBeforeInit.length; i++)
+		{
+			postInitSend(sentBeforeInit[i]);
+		}
+
+		sentBeforeInit = null; // to release objects held in queue
+		currentSend = postInitSend;
+		currentOnEffects = postInitOnEffects;
+		return postInitResult;
+	}
+
+	function postInitOnEffects(router, subList, state)
 	{
 		subs = subList;
 		return init;
+	}
+
+	function onEffects(router, subList, state)
+	{
+		return currentOnEffects(router, subList, state);
 	}
 
 	effectManagers[name].init = init;
@@ -2248,9 +2367,14 @@ function setupIncomingPort(name, callback)
 
 	// PUBLIC API
 
-	function send(value)
+	function preInitSend(value)
 	{
-		var result = A2(_elm_lang$core$Json_Decode$decodeValue, converter, value);
+		sentBeforeInit.push(value);
+	}
+
+	function postInitSend(incomingValue)
+	{
+		var result = A2(_elm_lang$core$Json_Decode$decodeValue, converter, incomingValue);
 		if (result.ctor === 'Err')
 		{
 			throw new Error('Trying to send an unexpected type of value through port `' + name + '`:\n' + result._0);
@@ -2263,6 +2387,11 @@ function setupIncomingPort(name, callback)
 			callback(temp._0(value));
 			temp = temp._1;
 		}
+	}
+
+	function send(incomingValue)
+	{
+		currentSend(incomingValue);
 	}
 
 	return { send: send };
@@ -2287,6 +2416,7 @@ return {
 };
 
 }();
+
 //import Native.Utils //
 
 var _elm_lang$core$Native_Scheduler = function() {
@@ -2536,7 +2666,10 @@ function work()
 	var process;
 	while (numSteps < MAX_STEPS && (process = workQueue.shift()))
 	{
-		numSteps = step(numSteps, process);
+		if (process.root)
+		{
+			numSteps = step(numSteps, process);
+		}
 	}
 	if (!process)
 	{
@@ -3054,13 +3187,21 @@ function endsWith(sub, str)
 function indexes(sub, str)
 {
 	var subLen = sub.length;
+	
+	if (subLen < 1)
+	{
+		return _elm_lang$core$Native_List.Nil;
+	}
+
 	var i = 0;
 	var is = [];
+
 	while ((i = str.indexOf(sub, i)) > -1)
 	{
 		is.push(i);
 		i = i + subLen;
-	}
+	}	
+	
 	return _elm_lang$core$Native_List.fromArray(is);
 }
 
@@ -3189,6 +3330,7 @@ return {
 };
 
 }();
+
 //import Native.Utils //
 
 var _elm_lang$core$Native_Char = function() {
@@ -5687,6 +5829,11 @@ function badOneOf(problems)
 	return { tag: 'oneOf', problems: problems };
 }
 
+function badCustom(msg)
+{
+	return { tag: 'custom', msg: msg };
+}
+
 function bad(msg)
 {
 	return { tag: 'fail', msg: msg };
@@ -5723,6 +5870,11 @@ function badToString(problem)
 				return 'I ran into the following problems'
 					+ (context === '_' ? '' : ' at ' + context)
 					+ ':\n\n' + problems.join('\n');
+
+			case 'custom':
+				return 'A `customDecoder` failed'
+					+ (context === '_' ? '' : ' at ' + context)
+					+ ' with the message: ' + problem.msg;
 
 			case 'fail':
 				return 'I ran into a `fail` decoder'
@@ -5926,7 +6078,7 @@ function runHelp(decoder, value)
 			var realResult = decoder.callback(result.value);
 			if (realResult.ctor === 'Err')
 			{
-				return badPrimitive('something custom', value);
+				return badCustom(realResult._0);
 			}
 			return ok(realResult._0);
 
@@ -7471,7 +7623,7 @@ function applyPatch(domNode, patch)
 	switch (patch.type)
 	{
 		case 'p-redraw':
-			return redraw(domNode, patch.data, patch.eventNode);
+			return applyPatchRedraw(domNode, patch.data, patch.eventNode);
 
 		case 'p-facts':
 			applyFacts(domNode, patch.eventNode, patch.data);
@@ -7520,57 +7672,7 @@ function applyPatch(domNode, patch)
 			return domNode;
 
 		case 'p-reorder':
-			var data = patch.data;
-
-			// end inserts
-			var endInserts = data.endInserts;
-			var end;
-			if (typeof endInserts !== 'undefined')
-			{
-				if (endInserts.length === 1)
-				{
-					var insert = endInserts[0];
-					var entry = insert.entry;
-					var end = entry.tag === 'move'
-						? entry.data
-						: render(entry.vnode, patch.eventNode);
-				}
-				else
-				{
-					end = document.createDocumentFragment();
-					for (var i = 0; i < endInserts.length; i++)
-					{
-						var insert = endInserts[i];
-						var entry = insert.entry;
-						var node = entry.tag === 'move'
-							? entry.data
-							: render(entry.vnode, patch.eventNode);
-						end.appendChild(node);
-					}
-				}
-			}
-
-			// removals
-			domNode = applyPatchesHelp(domNode, data.patches);
-
-			// inserts
-			var inserts = data.inserts;
-			for (var i = 0; i < inserts.length; i++)
-			{
-				var insert = inserts[i];
-				var entry = insert.entry;
-				var node = entry.tag === 'move'
-					? entry.data
-					: render(entry.vnode, patch.eventNode);
-				domNode.insertBefore(node, domNode.childNodes[insert.index]);
-			}
-
-			if (typeof end !== 'undefined')
-			{
-				domNode.appendChild(end);
-			}
-
-			return domNode;
+			return applyPatchReorder(domNode, patch);
 
 		case 'p-custom':
 			var impl = patch.data;
@@ -7582,7 +7684,7 @@ function applyPatch(domNode, patch)
 }
 
 
-function redraw(domNode, vNode, eventNode)
+function applyPatchRedraw(domNode, vNode, eventNode)
 {
 	var parentNode = domNode.parentNode;
 	var newNode = render(vNode, eventNode);
@@ -7597,6 +7699,59 @@ function redraw(domNode, vNode, eventNode)
 		parentNode.replaceChild(newNode, domNode);
 	}
 	return newNode;
+}
+
+
+function applyPatchReorder(domNode, patch)
+{
+	var data = patch.data;
+
+	// remove end inserts
+	var frag = applyPatchReorderEndInsertsHelp(data.endInserts, patch);
+
+	// removals
+	domNode = applyPatchesHelp(domNode, data.patches);
+
+	// inserts
+	var inserts = data.inserts;
+	for (var i = 0; i < inserts.length; i++)
+	{
+		var insert = inserts[i];
+		var entry = insert.entry;
+		var node = entry.tag === 'move'
+			? entry.data
+			: render(entry.vnode, patch.eventNode);
+		domNode.insertBefore(node, domNode.childNodes[insert.index]);
+	}
+
+	// add end inserts
+	if (typeof frag !== 'undefined')
+	{
+		domNode.appendChild(frag);
+	}
+
+	return domNode;
+}
+
+
+function applyPatchReorderEndInsertsHelp(endInserts, patch)
+{
+	if (typeof endInserts === 'undefined')
+	{
+		return;
+	}
+
+	var frag = document.createDocumentFragment();
+	for (var i = 0; i < endInserts.length; i++)
+	{
+		var insert = endInserts[i];
+		var entry = insert.entry;
+		frag.appendChild(entry.tag === 'move'
+			? entry.data
+			: render(entry.vnode, patch.eventNode)
+		);
+	}
+	return frag;
 }
 
 
@@ -9099,9 +9254,150 @@ function on(node)
 	};
 }
 
+var rAF = typeof requestAnimationFrame !== 'undefined'
+	? requestAnimationFrame
+	: function(callback) { callback(); };
+
+function withNode(id, doStuff)
+{
+	return _elm_lang$core$Native_Scheduler.nativeBinding(function(callback)
+	{
+		rAF(function()
+		{
+			var node = document.getElementById(id);
+			if (node === null)
+			{
+				callback(_elm_lang$core$Native_Scheduler.fail({ ctor: 'NotFound', _0: id }));
+				return;
+			}
+			callback(_elm_lang$core$Native_Scheduler.succeed(doStuff(node)));
+		});
+	});
+}
+
+
+// FOCUS
+
+function focus(id)
+{
+	return withNode(id, function(node) {
+		node.focus();
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+function blur(id)
+{
+	return withNode(id, function(node) {
+		node.blur();
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+
+// SCROLLING
+
+function getScrollTop(id)
+{
+	return withNode(id, function(node) {
+		return node.scrollTop;
+	});
+}
+
+function setScrollTop(id, desiredScrollTop)
+{
+	return withNode(id, function(node) {
+		node.scrollTop = desiredScrollTop;
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+function toBottom(id)
+{
+	return withNode(id, function(node) {
+		node.scrollTop = node.scrollHeight;
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+function getScrollLeft(id)
+{
+	return withNode(id, function(node) {
+		return node.scrollLeft;
+	});
+}
+
+function setScrollLeft(id, desiredScrollLeft)
+{
+	return withNode(id, function(node) {
+		node.scrollLeft = desiredScrollLeft;
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+function toRight(id)
+{
+	return withNode(id, function(node) {
+		node.scrollLeft = node.scrollWidth;
+		return _elm_lang$core$Native_Utils.Tuple0;
+	});
+}
+
+
+// SIZE
+
+function width(options, id)
+{
+	return withNode(id, function(node) {
+		switch (options.ctor)
+		{
+			case 'Content':
+				return node.scrollWidth;
+			case 'VisibleContent':
+				return node.clientWidth;
+			case 'VisibleContentWithBorders':
+				return node.offsetWidth;
+			case 'VisibleContentWithBordersAndMargins':
+				var rect = node.getBoundingClientRect();
+				return rect.right - rect.left;
+		}
+	});
+}
+
+function height(options, id)
+{
+	return withNode(id, function(node) {
+		switch (options.ctor)
+		{
+			case 'Content':
+				return node.scrollHeight;
+			case 'VisibleContent':
+				return node.clientHeight;
+			case 'VisibleContentWithBorders':
+				return node.offsetHeight;
+			case 'VisibleContentWithBordersAndMargins':
+				var rect = node.getBoundingClientRect();
+				return rect.bottom - rect.top;
+		}
+	});
+}
+
 return {
 	onDocument: F3(on(document)),
-	onWindow: F3(on(window))
+	onWindow: F3(on(window)),
+
+	focus: focus,
+	blur: blur,
+
+	getScrollTop: getScrollTop,
+	setScrollTop: F2(setScrollTop),
+	getScrollLeft: getScrollLeft,
+	setScrollLeft: F2(setScrollLeft),
+	toBottom: toBottom,
+	toRight: toRight,
+
+	height: F2(height),
+	width: F2(width)
 };
 
 }();
@@ -11010,17 +11306,9 @@ var _user$project$Dao$Changeset = F5(
 	function (a, b, c, d, e) {
 		return {table: a, inserted: b, deleted: c, updated: d, deleteReferring: e};
 	});
-var _user$project$Dao$UpdateResponse = F7(
-	function (a, b, c, d, e, f, g) {
-		return {inserted: a, inserteError: b, deleted: c, deleteError: d, updated: e, updateError: f, totalRecords: g};
-	});
-var _user$project$Dao$DaoResponse = F2(
-	function (a, b) {
-		return {daoList: a, errored: b};
-	});
-var _user$project$Dao$UpdateResponses = F5(
-	function (a, b, c, d, e) {
-		return {inserted: a, deleted: b, updated: c, totalRecords: d, table: e};
+var _user$project$Dao$UpdateResponse = F8(
+	function (a, b, c, d, e, f, g, h) {
+		return {table: a, inserted: b, inserteError: c, deleted: d, deleteError: e, updated: f, updateError: g, totalRecords: h};
 	});
 var _user$project$Dao$Uuid = function (a) {
 	return {ctor: 'Uuid', _0: a};
@@ -11285,9 +11573,10 @@ var _user$project$Dao$valueDecoder = A2(
 	A2(_elm_lang$core$Json_Decode_ops[':='], 'variant', _elm_lang$core$Json_Decode$string),
 	_user$project$Dao$valueVariant);
 var _user$project$Dao$daoDecoder = _elm_lang$core$Json_Decode$dict(_user$project$Dao$valueDecoder);
-var _user$project$Dao$updateResponseDecoder = A8(
-	_elm_lang$core$Json_Decode$object7,
+var _user$project$Dao$updateResponseDecoder = A9(
+	_elm_lang$core$Json_Decode$object8,
 	_user$project$Dao$UpdateResponse,
+	A2(_elm_lang$core$Json_Decode_ops[':='], 'table', _elm_lang$core$Json_Decode$string),
 	A2(
 		_elm_lang$core$Json_Decode_ops[':='],
 		'inserted',
@@ -12975,17 +13264,41 @@ var _user$project$Row$getOrigDao = function (model) {
 			},
 			model.fieldModels));
 };
+var _user$project$Row$equalDao = F2(
+	function (model, dao) {
+		var val = _elm_lang$core$Native_Utils.eq(
+			dao,
+			_user$project$Row$getOrigDao(model));
+		var _p6 = A2(
+			_elm_lang$core$Basics_ops['++'],
+			A2(
+				_elm_lang$core$Debug$log,
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					'EQUAL DAO ',
+					_elm_lang$core$Basics$toString(val)),
+				_elm_lang$core$Basics$toString(dao)),
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				_elm_lang$core$Basics$toString(
+					_user$project$Row$getOrigDao(model)),
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					' ===>>>  ',
+					_elm_lang$core$Basics$toString(val))));
+		return val;
+	});
 var _user$project$Row$getDao = function (model) {
 	return _elm_lang$core$Dict$fromList(
 		A2(
 			_elm_lang$core$List$filterMap,
 			function (f) {
-				var _p6 = f.value;
-				if (_p6.ctor === 'Nothing') {
+				var _p7 = f.value;
+				if (_p7.ctor === 'Nothing') {
 					return _elm_lang$core$Maybe$Nothing;
 				} else {
 					return _elm_lang$core$Maybe$Just(
-						{ctor: '_Tuple2', _0: f.field.column, _1: _p6._0});
+						{ctor: '_Tuple2', _0: f.field.column, _1: _p7._0});
 				}
 			},
 			model.fieldModels));
@@ -13024,8 +13337,8 @@ var _user$project$Row$Selection = function (a) {
 };
 var _user$project$Row$tabularRecordControls = function (model) {
 	var modificationControls = function () {
-		var _p7 = model.mode;
-		if (_p7.ctor === 'Read') {
+		var _p8 = model.mode;
+		if (_p8.ctor === 'Read') {
 			return A2(
 				_elm_lang$html$Html$td,
 				_elm_lang$core$Native_List.fromArray(
@@ -13212,8 +13525,8 @@ var _user$project$Row$UpdateField = F2(
 var _user$project$Row$view = function (model) {
 	var fieldModels = _user$project$Row$excludeKeyfieldModels(
 		_user$project$Row$filterFieldModelsWithDensity(model));
-	var _p8 = model.presentation;
-	switch (_p8.ctor) {
+	var _p9 = model.presentation;
+	switch (_p9.ctor) {
 		case 'Form':
 			return A2(
 				_elm_lang$html$Html$div,
@@ -13323,42 +13636,42 @@ var _user$project$Row$SaveChanges = {ctor: 'SaveChanges'};
 var _user$project$Row$CancelChanges = {ctor: 'CancelChanges'};
 var _user$project$Row$update = F2(
 	function (msg, model) {
-		var _p9 = msg;
-		switch (_p9.ctor) {
+		var _p10 = msg;
+		switch (_p10.ctor) {
 			case 'ChangeMode':
-				var _p10 = _p9._0;
+				var _p11 = _p10._0;
 				return {
 					ctor: '_Tuple2',
 					_0: A2(
 						_user$project$Row$updateFields,
-						_user$project$Field$ChangeMode(_p10),
+						_user$project$Field$ChangeMode(_p11),
 						_elm_lang$core$Native_Utils.update(
 							model,
-							{mode: _p10})),
+							{mode: _p11})),
 					_1: _elm_lang$core$Maybe$Nothing
 				};
 			case 'ChangePresentation':
-				var _p11 = _p9._0;
+				var _p12 = _p10._0;
 				return {
 					ctor: '_Tuple2',
 					_0: A2(
 						_user$project$Row$updateFields,
-						_user$project$Field$ChangePresentation(_p11),
+						_user$project$Field$ChangePresentation(_p12),
 						_elm_lang$core$Native_Utils.update(
 							model,
-							{presentation: _p11})),
+							{presentation: _p12})),
 					_1: _elm_lang$core$Maybe$Nothing
 				};
 			case 'ChangeDensity':
-				var _p12 = _p9._0;
+				var _p13 = _p10._0;
 				return {
 					ctor: '_Tuple2',
 					_0: A2(
 						_user$project$Row$updateFields,
-						_user$project$Field$ChangeDensity(_p12),
+						_user$project$Field$ChangeDensity(_p13),
 						_elm_lang$core$Native_Utils.update(
 							model,
-							{density: _p12})),
+							{density: _p13})),
 					_1: _elm_lang$core$Maybe$Nothing
 				};
 			case 'UpdateField':
@@ -13370,10 +13683,10 @@ var _user$project$Row$update = F2(
 							fieldModels: A2(
 								_elm_lang$core$List$map,
 								function (f) {
-									if (_elm_lang$core$Native_Utils.eq(f.field.column, _p9._0)) {
-										var _p13 = A2(_user$project$Field$update, _p9._1, f);
-										var mr = _p13._0;
-										var cmd = _p13._1;
+									if (_elm_lang$core$Native_Utils.eq(f.field.column, _p10._0)) {
+										var _p14 = A2(_user$project$Field$update, _p10._1, f);
+										var mr = _p14._0;
+										var cmd = _p14._1;
 										return mr;
 									} else {
 										return f;
@@ -13384,19 +13697,19 @@ var _user$project$Row$update = F2(
 					_1: _elm_lang$core$Maybe$Nothing
 				};
 			case 'DaoStateReceived':
-				var _p16 = _p9._0;
+				var _p17 = _p10._0;
 				var fieldModels = A2(
 					_elm_lang$core$List$map,
 					function (f) {
-						var value = A2(_elm_lang$core$Dict$get, f.field.column, _p16.dao);
-						var _p14 = value;
-						if (_p14.ctor === 'Just') {
-							var _p15 = A2(
+						var value = A2(_elm_lang$core$Dict$get, f.field.column, _p17.dao);
+						var _p15 = value;
+						if (_p15.ctor === 'Just') {
+							var _p16 = A2(
 								_user$project$Field$update,
-								_user$project$Field$SetValue(_p14._0),
+								_user$project$Field$SetValue(_p15._0),
 								f);
-							var field$ = _p15._0;
-							var outmsg$ = _p15._1;
+							var field$ = _p16._0;
+							var outmsg$ = _p16._1;
 							return field$;
 						} else {
 							return f;
@@ -13407,7 +13720,7 @@ var _user$project$Row$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{isFocused: _p16.focused, fieldModels: fieldModels}),
+						{isFocused: _p17.focused, fieldModels: fieldModels}),
 					_1: _elm_lang$core$Maybe$Nothing
 				};
 			case 'Selection':
@@ -13415,7 +13728,7 @@ var _user$project$Row$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{isSelected: _p9._0}),
+						{isSelected: _p10._0}),
 					_1: _elm_lang$core$Maybe$Nothing
 				};
 			case 'ToggleSelect':
@@ -13449,7 +13762,7 @@ var _user$project$Row$update = F2(
 					ctor: '_Tuple2',
 					_0: A2(
 						_user$project$Row$updateLookupFields,
-						_user$project$Field$LookupTabsReceived(_p9._0),
+						_user$project$Field$LookupTabsReceived(_p10._0),
 						model),
 					_1: _elm_lang$core$Maybe$Nothing
 				};
@@ -13458,7 +13771,7 @@ var _user$project$Row$update = F2(
 					ctor: '_Tuple2',
 					_0: A2(
 						_user$project$Row$updateLookupFields,
-						_user$project$Field$LookupDataReceived(_p9._0),
+						_user$project$Field$LookupDataReceived(_p10._0),
 						model),
 					_1: _elm_lang$core$Maybe$Nothing
 				};
@@ -13653,6 +13966,29 @@ var _user$project$Tab$focusedRow = function (model) {
 			},
 			model.rows));
 };
+var _user$project$Tab$inDeleted = F2(
+	function (updateResponse, row) {
+		return A2(
+			_elm_lang$core$List$any,
+			function (d) {
+				return A2(_user$project$Row$equalDao, row, d);
+			},
+			updateResponse.deleted);
+	});
+var _user$project$Tab$updateRecordFromResponse = F2(
+	function (model, ur) {
+		return _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				rows: A2(
+					_elm_lang$core$List$filter,
+					function (row) {
+						return _elm_lang$core$Basics$not(
+							A2(_user$project$Tab$inDeleted, ur, row));
+					},
+					model.rows)
+			});
+	});
 var _user$project$Tab$updateSelectionAllRecords = F2(
 	function (model, checked) {
 		var rows = A2(
@@ -14137,6 +14473,9 @@ var _user$project$Tab$tabDecoder = A2(
 			A2(_elm_lang$core$Json_Decode_ops[':='], 'icon', _elm_lang$core$Json_Decode$string))),
 	_elm_lang$core$Json_Decode$maybe(
 		A2(_elm_lang$core$Json_Decode_ops[':='], 'estimated_row_count', _elm_lang$core$Json_Decode$int)));
+var _user$project$Tab$RecordsUpdated = function (a) {
+	return {ctor: 'RecordsUpdated', _0: a};
+};
 var _user$project$Tab$ReceivedScrollBottomEvent = {ctor: 'ReceivedScrollBottomEvent'};
 var _user$project$Tab$TabDataNextPageReceived = function (a) {
 	return {ctor: 'TabDataNextPageReceived', _0: a};
@@ -14784,7 +15123,7 @@ var _user$project$Tab$update = F2(
 					_0: A2(_user$project$Tab$addToRows, model, _p24._0),
 					_1: _elm_lang$core$Maybe$Nothing
 				};
-			default:
+			case 'ReceivedScrollBottomEvent':
 				return _elm_lang$core$Basics$not(model.loadingPage) ? {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
@@ -14792,6 +15131,12 @@ var _user$project$Tab$update = F2(
 						{loadingPage: true}),
 					_1: _elm_lang$core$Maybe$Just(_user$project$Tab$LoadNextPage)
 				} : {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Maybe$Nothing};
+			default:
+				return {
+					ctor: '_Tuple2',
+					_0: A2(_user$project$Tab$updateRecordFromResponse, model, _p24._0),
+					_1: _elm_lang$core$Maybe$Nothing
+				};
 		}
 	});
 
@@ -15141,6 +15486,9 @@ var _user$project$DataWindow$windowDecoder = A9(
 		_elm_lang$core$Json_Decode_ops[':='],
 		'has_many_indirect_tabs',
 		_elm_lang$core$Json_Decode$list(_user$project$Tab$tabDecoder)));
+var _user$project$DataWindow$RecordsUpdated = function (a) {
+	return {ctor: 'RecordsUpdated', _0: a};
+};
 var _user$project$DataWindow$SetAlert = function (a) {
 	return {ctor: 'SetAlert', _0: a};
 };
@@ -16041,7 +16389,7 @@ var _user$project$DataWindow$update = F2(
 							{alert: _elm_lang$core$Maybe$Nothing})),
 					_1: _elm_lang$core$Maybe$Nothing
 				};
-			default:
+			case 'SetAlert':
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
@@ -16051,6 +16399,30 @@ var _user$project$DataWindow$update = F2(
 						}),
 					_1: _elm_lang$core$Maybe$Nothing
 				};
+			default:
+				var _p39 = _p16._0;
+				var mainResponse = _elm_lang$core$List$head(
+					A2(
+						_elm_lang$core$List$filter,
+						function (ur) {
+							return _elm_lang$core$Native_Utils.eq(ur.table, model.mainTab.tab.table);
+						},
+						_p39));
+				var _p37 = A2(_elm_lang$core$Debug$log, 'records updated', _p39);
+				var _p38 = mainResponse;
+				if (_p38.ctor === 'Just') {
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Basics$fst(
+							A2(
+								_user$project$DataWindow$updateMainTab,
+								_user$project$Tab$RecordsUpdated(_p38._0),
+								model)),
+						_1: _elm_lang$core$Maybe$Nothing
+					};
+				} else {
+					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Maybe$Nothing};
+				}
 		}
 	});
 
@@ -17076,8 +17448,8 @@ var _user$project$Main$fetchFocusedRecordDetail = F3(
 					return _elm_lang$core$Native_Utils.crashCase(
 						'Main',
 						{
-							start: {line: 745, column: 21},
-							end: {line: 753, column: 54}
+							start: {line: 747, column: 21},
+							end: {line: 755, column: 54}
 						},
 						_p29)('No such row');
 				}
@@ -17085,8 +17457,8 @@ var _user$project$Main$fetchFocusedRecordDetail = F3(
 				return _elm_lang$core$Native_Utils.crashCase(
 					'Main',
 					{
-						start: {line: 743, column: 13},
-						end: {line: 755, column: 49}
+						start: {line: 745, column: 13},
+						end: {line: 757, column: 49}
 					},
 					_p28)('No such window');
 			}
@@ -17094,8 +17466,8 @@ var _user$project$Main$fetchFocusedRecordDetail = F3(
 			return _elm_lang$core$Native_Utils.crashCase(
 				'Main',
 				{
-					start: {line: 741, column: 5},
-					end: {line: 758, column: 63}
+					start: {line: 743, column: 5},
+					end: {line: 760, column: 63}
 				},
 				_p27)('No matching table for focused record');
 		}
@@ -17124,8 +17496,8 @@ var _user$project$Main$fetchLookupData = F2(
 			return _elm_lang$core$Native_Utils.crashCase(
 				'Main',
 				{
-					start: {line: 729, column: 5},
-					end: {line: 735, column: 54}
+					start: {line: 731, column: 5},
+					end: {line: 737, column: 54}
 				},
 				_p33)('Unable to get matching table');
 		}
@@ -17154,8 +17526,8 @@ var _user$project$Main$fetchLookupTabs = F2(
 			return _elm_lang$core$Native_Utils.crashCase(
 				'Main',
 				{
-					start: {line: 717, column: 5},
-					end: {line: 723, column: 54}
+					start: {line: 719, column: 5},
+					end: {line: 725, column: 54}
 				},
 				_p35)('Unable to get matching table');
 		}
@@ -17743,11 +18115,21 @@ var _user$project$Main$update = F2(
 					};
 				}
 			case 'RecordsUpdated':
-				var _p79 = A2(_elm_lang$core$Debug$log, 'Update response: ', _p37._1);
-				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+				var _p80 = _p37._1;
+				var _p79 = A2(_elm_lang$core$Debug$log, 'Update response: ', _p80);
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Basics$fst(
+						A3(
+							_user$project$Main$updateWindow,
+							model,
+							_user$project$DataWindow$RecordsUpdated(_p80),
+							_p37._0)),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
 			default:
-				var _p81 = _p37._1;
-				var _p80 = A2(_elm_lang$core$Debug$log, 'Update error', _p81);
+				var _p82 = _p37._1;
+				var _p81 = A2(_elm_lang$core$Debug$log, 'Update error', _p82);
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Basics$fst(
@@ -17755,7 +18137,7 @@ var _user$project$Main$update = F2(
 							_user$project$Main$updateWindow,
 							model,
 							_user$project$DataWindow$SetAlert(
-								_elm_lang$core$Basics$toString(_p81)),
+								_elm_lang$core$Basics$toString(_p82)),
 							_p37._0)),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};

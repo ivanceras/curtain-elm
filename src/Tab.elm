@@ -86,6 +86,7 @@ type Msg
     | BrowserDimensionChanged BrowserDimension
     | TabDataNextPageReceived TableDao
     | ReceivedScrollBottomEvent
+    | RecordsUpdated Dao.UpdateResponse
 
 type OutMsg
     = LoadNextPage
@@ -570,6 +571,26 @@ update msg model =
                 }, Just LoadNextPage)
             else
                 (model, Nothing)
+
+        RecordsUpdated updateResponse ->
+            (updateRecordFromResponse model updateResponse, Nothing)
+
+-- retain only what's not in deleted
+
+updateRecordFromResponse: Model -> Dao.UpdateResponse -> Model
+updateRecordFromResponse model ur =
+        { model | rows = 
+            List.filter (
+                \row ->
+                not (inDeleted ur row)
+            ) model.rows
+        }
+
+
+
+inDeleted: Dao.UpdateResponse -> Row.Model -> Bool
+inDeleted updateResponse row =
+    List.any (\d -> Row.equalDao row d) updateResponse.deleted
 
 
 focusedRow: Model -> Maybe Row.Model

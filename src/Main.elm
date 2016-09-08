@@ -425,10 +425,12 @@ update msg model =
                      , Cmd.none)
 
 
-        RecordsUpdated mainTable updateResponse ->
+        RecordsUpdated windowId updateResponse ->
             let _ = Debug.log "Update response: " updateResponse 
             in
-            (model, Cmd.none)
+            (updateWindow model (DataWindow.RecordsUpdated updateResponse) windowId
+               |> fst 
+            , Cmd.none)
 
         UpdateError windowId error ->
             let _ = Debug.log "Update error" error

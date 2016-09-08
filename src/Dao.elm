@@ -49,7 +49,8 @@ type alias Changeset =
 
 -- Update responses
 type alias UpdateResponse =
-    { inserted: List Dao -- records that are inserted successfully
+    { table: String 
+    , inserted: List Dao -- records that are inserted successfully
     , inserteError: List (Dao, String) -- the records that has trouble inserting
     , deleted: List Dao -- number of deleted records
     , deleteError: List (Dao, String)  -- records that have trouble deleting
@@ -59,22 +60,11 @@ type alias UpdateResponse =
     }
 
 
-type alias DaoResponse =
-    { daoList: List Dao
-    , errored: List (Dao, String)
-    }
-
-type alias UpdateResponses =
-    { inserted: DaoResponse
-    , deleted: DaoResponse
-    , updated: DaoResponse
-    , totalRecords: Int
-    , table: String
-    }
  
 updateResponseDecoder: Decoder UpdateResponse
 updateResponseDecoder =
-    Decode.object7 UpdateResponse
+    Decode.object8 UpdateResponse
+        ("table" := Decode.string)
         ("inserted" := Decode.list daoDecoder)
         ("insert_error" := Decode.list (Decode.tuple2 (,) daoDecoder Decode.string) )
         ("deleted" := Decode.list daoDecoder )
@@ -160,6 +150,7 @@ type Value
     | Date String
     | DateTime String
     | Uuid String
+
 
 encodeValue: Value -> Encode.Value
 encodeValue value =

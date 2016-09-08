@@ -82,6 +82,7 @@ type Msg
     | ClickedSaveChanges
     | ClickedCloseAlert
     | SetAlert String
+    | RecordsUpdated (List Dao.UpdateResponse)
     
 type OutMsg = LoadNextPage Tab.Model
     | UpdateRecords String String
@@ -484,6 +485,23 @@ update msg model =
             ({ model | alert = Just alert }
              , Nothing
             )
+        
+        RecordsUpdated updateResponse ->
+            let _ = Debug.log "records updated" updateResponse
+                mainResponse = 
+                    List.filter (
+                        \ur ->
+                            ur.table == model.mainTab.tab.table
+                    ) updateResponse
+                        |> List.head
+            in
+            case mainResponse of
+                Just mainResponse ->
+                    ( updateMainTab (Tab.RecordsUpdated mainResponse) model
+                        |> fst
+                    , Nothing)
+                Nothing ->
+                    ( model, Nothing)
 
 
 getSelectedOrigRecords: Model -> List Dao.Dao

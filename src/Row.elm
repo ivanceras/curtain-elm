@@ -110,7 +110,13 @@ type OutMsg = Remove
     | FocusChanged
 
 
-
+equalDao: Model -> Dao.Dao -> Bool
+equalDao model dao =
+    let  
+        val = (dao == getOrigDao model)
+        _ = Debug.log ("EQUAL DAO "++(toString val)) (toString dao) ++ (toString <| getOrigDao model) ++ " ===>>>  "++(toString val)
+    in 
+        val
 
 excludeKeyfields: List Field.Field -> List Field.Field
 excludeKeyfields fieldList =
