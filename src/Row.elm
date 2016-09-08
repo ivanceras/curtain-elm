@@ -112,11 +112,7 @@ type OutMsg = Remove
 
 equalDao: Model -> Dao.Dao -> Bool
 equalDao model dao =
-    let  
-        val = (dao == getOrigDao model)
-        _ = Debug.log ("EQUAL DAO "++(toString val)) (toString dao) ++ (toString <| getOrigDao model) ++ " ===>>>  "++(toString val)
-    in 
-        val
+    dao == getOrigDao model
 
 excludeKeyfields: List Field.Field -> List Field.Field
 excludeKeyfields fieldList =

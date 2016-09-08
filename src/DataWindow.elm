@@ -350,24 +350,7 @@ update msg model =
             let (model', outmsg) = updateMainTab tab_msg model
                 _ = Debug.log "Tab outmsg" outmsg
             in
-                case outmsg of
-                    Nothing ->
-                        (model', Nothing)
-                    Just outmsg ->
-                        case outmsg of
-                            Tab.WindowChangePresentation presentation ->
-                                ({model' | presentation = presentation}
-                                , Nothing
-                                )
-                            Tab.FormClose ->
-                                ({model' | presentation = Table}
-                                    |> updateMainTab (Tab.ChangePresentation Table) 
-                                    |> fst
-                                , Nothing)
-
-                            Tab.LoadNextPage ->
-                                (model', Just (LoadNextPage model'.mainTab))
-                                 
+                handleOutMsg model' outmsg                 
                         
         WindowDetailReceived window ->
             (updateWindow window model
@@ -439,15 +422,8 @@ update msg model =
            let (model', outmsg) =
                 updateMainTab Tab.ReceivedScrollBottomEvent model
                _ = Debug.log "ReceivedScroll Tab outmsg" outmsg
-           in case outmsg of
-                Nothing ->
-                    (model', Nothing)
-                Just outmsg ->
-                    case outmsg of
-                        Tab.LoadNextPage ->
-                            (model', Just (LoadNextPage model.mainTab))
-                        _ ->
-                            (model', Nothing)
+           in
+                handleOutMsg model' outmsg
 
         ResizeStart xy ->
             let _ = Debug.log "Starting resize.." xy in
@@ -497,12 +473,33 @@ update msg model =
             in
             case mainResponse of
                 Just mainResponse ->
-                    ( updateMainTab (Tab.RecordsUpdated mainResponse) model
-                        |> fst
-                    , Nothing)
+                    let (model', outmsg) =
+                        updateMainTab (Tab.RecordsUpdated mainResponse) model
+                    in
+                        handleOutMsg model' outmsg
                 Nothing ->
                     ( model, Nothing)
 
+
+handleOutMsg model' outmsg =
+    let _ = Debug.log "Datawindow handlingOutMsg" outmsg in
+    case outmsg of
+        Nothing ->
+            (model', Nothing)
+        Just outmsg ->
+            case outmsg of
+                Tab.WindowChangePresentation presentation ->
+                    ({model' | presentation = presentation}
+                    , Nothing
+                    )
+                Tab.FormClose ->
+                    ({model' | presentation = Table}
+                        |> updateMainTab (Tab.ChangePresentation Table) 
+                        |> fst
+                    , Nothing)
+
+                Tab.LoadNextPage ->
+                    (model', Just (LoadNextPage model'.mainTab))
 
 getSelectedOrigRecords: Model -> List Dao.Dao
 getSelectedOrigRecords model =

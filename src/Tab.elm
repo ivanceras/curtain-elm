@@ -573,7 +573,25 @@ update msg model =
                 (model, Nothing)
 
         RecordsUpdated updateResponse ->
-            (updateRecordFromResponse model updateResponse, Nothing)
+            let model' = updateRecordFromResponse model updateResponse
+            in
+            if shallLoadNextPage model' updateResponse then
+                ({ model' | loadingPage = True }
+                , Just LoadNextPage
+                )
+             else
+                ( model', Nothing)
+
+-- load next page if current model.rows < pageSize && totalPage > model.rows
+shallLoadNextPage: Model -> Dao.UpdateResponse -> Bool
+shallLoadNextPage model updateResponse =
+    let 
+        _ = Debug.log "Deciding whether to load Next Page" ""
+        rowLength = 
+           Debug.log "rowLength"  <| List.length model.rows
+    in
+    Debug.log "shallLoad" (rowLength < 40 && updateResponse.totalRecords > rowLength)
+        
 
 -- retain only what's not in deleted
 

@@ -212,18 +212,7 @@ update msg model =
         UpdateWindow windowId windowMsg -> 
             let (model', outmsg) = updateWindow model windowMsg windowId
             in 
-                case outmsg of
-                    Nothing ->
-                        (model', Cmd.none)
-                    Just outmsg ->
-                        case outmsg of
-                            DataWindow.UpdateRecords mainTable changeset ->
-                                let _ = Debug.log "Calling httpUpdateRecords..." mainTable
-                                in
-                                (model', httpUpdateRecords model' windowId  mainTable changeset)
-
-                            DataWindow.LoadNextPage tab_model ->
-                                (model', loadNextPage windowId model)
+                handleOutMsg outmsg model' windowId
 
         CloseWindow windowId ->
             (closeWindow model windowId 
@@ -348,15 +337,8 @@ update msg model =
                 Just windowId ->
                     let (model', outmsg) =
                         updateActiveWindow (DataWindow.ReceivedScrollBottomEvent table) model
-                    in case outmsg of
-                        Nothing ->
-                            (model', Cmd.none)
-                        Just outmsg ->
-                            case outmsg of
-                                DataWindow.LoadNextPage tab_model ->
-                                    (model', loadNextPage windowId model)
-                                DataWindow.UpdateRecords mainTable body ->
-                                    (model', httpUpdateRecords model' windowId mainTable body)
+                    in 
+                        handleOutMsg outmsg model' windowId
 
                 Nothing -> 
                      (model,Cmd.none)
@@ -427,10 +409,9 @@ update msg model =
 
         RecordsUpdated windowId updateResponse ->
             let _ = Debug.log "Update response: " updateResponse 
+                (model',outmsg) = updateWindow model (DataWindow.RecordsUpdated updateResponse) windowId
             in
-            (updateWindow model (DataWindow.RecordsUpdated updateResponse) windowId
-               |> fst 
-            , Cmd.none)
+                handleOutMsg outmsg model' windowId
 
         UpdateError windowId error ->
             let _ = Debug.log "Update error" error
@@ -439,6 +420,16 @@ update msg model =
                 |> fst
             , Cmd.none)
 
+handleOutMsg outmsg model' windowId =
+    case outmsg of
+        Nothing ->
+            (model', Cmd.none)
+        Just outmsg ->
+            case outmsg of
+                DataWindow.LoadNextPage tab_model ->
+                    (model', loadNextPage windowId model')
+                DataWindow.UpdateRecords mainTable body ->
+                    (model', httpUpdateRecords model' windowId mainTable body)
 
 main = 
     App.program
