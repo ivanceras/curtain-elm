@@ -1,3 +1,8 @@
+/* override photon user-select: none */
+* { 
+    user-select: auto;
+    -webkit-user-select: auto;
+}
 .badge {
 	position: absolute;
 	background: #ff4081;

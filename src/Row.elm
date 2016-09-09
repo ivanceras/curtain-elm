@@ -248,25 +248,25 @@ tabularRecordControls model =
 
 
 
-update: Msg -> Model -> (Model, Maybe OutMsg)
+update: Msg -> Model -> (Model, List OutMsg)
 update msg model =
     case msg of
         ChangeMode mode ->
             ({ model | mode = mode }
                 |> updateFields (Field.ChangeMode mode)
-              ,Nothing)
+              ,[])
  
 
         ChangePresentation presentation ->
             ({ model | presentation = presentation }
                 |> updateFields (Field.ChangePresentation presentation) 
-             , Nothing
+             , []
              )
 
         ChangeDensity density ->
             ({model | density = density }
                 |> updateFields (Field.ChangeDensity density)
-             , Nothing
+             , []
             )
 
         UpdateField column fieldMsg ->
@@ -277,7 +277,7 @@ update msg model =
                     in mr
                 else
                     f
-              ) }, Nothing)
+              ) }, [])
 
         DaoStateReceived daoState ->
             let fieldModels =
@@ -296,27 +296,27 @@ update msg model =
             ({model | isFocused = daoState.focused
                     , fieldModels = fieldModels
               }
-            , Nothing
+            , []
             )
 
         Selection checked ->
-            ({model | isSelected = checked}, Nothing)
+            ({model | isSelected = checked}, [])
 
         ToggleSelect ->
-            ({model | isSelected = not model.isSelected}, Nothing)
+            ({model | isSelected = not model.isSelected}, [])
 
         FocusRecord ->
-            ({model | isFocused = True}, Just FocusChanged)
+            ({model | isFocused = True}, [FocusChanged])
         LooseFocusRecord ->
-            ({model | isFocused = False}, Nothing)
+            ({model | isFocused = False}, [])
 
         LookupTabsReceived lookupTabFields ->
             (updateLookupFields (Field.LookupTabsReceived lookupTabFields) model
-            , Nothing
+            , []
             ) 
         LookupDataReceived lookupDataList ->
             (updateLookupFields (Field.LookupDataReceived lookupDataList) model
-            , Nothing
+            , []
             ) 
         EditRecordInForm -> -- tapped in Tab
             ({ model | mode = Edit
@@ -324,7 +324,7 @@ update msg model =
              }
                 |> updateFields (Field.ChangeMode Edit)
                 |> updateFields (Field.ChangePresentation Form)
-             ,Just TabEditRecordInForm
+             ,[TabEditRecordInForm]
             )
         EditRecordInPlace -> -- tapped in Tab
             ({model | mode = Edit
@@ -332,20 +332,20 @@ update msg model =
               }
                 |> updateFields (Field.ChangeMode Edit)
                 |> updateFields (Field.ChangePresentation Table)
-            , Nothing)
+            , [])
 
         ClickedCancelChanges ->
             ({model | mode = Read
              ,presentation = Table
              }
                 |> updateFields Field.CancelChanges
-            , Just CancelChanges)
+            , [CancelChanges])
 
         ClickedSaveChanges ->
             ({model | mode = Read
              ,presentation = Table
              }
-            , Just SaveChanges)
+            , [SaveChanges])
 
 
 --determine whether at least 1 field of the row is modified

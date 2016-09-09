@@ -212,7 +212,7 @@ update msg model =
         UpdateWindow windowId windowMsg -> 
             let (model', outmsg) = updateWindow model windowMsg windowId
             in 
-                handleOutMsg outmsg model' windowId
+                handleWindowOutMsg outmsg model' windowId
 
         CloseWindow windowId ->
             (closeWindow model windowId 
@@ -279,28 +279,10 @@ update msg model =
             ( { model | error = Just (toString e)}, Cmd.none )
 
         UpdateSettings settingsMsg ->
-            let (updatedSettings, outmsg) = Settings.update settingsMsg model.settings
+            let (updatedSettings, outmsgs) = Settings.update settingsMsg model.settings
                 model' = {model | settings = updatedSettings}
             in
-            case outmsg of
-                Nothing ->
-                    (model', Cmd.none)
-
-                Just settings_outmsg ->
-                    case settings_outmsg of
-
-                        Settings.CloseWindow ->
-                            (closeSettingsWindow model'
-                            , Cmd.none)
-
-                        Settings.ApplySettings settings ->
-                            let _ = Debug.log "Apllying the settings down...." ""
-                            in
-                            ( model' 
-                            ,Cmd.batch [testDbConnection model'
-                                       ,saveSettings model'
-                                       ])
-                    
+              handleSettingsOutMsg model' outmsgs 
 
         ToggleSettingsWindow ->
             ({model | isSettingsOpened = not model.isSettingsOpened}, Cmd.none)
@@ -336,9 +318,9 @@ update msg model =
             case model.activeWindow of
                 Just windowId ->
                     let (model', outmsg) =
-                        updateActiveWindow (DataWindow.ReceivedScrollBottomEvent table) model
+                        updateWindow model (DataWindow.ReceivedScrollBottomEvent table) windowId
                     in 
-                        handleOutMsg outmsg model' windowId
+                        handleWindowOutMsg outmsg model' windowId
 
                 Nothing -> 
                      (model,Cmd.none)
@@ -411,7 +393,7 @@ update msg model =
             let _ = Debug.log "Update response: " updateResponse 
                 (model',outmsg) = updateWindow model (DataWindow.RecordsUpdated updateResponse) windowId
             in
-                handleOutMsg outmsg model' windowId
+                handleWindowOutMsg outmsg model' windowId
 
         UpdateError windowId error ->
             let _ = Debug.log "Update error" error
@@ -420,16 +402,46 @@ update msg model =
                 |> fst
             , Cmd.none)
 
-handleOutMsg outmsg model' windowId =
-    case outmsg of
-        Nothing ->
-            (model', Cmd.none)
-        Just outmsg ->
-            case outmsg of
-                DataWindow.LoadNextPage tab_model ->
-                    (model', loadNextPage windowId model')
-                DataWindow.UpdateRecords mainTable body ->
-                    (model', httpUpdateRecords model' windowId mainTable body)
+handleSettingsOutMsg: Model -> List Settings.OutMsg -> (Model, Cmd Msg)
+handleSettingsOutMsg model outmsgs =           
+    let
+        (model'', newoutList) = 
+            List.foldl
+                (\outmsg (model', newout) ->
+                    case outmsg of
+                        Settings.CloseWindow ->
+                            (closeSettingsWindow model'
+                            , newout)
+
+                        Settings.ApplySettings settings ->
+                            let _ = Debug.log "Apllying the settings down...." ""
+                            in
+                            ( model' 
+                            , newout ++
+                                [testDbConnection model'
+                                ,saveSettings model'
+                                ]
+                             )
+                  ) (model, []) outmsgs
+    in
+        (model'', Cmd.batch newoutList)
+
+handleWindowOutMsg: List DataWindow.OutMsg -> Model -> WindowId -> ( Model, Cmd Msg)
+handleWindowOutMsg outmsgs model windowId =
+    let (model', cmdlist) =
+        List.foldl
+            (
+            \ outmsg (model, cmds) ->
+                case outmsg of
+                    DataWindow.LoadNextPage tabModel ->
+                        (model, cmds ++ [ loadNextPage windowId model ])
+                    DataWindow.UpdateRecords mainTable body ->
+                        (model, cmds ++ [httpUpdateRecords model windowId mainTable body])
+
+            ) (model, []) outmsgs
+      in
+       (model', Cmd.batch cmdlist)
+
 
 main = 
     App.program
@@ -480,7 +492,7 @@ closeWindow model windowId =
     }
 
 
-updateWindow: Model -> DataWindow.Msg -> WindowId -> (Model, Maybe DataWindow.OutMsg)
+updateWindow: Model -> DataWindow.Msg -> WindowId -> (Model, List DataWindow.OutMsg)
 updateWindow model windowMsg windowId =
     let updated_outmsgs = 
         List.map(
@@ -492,13 +504,13 @@ updateWindow model windowMsg windowId =
                         (window', outmsg) 
                                     
                 else
-                    (w, Nothing)
+                    (w, [])
         ) model.openedWindows
 
         (windows, outmsgs) = List.unzip updated_outmsgs
     in
     ({model | openedWindows = windows}
-    , Utils.fstNoneEmpty outmsgs)
+    , List.concat outmsgs)
 
 
 updateAllWindow: DataWindow.Msg -> Model -> Model
@@ -512,6 +524,7 @@ updateAllWindow windowMsg model =
     in
     {model | openedWindows = updatedWindows}
 
+{--
 updateActiveWindow: DataWindow.Msg -> Model -> (Model, Maybe DataWindow.OutMsg)
 updateActiveWindow windowMsg model =
     let updatedWindows = 
@@ -529,6 +542,7 @@ updateActiveWindow windowMsg model =
     ({model | openedWindows = openedWindows}
     , Utils.fstNoneEmpty outmsgs
     )
+--}
 
 activateFirstWindow: Model -> Model
 activateFirstWindow model =
@@ -589,6 +603,15 @@ getActiveWindow model =
             List.filter (\w -> w.windowId == activeWindow) model.openedWindows
             |> List.head
         Nothing -> Nothing
+
+getActiveWindowId: Model -> Maybe WindowId
+getActiveWindowId model =
+    case getActiveWindow model of
+        Just window ->
+            Just window.windowId
+        Nothing ->
+            Nothing
+
 
 updateActivatedWindowList: Model -> Model
 updateActivatedWindowList model =

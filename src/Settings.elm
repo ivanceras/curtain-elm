@@ -115,36 +115,36 @@ view model =
 
 
 
-update: Msg -> Model -> (Model, Maybe OutMsg)
+update: Msg -> Model -> (Model, List OutMsg)
 update msg model =
     let _ = Debug.log "In Settings.update" "here..."
     in
     case msg of
         ChangeDbUrl dbUrl ->
-            ({model | dbUrl = dbUrl}, Nothing)
+            ({model | dbUrl = dbUrl}, [])
         ChangeApiServer apiServer ->
-            ({model | apiServer = apiServer}, Nothing)
+            ({model | apiServer = apiServer}, [])
         ClickedConnect ->
-            ({ model | error = Nothing
+            ({ model | error = Nothing 
                 ,processing = True
             }
-            , Just (ApplySettings model))
+            , [ApplySettings model])
         ClickedCloseWindow ->
-            ( model, Just CloseWindow)
+            ( model, [CloseWindow])
         DbConnectionTested ->
-            ({model | error = Nothing
+            ({model | error = Nothing 
                 ,processing = False
             }
-            , Nothing)
+            , [])
         DbConnectionTestError ->
             ( {model | error =
                 Just "Error connecting to database" 
                 , processing = False
               }
-            , Nothing)
+            , [])
         NetworkError ->
             ({model | error =
                 Just "Unable to connect to api server"
                 , processing = False
               }
-            , Nothing)
+            , [])
