@@ -262,49 +262,49 @@ view model =
                                     [(fieldRead model)
                                     ]
 
-update: Msg -> Model -> (Model, Maybe OutMsg)
+update: Msg -> Model -> (Model, List OutMsg)
 update msg model =
     case msg of
         ChangeValue v ->
             ({model | value = Just (String v) }
-            , Nothing)
+            , [])
         ChangeValueBool b ->
             ({model | value = Just (Bool b)}
-            , Nothing)
+            , [])
         CancelChanges ->
             ({ model | value = model.orig_value}
-            , Nothing
+            , []
             )
         ChangeMode mode ->
             let _ = Debug.log "Field change mode" mode
             in
             case mode of
                 Edit ->
-                    ({model | mode = mode }, Nothing)
+                    ({model | mode = mode }, [])
                 Read ->
-                    ({model | mode = mode }, Nothing)
+                    ({model | mode = mode }, [])
 
         ChangePresentation presentation ->
-            ({model | presentation = presentation}, Nothing )
+            ({model | presentation = presentation}, [] )
         ChangeDensity density ->
-            ({model | density = density}, Nothing)
+            ({model | density = density}, [])
         SetValue value ->
             ({model | value = Just value
                 , orig_value = Just value
-             }, Nothing)
+             }, [])
 
         LookupTabsReceived lookupTabList ->
             ({model | lookupTabs = lookupTabList}
-            , Nothing
+            , []
             )
 
         LookupDataReceived lookupDataList ->
             ({model | lookupData = lookupDataList}
-            , Nothing
+            , []
             )
 
         ListScrolled target ->
-            ( model, Just RequestDataFromTable)
+            ( model, [RequestDataFromTable])
 
 
 

@@ -469,84 +469,65 @@ updateSelectionAllRecords model checked =
 
         
 
-update: Msg -> Model -> (Model, Maybe OutMsg)
+update: Msg -> Model -> (Model, List OutMsg)
 update msg model =
     case msg of
         UpdateRow rowId rowMsg ->
-            let (model',outmsg) = updateRow rowMsg rowId model
-            in case outmsg of
-                Nothing -> (model', Nothing)
-                Just outmsg -> 
-                    case outmsg of
-                        Row.TabChangePresentation presentation ->
-                            ({model' | presentation = presentation}
-                                |> updateRows (Row.ChangePresentation presentation) 
-                            , Just (WindowChangePresentation presentation))
-                        Row.TabEditRecordInForm ->
-                            ({model' | presentation = Form}
-                                |> updateFocusedRow rowId
-                            , Just (WindowChangePresentation Form))
-                            
-                        Row.CancelChanges ->
-                            (model', Nothing)
-                        Row.SaveChanges ->
-                            (model', Nothing)
-                        Row.Remove ->
-                            (model', Nothing)
-                        Row.FocusChanged ->
-                            (updateFocusedRow rowId model', Nothing)
+            let (model',outmsgs) = updateRow rowMsg rowId model
+            in 
+                handleRowOutMsg outmsgs rowId model'
 
                     
         ChangeMode mode ->
             ({ model | mode = mode}
                 |> updateRows (Row.ChangeMode mode)
-            , Nothing)
+            , [])
 
         ChangePresentation presentation ->
             ({model | presentation = presentation}
                 |> updateRows (Row.ChangePresentation presentation)
-            , Nothing)
+            , [])
 
         ChangeDensity density ->
             ({model | density = density }
                 |> updateRows (Row.ChangeDensity density)
-            , Nothing
+            , []
             )
         TabReceived tab ->
-            ( {model | tab = tab}, Nothing )
+            ( {model | tab = tab}, [] )
 
         TabDataReceived tableDao ->
-            (setTabRows model tableDao, Nothing)
+            (setTabRows model tableDao, [])
 
 
         SelectionAll checked ->
             (updateRows (Row.Selection checked) model
-            , Nothing)
+            , [])
 
         LookupTabsReceived tabList ->
             let listLookupFields = buildLookupField tabList
             in
             (updateRows (Row.LookupTabsReceived listLookupFields) model
-            , Nothing
+            , []
             )
 
         LookupDataReceived lookupDataList ->
             (updateRows (Row.LookupDataReceived lookupDataList) model
-            , Nothing
+            , []
             )
 
         Open ->
-            ({model | isOpen = True}, Nothing)
+            ({model | isOpen = True}, [])
 
         Close ->
-            ({model | isOpen = False}, Nothing)
+            ({model | isOpen = False}, [])
 
         Toggle ->
-            ({ model | isOpen = not model.isOpen}, Nothing)
+            ({ model | isOpen = not model.isOpen}, [])
 
         ChangeAllocatedHeight height ->
             ( {model | allocatedHeight = height}
-            , Nothing
+            , []
             )
         
         FormRecordClose ->
@@ -554,33 +535,59 @@ update msg model =
                 , mode = Read
                 }
                 |> updateRows (Row.ChangeMode Read)
-             , Just FormClose)
+             , [FormClose])
 
         BrowserDimensionChanged browserDimension ->
             ({ model | browserDimension = browserDimension}
-            , Nothing)
+            , [])
 
         TabDataNextPageReceived tableDao ->
             (addToRows model tableDao
-            , Nothing)
+            , [])
 
 
         ReceivedScrollBottomEvent ->
-            if not model.loadingPage then
+            if shallLoadNextPage model then
                 ({model | loadingPage = True
-                }, Just LoadNextPage)
+                }, [LoadNextPage])
             else
-                (model, Nothing)
+                (model, [])
 
         RecordsUpdated updateResponse ->
             let model' = updateRecordFromResponse model updateResponse
             in
             if shallLoadNextPage model' then
                 ({ model' | loadingPage = True }
-                , Just LoadNextPage
+                , [LoadNextPage]
                 )
              else
-                ( model', Nothing)
+                ( model', [])
+
+
+handleRowOutMsg: List Row.OutMsg -> Int -> Model -> (Model, List OutMsg)
+handleRowOutMsg outmsgs rowId model =
+    List.foldl
+        (\ outmsg (model, newout) ->
+            case outmsg of
+                Row.TabChangePresentation presentation ->
+                    ({model | presentation = presentation}
+                        |> updateRows (Row.ChangePresentation presentation) 
+                    , newout ++ [WindowChangePresentation presentation])
+                Row.TabEditRecordInForm ->
+                    ({model | presentation = Form}
+                        |> updateFocusedRow rowId
+                    , newout ++ [WindowChangePresentation Form])
+                    
+                Row.CancelChanges ->
+                    (model, newout)
+                Row.SaveChanges ->
+                    (model, newout)
+                Row.Remove ->
+                    (model, newout)
+                Row.FocusChanged ->
+                    (updateFocusedRow rowId model, newout)
+        ) (model, []) outmsgs
+
 
 -- load next page if current model.rows < pageSize && totalPage > model.rows
 shallLoadNextPage: Model -> Bool
@@ -702,18 +709,18 @@ buildLookupField tabList =
            
     ) tabList
 
-updateRow: Row.Msg -> Int -> Model -> (Model, Maybe Row.OutMsg)
+updateRow: Row.Msg -> Int -> Model -> (Model, List Row.OutMsg)
 updateRow rowMsg rowId model =
     let rows_out  = 
         List.map (\r -> 
             if r.rowId == rowId then
                 Row.update rowMsg r 
              else
-                (r,Nothing)
+                (r, [])
             ) model.rows 
         (rows,outmsgs) = List.unzip rows_out
      in
-     ({ model | rows = rows }, Utils.fstNoneEmpty outmsgs)
+     ({ model | rows = rows }, List.concat outmsgs)
 
 getRow: Model -> Int -> Maybe Row.Model
 getRow model rowId =

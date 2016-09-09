@@ -342,71 +342,71 @@ hasManyTabView model =
     else
         text ""
 
-update: Msg -> Model -> (Model, Maybe OutMsg)
+update: Msg -> Model -> (Model, List OutMsg)
 update msg model =
     case msg of 
         UpdateTab tab_msg ->
             let (model', outmsg) = updateMainTab tab_msg model
                 _ = Debug.log "Tab outmsg" outmsg
             in
-                handleOutMsg model' outmsg                 
+                handleTabOutMsg model' outmsg                 
                         
         WindowDetailReceived window ->
             (updateWindow window model
-            ,Nothing
+            ,[]
             )
 
         WindowDataReceived listTableDao ->
             case (List.head listTableDao) of --TODO: get the main tab
                     Just tableDao -> 
                         let (model', outmsg) = updateMainTab (Tab.TabDataReceived tableDao) model
-                        in (model',Nothing)
-                    Nothing -> (model, Nothing)
+                        in (model',[])
+                    Nothing -> (model, [])
 
         ChangeMode mode ->
-            ({model | mode = mode}, Nothing)
+            ({model | mode = mode}, [])
 
         ChangePresentation presentation ->
             ({model | presentation = presentation}
                 |> updateAllocatedHeight
-            , Nothing
+            , []
             )
 
         ActivateWindow ->
-            ({model | isActive = True}, Nothing)
+            ({model | isActive = True}, [])
 
         DeactivateWindow ->
-            ({model | isActive = False}, Nothing)
+            ({model | isActive = False}, [])
 
         LookupTabsReceived tabList ->
             let (model', outmsg) =
                 updateMainTab (Tab.LookupTabsReceived tabList) model
-            in (model', Nothing)
+            in (model', [])
 
         LookupDataReceived lookupDataList ->
             let (model', outmsg) =
                 updateMainTab (Tab.LookupDataReceived lookupDataList) model
-            in (model', Nothing)
+            in (model', [])
 
         OpenHasManyTab table ->
             (updateAllMergedTab Tab.Close model
                 |> updateHasManyMergedTab Tab.Open table
-            , Nothing)
+            , [])
 
         FocusedRecordDataReceived rowId tableDaoList ->
            (hydrateAllMergedTab tableDaoList model
                 |> openFirstMergedTab
-           , Nothing)
+           , [])
 
         BrowserDimensionChanged browserDimension ->
             ( {model | browserDimension = browserDimension}
                 |> updateAllTabs (Tab.BrowserDimensionChanged browserDimension)
                 |> updateAllocatedHeight
-            , Nothing)
+            , [])
         
         ToggleExtTab tab ->
             (updateExtTab Tab.Toggle tab model
-            ,Nothing
+            ,[]
             )
 
         WindowDataNextPageReceived listTableDao ->
@@ -414,19 +414,19 @@ update msg model =
                     Just tableDao -> 
                         let (model', outmsg) = 
                             updateMainTab (Tab.TabDataNextPageReceived tableDao) model
-                        in (model', Nothing)
-                    Nothing -> (model, Nothing) 
+                        in (model', [])
+                    Nothing -> (model, []) 
         
         ReceivedScrollBottomEvent table ->
            let (model', outmsg) =
                 updateMainTab Tab.ReceivedScrollBottomEvent model
                _ = Debug.log "ReceivedScroll Tab outmsg" outmsg
            in
-                handleOutMsg model' outmsg
+                handleTabOutMsg model' outmsg
 
         ResizeStart xy ->
             let _ = Debug.log "Starting resize.." xy in
-            (model, Nothing)
+            (model, [])
 
         ClickedDeleteRecords ->
             let _ = Debug.log "Deleting records" ""
@@ -436,7 +436,7 @@ update msg model =
                 encoded = Encode.encode 0 (Dao.changeSetListEncoder changeset)
                 _ = Debug.log "selected rows" encoded
             in 
-            (model, Just (UpdateRecords table encoded))
+            (model, [UpdateRecords table encoded])
 
          -- updated and inserted records
         ClickedSaveChanges ->
@@ -448,17 +448,17 @@ update msg model =
                 encoded = Encode.encode 0 (Dao.changeSetListEncoder changeset)
                 _ = Debug.log "For save" encoded
              in 
-                (model, Just (UpdateRecords table encoded))
+                (model, [UpdateRecords table encoded])
 
         ClickedCloseAlert ->
             ( {model | alert = Nothing}
                 |> updateAllocatedHeight
-            , Nothing
+            , []
             )
         
         SetAlert alert ->
             ({ model | alert = Just alert }
-             , Nothing
+             , []
             )
         
         RecordsUpdated updateResponse ->
@@ -479,9 +479,9 @@ update msg model =
                         (model'', outmsg) =
                             updateMainTab (Tab.RecordsUpdated mainResponse) model'
                     in
-                        handleOutMsg model'' outmsg
+                        handleTabOutMsg model'' outmsg
                 Nothing ->
-                    ( model, Nothing)
+                    ( model, [])
 
 getError updateResponse =
     let deleteErrorCount = 
@@ -492,25 +492,31 @@ getError updateResponse =
         else
             Nothing
 
-handleOutMsg model' outmsg =
-    let _ = Debug.log "Datawindow handlingOutMsg" outmsg in
-    case outmsg of
-        Nothing ->
-            (model', Nothing)
-        Just outmsg ->
+handleTabOutMsg: Model -> List Tab.OutMsg -> (Model, List OutMsg)
+handleTabOutMsg model outmsgs =
+    List.foldl
+        (\outmsg (model', newout) ->
             case outmsg of
-                Tab.WindowChangePresentation presentation ->
-                    ({model' | presentation = presentation}
-                    , Nothing
-                    )
-                Tab.FormClose ->
-                    ({model' | presentation = Table}
-                        |> updateMainTab (Tab.ChangePresentation Table) 
-                        |> fst
-                    , Nothing)
 
+                Tab.WindowChangePresentation presentation ->
+                    ({ model' | presentation = presentation}
+                    , newout
+                    )
+
+                Tab.FormClose ->
+                    ({ model' | presentation = Table }
+                        |> updateMainTab (Tab.ChangePresentation Table)
+                        |> fst
+                    , newout
+                    )
+                 
                 Tab.LoadNextPage ->
-                    (model', Just (LoadNextPage model'.mainTab))
+                    ( model'
+                    , newout ++ [LoadNextPage model'.mainTab]
+                    )
+
+        ) (model, []) outmsgs
+
 
 getSelectedOrigRecords: Model -> List Dao.Dao
 getSelectedOrigRecords model =
@@ -656,7 +662,7 @@ updateAllMergedTab tabMsg model =
 
 
 
-updateMainTab: Tab.Msg -> Model -> (Model, Maybe Tab.OutMsg)
+updateMainTab: Tab.Msg -> Model -> (Model, List Tab.OutMsg)
 updateMainTab tabMsg model =
     let (updatedMainTab, outmsg) = Tab.update tabMsg model.mainTab
         model' = {model | mainTab = updatedMainTab}
