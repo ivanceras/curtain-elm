@@ -12,9 +12,8 @@ import Tab
 import Field
 import Row
 import Update.Extra.Infix exposing ((:>))
-import Presentation exposing 
-    (Presentation (Table, Form, Grid)
-    ,Mode (Edit,Read)
+import Mode exposing 
+    ( Mode (Edit,Read)
     ,Density(Compact, Medium, Expanded))
 
 import Dao exposing (TableDao)
@@ -35,9 +34,11 @@ type alias Model =
     , detailTableHeight: Int
     , browserDimension: Tab.BrowserDimension
     , alert: Maybe String
+    , focusedRow: Maybe Row.Model -- the focused row
+    , formHeight: Int
+    , formMargin: Int
     }
 
-defaultFormRecordHeight = 200
 
 generateTabId: Window -> Int -> String
 generateTabId window windowId =
@@ -52,13 +53,18 @@ create window windowId =
     , hasManyMergedTabs = []
     , name = window.name
     , windowId = windowId
-    , mainTab = Tab.create window.mainTab (generateTabId window windowId) 0
+    , mainTab = Tab.create window.mainTab (generateTabId window windowId) 100 Tab.Table
     , nextTabId = 0
     , mainTableHeight = 0
     , detailTableHeight = 0
     , browserDimension = Tab.defaultBrowserDimension
     , alert = Nothing
+    , focusedRow = Nothing
+    , formHeight = 200
+    , formMargin = 150 -- margin if want to show the table listing
     }
+
+type Presentation = Table | Grid
 
 type Msg
     = ChangeMode Mode
@@ -82,6 +88,10 @@ type Msg
     | ClickedCloseAlert
     | SetAlert String
     | RecordsUpdated (List Dao.UpdateResponse)
+    | UpdateRow Row.Msg
+    | SetFocusRow (Maybe Row.Model)
+    | MaximizeForm
+    | RestoreSize
     
 type OutMsg = LoadNextPage Tab.Model
     | UpdateRecords String String
@@ -137,34 +147,51 @@ view model =
                     Nothing ->
                         span [] []
 
-                ,case model.presentation of
-                    
-                    Form ->
-                        div[class "master_container"
-                           ] 
-                            [formRecordControls model
-                            ,div [style [("height", "400px")
-                                    ,("overflow", "auto")
-                                    ,("display", "block")
-                                    ,("padding", "20px")
-                                    ]
-                                ]
-                                [App.map UpdateTab(Tab.view model.mainTab) -- when in form view, main tab and extension table are in 1 scrollable container
-                                ,extensionTabView model
-                                ]
-                             ,separator
-                             ,div [class "related-container"
-                                  ,style [("margin-top", "30px")
-                                         ]
-                                  ]
-                                  [hasManyTabView model]
-                            ]
-                    Table ->
-                        App.map UpdateTab(Tab.view model.mainTab) -- when in form view, main tab and extension table are in 1 scrollable container
-                    Grid ->
-                        App.map UpdateTab(Tab.view model.mainTab) 
+                ,div []
+                    [div [style [("position", "absolute")]]
+                        [App.map UpdateTab(Tab.view model.mainTab) -- when in form view, main tab and extension table are in 1 scrollable container
+                        ]
+                    ,formView model
+                    ]
                 ]
 
+
+formView model =
+    case model.focusedRow of
+        Just focusedRow ->
+            let 
+                formMargin = model.formMargin
+                maxFormWidth = (calcMainTableWidth model) - formMargin
+                maxFormHeight = calcMainTableHeight model
+                mergeTabHeight = 28 + (maxFormHeight - model.formHeight)
+
+            in
+            div[class "master_container record_detail"
+                ,style [("background-color", "#fff")
+                       ,("margin-left", (toString formMargin)++"px")
+                       ,("width", (toString maxFormWidth)++"px")
+                       ,("position","absolute")
+                       ]
+               ] 
+                [formRecordControls model
+                ,div [style [("height", (toString model.formHeight)++"px")
+                        ,("overflow", "auto")
+                        ,("display", "block")
+                        ,("padding", "20px")
+                        ]
+                    ]
+                    [App.map UpdateRow (Row.view focusedRow)
+                    ,extensionTabView model
+                    ]
+                 ,separator
+                 ,div [class "related-container"
+                      ,style [("height", (toString mergeTabHeight)++"px")
+                             ]
+                      ]
+                      [hasManyTabView model]
+                ]
+        Nothing ->
+            text ""
 
 onMouseDown : Attribute Msg
 onMouseDown =
@@ -172,7 +199,7 @@ onMouseDown =
 
 separator = 
      div [class "separator"
-          ,style [("border", "1px solid #cf9")
+          ,style [("background-color","#b8b6b8")
                  ,("height", "10px")
                  ,("cursor", "ns-resize")
                  ]
@@ -200,7 +227,12 @@ extensionTabView model =
                                                 ]
                                    ] []
                              ,text (" "++ext.tab.name)]
-                        ,App.map UpdateTab (Tab.view ext)
+                        ,case Tab.firstRow ext of
+                            Just firstRow ->
+                                App.map UpdateRow (Row.view firstRow)
+                            Nothing ->
+                                text "No first row.."
+                            
                         ]
             ) model.extTabs
             
@@ -216,11 +248,19 @@ formRecordControls model =
             [span [class "icon icon-text icon-right-open"] []
             ,text "Next"
             ]
-        ,button [class "btn btn-large btn-default"]
+        ,button [class "btn btn-large btn-default"
+                ,onClick MaximizeForm
+                ]
             [span [class "icon icon-text icon-resize-full"] []
             ,text "Maximize"
             ]
-        ,button [class "btn btn-large btn-default", onClick (UpdateTab Tab.FormRecordClose)]
+        ,button [class "btn btn-large btn-default"
+                ,onClick RestoreSize
+                ]
+            [span [class "icon icon-text icon-resize-small"] []
+            ,text "Restore Size"
+            ]
+        ,button [class "btn btn-large btn-default", onClick (SetFocusRow Nothing)]
             [span [class "icon icon-text icon-cancel"] []
             ,text "Close"
             ]
@@ -350,6 +390,11 @@ update msg model =
                 _ = Debug.log "Tab outmsg" outmsg
             in
                 handleTabOutMsg model' outmsg                 
+
+        UpdateRow rowMsg ->
+            let _ = Debug.log "Updating row" rowMsg
+            in
+            (model, [])
                         
         WindowDetailReceived window ->
             (updateWindow window model
@@ -482,6 +527,24 @@ update msg model =
                         handleTabOutMsg model'' outmsg
                 Nothing ->
                     ( model, [])
+         
+        SetFocusRow row ->
+            ({ model | focusedRow = row }
+            ,[]
+            )
+        MaximizeForm ->
+            ({ model | formHeight = calcMainTableHeight model
+                , formMargin = 0
+             }
+            ,[]
+            )
+        RestoreSize ->
+            ({ model | formMargin = 150
+                , formHeight = 2 * (calcMainTableHeight model) // 3
+             }
+             ,[]
+            )
+            
 
 getError updateResponse =
     let deleteErrorCount = 
@@ -497,24 +560,22 @@ handleTabOutMsg model outmsgs =
     List.foldl
         (\outmsg (model', newout) ->
             case outmsg of
-
-                Tab.WindowChangePresentation presentation ->
-                    ({ model' | presentation = presentation}
-                    , newout
-                    )
-
-                Tab.FormClose ->
-                    ({ model' | presentation = Table }
-                        |> updateMainTab (Tab.ChangePresentation Table)
-                        |> fst
-                    , newout
-                    )
-                 
                 Tab.LoadNextPage ->
                     ( model'
                     , newout ++ [LoadNextPage model'.mainTab]
                     )
-
+                Tab.FocusRow focusedRow ->
+                    ({model' | focusedRow = 
+                        case focusedRow of
+                            Just focusedRow ->
+                                Just (
+                                        Row.update (Row.ChangePresentation Row.Form) focusedRow
+                                            |> fst
+                                    )
+                            Nothing -> Nothing
+                      }
+                    , newout
+                    )
         ) (model, []) outmsgs
 
 
@@ -584,18 +645,15 @@ calcMainTableHeight model =
     in
     model.browserDimension.height - (heightDeductions + alertHeight)
 
+calcMainTableWidth model =  
+    let widthDeductions = 220 
+    in
+    model.browserDimension.width - widthDeductions
 
 updateAllocatedHeight: Model -> Model
 updateAllocatedHeight model =
-    case model.presentation of
-        Form ->
-            updateMainTab (Tab.ChangeAllocatedHeight defaultFormRecordHeight) model
-            |> fst
-        Table ->
-            updateMainTab (Tab.ChangeAllocatedHeight (calcMainTableHeight model)) model
-            |> fst
-
-        _ -> model
+    updateMainTab (Tab.ChangeAllocatedHeight (calcMainTableHeight model)) model
+    |> fst
 
 getTableDao: List TableDao -> Tab.Tab -> Maybe TableDao
 getTableDao tableDaoList tab =
@@ -673,17 +731,18 @@ updateMainTab tabMsg model =
 
 updateWindow: Window -> Model -> Model
 updateWindow window model =
-    {model | mainTab = Tab.create window.mainTab (generateTabId window model.windowId) model.mainTableHeight
+    {model | mainTab = Tab.create window.mainTab (generateTabId window model.windowId) model.mainTableHeight Tab.Table
     ,extTabs = 
         List.map(
             \ext ->
-               let extModel = Tab.create ext (generateTabId window model.windowId) 100
-               in {extModel | presentation = Form}
+               let extModel = Tab.create ext (generateTabId window model.windowId) 100 Tab.Table
+               in
+               extModel
         ) window.extTabs
     ,hasManyMergedTabs =
         List.map(
             \tab -> 
-                let tabModel = Tab.create tab (generateTabId window model.windowId) model.detailTableHeight
+                let tabModel = Tab.create tab (generateTabId window model.windowId) model.detailTableHeight Tab.Table
                 in {tabModel | isOpen = False}
         ) (window.hasManyTabs ++ window.hasManyIndirectTabs)
     }

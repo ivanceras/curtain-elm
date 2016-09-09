@@ -9,9 +9,8 @@ import Dict
 import Json.Decode as Decode exposing ((:=))
 import Task
 import String
-import Presentation exposing 
-    (Presentation (Table, Form, Grid)
-    ,Mode (Edit,Read)
+import Mode exposing 
+    (Mode (Edit,Read)
     ,Density(Compact, Medium, Expanded))
 
 import Dao exposing (DaoState)
@@ -26,6 +25,7 @@ type alias Model =
     , isSelected: Bool
     }
 
+type Presentation = Table | Form | Grid
 
 
 -- get the Dao which also contain the changes
@@ -103,10 +103,8 @@ type Msg
     | ClickedSaveChanges
 
 type OutMsg = Remove
-    | TabChangePresentation Presentation
     | CancelChanges
     | SaveChanges
-    | TabEditRecordInForm
     | FocusChanged
 
 
@@ -247,6 +245,12 @@ tabularRecordControls model =
         selection :: [modificationControls]
 
 
+mapFieldPresentation: Presentation -> Field.Presentation
+mapFieldPresentation presentation =
+    case presentation of
+        Form -> Field.Form
+        Table -> Field.Table
+        Grid -> Field.Grid
 
 update: Msg -> Model -> (Model, List OutMsg)
 update msg model =
@@ -259,7 +263,7 @@ update msg model =
 
         ChangePresentation presentation ->
             ({ model | presentation = presentation }
-                |> updateFields (Field.ChangePresentation presentation) 
+                |> updateFields (Field.ChangePresentation (mapFieldPresentation presentation)) 
              , []
              )
 
@@ -320,18 +324,16 @@ update msg model =
             ) 
         EditRecordInForm -> -- tapped in Tab
             ({ model | mode = Edit
-             ,presentation = Form
+                , isFocused = True
              }
                 |> updateFields (Field.ChangeMode Edit)
-                |> updateFields (Field.ChangePresentation Form)
-             ,[TabEditRecordInForm]
+             ,[FocusChanged]
             )
         EditRecordInPlace -> -- tapped in Tab
             ({model | mode = Edit
              ,presentation = Table
               }
-                |> updateFields (Field.ChangeMode Edit)
-                |> updateFields (Field.ChangePresentation Table)
+               |> updateFields (Field.ChangeMode Edit)
             , [])
 
         ClickedCancelChanges ->

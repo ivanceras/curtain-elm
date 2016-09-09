@@ -9,9 +9,8 @@ import Html.App as App
 import Json.Decode as Decode exposing ((:=))
 import Json.Decode.Extra as Extra exposing ((|:))
 import Update.Extra.Infix exposing ((:>))
-import Presentation exposing 
-    (Presentation (Table, Form, Grid)
-    ,Mode (Edit,Read)
+import Mode exposing 
+    (Mode (Edit,Read)
     ,Density(Compact, Medium, Expanded))
 
 import Dao exposing 
@@ -23,6 +22,7 @@ import Dao exposing
 import Utils
 import Update.Extra exposing (andThen)
 
+type Presentation = Table | Grid
 
 type alias Model =
     { tab: Tab
@@ -90,8 +90,7 @@ type Msg
 
 type OutMsg
     = LoadNextPage
-    | WindowChangePresentation Presentation
-    | FormClose
+    | FocusRow (Maybe Row.Model)
 
 
 tabDecoder: Decode.Decoder Tab
@@ -122,12 +121,12 @@ lookupDataDecoder =
 
 
 
-create: Tab -> String -> Int -> Model
-create tab tabId height =
+create: Tab -> String -> Int -> Presentation -> Model
+create tab tabId height presentation =
     { tab = tab
     , rows= []
     , mode= Read
-    , presentation= if tab.isExtension then Form else Table -- extension will be in form mode
+    , presentation= presentation -- extension will be in form mode
     , density = Expanded
     , isOpen = True
     , page = Nothing
@@ -149,14 +148,6 @@ defaultBrowserDimension =
     } 
 
 
-emptyRowForm: Model -> Row.Model
-emptyRowForm model =
-    let row = Row.create model.tab.fields model.uid
-        (updatedRow,_) = Row.update (Row.ChangePresentation Form) row
-        (updatedRow1,_) = Row.update (Row.ChangeMode Edit) updatedRow
-     in
-     updatedRow1
-
 
 
 view: Model -> Html Msg
@@ -166,19 +157,6 @@ view model =
 
         tabView =
             case model.presentation of
-            Form ->
-                let focused = focusedRow model
-                in
-                div []
-                    [div [class "form"] 
-                       [case focused of
-                           Just focused ->
-                              Row.view focused |> App.map (UpdateRow focused.rowId)
-                           Nothing ->
-                              Row.view (emptyRowForm model) |> App.map (UpdateRow 1000)
-                       ]
-                    ]
-
             Table ->
                 div [class "all_table_hack"
                     ,style [("display","flex")
@@ -225,7 +203,7 @@ view model =
                                    ] 
                                 [tbody [                               ]
                                 (model.rows
-                                    |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
+                                    |> List.map (\r -> App.map (UpdateRow r.rowId) (Row.view r))
 
                                 )
                                 ]
@@ -245,19 +223,27 @@ view model =
             Grid ->
                     div [class "grid"]
                         (model.rows
-                            |> List.map (\r -> Row.view r |> App.map (UpdateRow r.rowId))
+                            |> List.map (\r -> App.map (UpdateRow r.rowId) (Row.view r))
 
                         )
     in
-    if model.isOpen then
-        div []
-            [div []
-                 [tabView
-                 ]
-            ]
-    else 
-       text "" 
+    div [style [("display", if model.isOpen then "block" else "none") ]]
+        [tabView]
                 
+
+
+formView model =
+    let focused = focusedRow model
+    in
+    div []
+        [div [class "form"] 
+           [case focused of
+               Just focused ->
+                  App.map (UpdateRow focused.rowId) (Row.view focused)
+               Nothing ->
+                text "No focused row"
+           ]
+        ]
 
 calcMainTableWidth model =  
     let widthDeductions = 325
@@ -434,7 +420,7 @@ updateRows row_msg model =
                     Row.update row_msg r
                  in row
         ) model.rows
-    }
+    } 
 
 focusFirstRecord: Model -> Maybe Row.Model
 focusFirstRecord model =
@@ -485,7 +471,6 @@ update msg model =
 
         ChangePresentation presentation ->
             ({model | presentation = presentation}
-                |> updateRows (Row.ChangePresentation presentation)
             , [])
 
         ChangeDensity density ->
@@ -531,11 +516,8 @@ update msg model =
             )
         
         FormRecordClose ->
-            ( {model | presentation = Table
-                , mode = Read
-                }
-                |> updateRows (Row.ChangeMode Read)
-             , [FormClose])
+            ( looseFocusedRow model
+             , [])
 
         BrowserDimensionChanged browserDimension ->
             ({ model | browserDimension = browserDimension}
@@ -547,7 +529,9 @@ update msg model =
 
 
         ReceivedScrollBottomEvent ->
-            if shallLoadNextPage model then
+            let _ = Debug.log "ReceivedScrollBottomEvent in Tab" ""
+            in
+            if Debug.log "shallLoadNextPage" (shallLoadNextPage model) then
                 ({model | loadingPage = True
                 }, [LoadNextPage])
             else
@@ -556,7 +540,7 @@ update msg model =
         RecordsUpdated updateResponse ->
             let model' = updateRecordFromResponse model updateResponse
             in
-            if shallLoadNextPage model' then
+            if shallAutoLoadNextPage model' then
                 ({ model' | loadingPage = True }
                 , [LoadNextPage]
                 )
@@ -564,20 +548,21 @@ update msg model =
                 ( model', [])
 
 
+looseFocusedRow: Model -> Model
+looseFocusedRow model =
+    { model | rows =
+        List.map(
+            \r ->
+             Row.update (Row.LooseFocusRecord) r
+             |> fst
+        ) model.rows
+     }
+
 handleRowOutMsg: List Row.OutMsg -> Int -> Model -> (Model, List OutMsg)
 handleRowOutMsg outmsgs rowId model =
     List.foldl
         (\ outmsg (model, newout) ->
             case outmsg of
-                Row.TabChangePresentation presentation ->
-                    ({model | presentation = presentation}
-                        |> updateRows (Row.ChangePresentation presentation) 
-                    , newout ++ [WindowChangePresentation presentation])
-                Row.TabEditRecordInForm ->
-                    ({model | presentation = Form}
-                        |> updateFocusedRow rowId
-                    , newout ++ [WindowChangePresentation Form])
-                    
                 Row.CancelChanges ->
                     (model, newout)
                 Row.SaveChanges ->
@@ -585,14 +570,31 @@ handleRowOutMsg outmsgs rowId model =
                 Row.Remove ->
                     (model, newout)
                 Row.FocusChanged ->
-                    (updateFocusedRow rowId model, newout)
+                    (updateFocusedRow rowId model
+                    , newout ++ [FocusRow (focusedRow model)]
+                    )
         ) (model, []) outmsgs
 
 
--- load next page if current model.rows < pageSize && totalPage > model.rows
-shallLoadNextPage: Model -> Bool
-shallLoadNextPage model =
+--called when removing rows
+shallAutoLoadNextPage: Model -> Bool
+shallAutoLoadNextPage model =
     let 
+        rowLength = List.length model.rows
+        _ = Debug.log "rowLength" rowLength
+        _ = Debug.log "pageSize" model.pageSize
+        _ = Debug.log "loadingPage" model.loadingPage
+    in
+    case model.pageSize of
+        Just pageSize ->
+            rowLength < pageSize && shallLoadNextPage model
+
+        Nothing ->
+            False
+        
+-- called when scrolling bottom
+shallLoadNextPage model =
+    let
         rowLength = List.length model.rows
         totalRecords = 
             case model.totalRecords of
@@ -600,16 +602,8 @@ shallLoadNextPage model =
                     totalRecords
                 Nothing ->
                    -1 
-    in
-    case model.pageSize of
-        Just pageSize ->
-                rowLength < pageSize  
-                && totalRecords > rowLength 
-                && not model.loadingPage
-
-        Nothing ->
-            False
-        
+     in
+        totalRecords > rowLength &&  not model.loadingPage
 
 -- retain only what's not in deleted
 
@@ -630,6 +624,12 @@ inDeleted updateResponse row =
     List.any (\d -> Row.equalDao row d) updateResponse.deleted
 
 
+hasFocusedRow: Model -> Bool
+hasFocusedRow model =
+    case focusedRow model of
+        Just row -> True
+        Nothing -> False
+
 focusedRow: Model -> Maybe Row.Model
 focusedRow model =
     List.filter
@@ -637,6 +637,10 @@ focusedRow model =
             r.isFocused
         ) model.rows
         |> List.head
+
+firstRow: Model -> Maybe Row.Model
+firstRow model =
+    List.head model.rows
 
 createRows: Model -> List DaoState -> List Row.Model
 createRows model listDaoState =

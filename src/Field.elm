@@ -11,9 +11,8 @@ import String
 import Random
 import Dict
 import Json.Decode as Decode exposing (Decoder)
-import Presentation exposing 
-    (Presentation (Table, Form, Grid)
-    ,Mode (Edit,Read)
+import Mode exposing 
+    (Mode (Edit,Read)
     ,Density(Compact, Medium, Expanded))
 
 import Dao exposing 
@@ -47,8 +46,18 @@ create field =
     , lookupData = []
     }
 
+{- | Presentation - describes how the data 
+    is presented to the client
+    Table  - displays in tabular format for large data set 
+            but with enough screen space
+    Form - displays 1 row of data consuming the work area
+           ideal for editing 1 row of record
+    Grid - displays the large dataset in a grid like manner
+            like icons for apps. This is useful when the screen area is very tight
+         - Each record is crumpled into a uniform small box
+-}
 
-
+type Presentation = Table | Form | Grid
 
 type alias LookupTab =
     { table: String
