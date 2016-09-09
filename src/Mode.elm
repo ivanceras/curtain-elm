@@ -1,4 +1,4 @@
-module Presentation exposing (..)
+module Mode exposing (..)
 
 {-| Types which describes how the UI is presented into view
  This includes, presentation in Table, Form and Grid view
@@ -8,17 +8,6 @@ module Presentation exposing (..)
 
 type Mode = Edit | Read 
 
-{- | Presentation - describes how the data 
-    is presented to the client
-    Table  - displays in tabular format for large data set 
-            but with enough screen space
-    Form - displays 1 row of data consuming the work area
-           ideal for editing 1 row of record
-    Grid - displays the large dataset in a grid like manner
-            like icons for apps. This is useful when the screen area is very tight
-         - Each record is crumpled into a uniform small box
--}
-type Presentation = Table | Form | Grid 
 
 
 {- | Density - a layman's term to describe how compact the data set to be presented

@@ -3,6 +3,14 @@
     user-select: auto;
     -webkit-user-select: auto;
 }
+.fast {
+    animation-duration: 0.25s;
+}
+
+
+.record_detail{
+    box-shadow: -9px 9px 28px 0px rgba(50, 50, 50, 0.73);
+}
 .badge {
 	position: absolute;
 	background: #ff4081;
@@ -134,6 +142,7 @@ form * {
     white-space: nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
+    width: 150px;
 }
 
 .main_container{
