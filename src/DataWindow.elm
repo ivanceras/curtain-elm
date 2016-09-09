@@ -95,6 +95,7 @@ type Msg
     
 type OutMsg = LoadNextPage Tab.Model
     | UpdateRecords String String
+    | FocusedRow Row.Model
     
 type alias Window =
     { name: String
@@ -229,7 +230,11 @@ extensionTabView model =
                              ,text (" "++ext.tab.name)]
                         ,case Tab.firstRow ext of
                             Just firstRow ->
-                                App.map UpdateRow (Row.view firstRow)
+                                let formedFirstRow = 
+                                    Row.update (Row.ChangePresentation Row.Form) firstRow
+                                        |> fst 
+                                in
+                                App.map UpdateRow (Row.view formedFirstRow)
                             Nothing ->
                                 text "No first row.."
                             
@@ -439,7 +444,8 @@ update msg model =
             , [])
 
         FocusedRecordDataReceived rowId tableDaoList ->
-           (hydrateAllMergedTab tableDaoList model
+           (hydrateExtensionTab tableDaoList model
+                |> hydrateAllMergedTab tableDaoList
                 |> openFirstMergedTab
            , [])
 
@@ -530,7 +536,11 @@ update msg model =
          
         SetFocusRow row ->
             ({ model | focusedRow = row }
-            ,[]
+            ,case row of
+                Just focusedRow ->
+                    [FocusedRow focusedRow]
+                Nothing ->
+                    []
             )
         MaximizeForm ->
             ({ model | formHeight = calcMainTableHeight model
@@ -565,17 +575,19 @@ handleTabOutMsg model outmsgs =
                     , newout ++ [LoadNextPage model'.mainTab]
                     )
                 Tab.FocusRow focusedRow ->
-                    ({model' | focusedRow = 
-                        case focusedRow of
-                            Just focusedRow ->
+                    case focusedRow of
+                        Just focusedRow ->
+                            ({model' | focusedRow =
                                 Just (
                                         Row.update (Row.ChangePresentation Row.Form) focusedRow
                                             |> fst
                                     )
-                            Nothing -> Nothing
-                      }
-                    , newout
-                    )
+                             }
+                            , newout ++ [FocusedRow focusedRow]
+                            )
+                        Nothing -> 
+                            ( model', newout)
+
         ) (model, []) outmsgs
 
 
@@ -663,6 +675,20 @@ getTableDao tableDaoList tab =
             
     )tableDaoList
         |> List.head
+
+hydrateExtensionTab: List TableDao -> Model -> Model
+hydrateExtensionTab tableDaoList model =
+    { model | extTabs =
+        List.map (
+            \ext ->
+                case Debug.log "Extention table" <| getTableDao tableDaoList ext.tab of
+                    Just tableDao ->
+                        Tab.update (Tab.TabDataReceived tableDao) ext
+                            |> fst
+                    Nothing ->
+                        ext
+        ) model.extTabs
+    }
 
 hydrateAllMergedTab: List TableDao -> Model -> Model
 hydrateAllMergedTab tableDaoList model =
