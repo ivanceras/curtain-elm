@@ -524,25 +524,6 @@ updateAllWindow windowMsg model =
     in
     {model | openedWindows = updatedWindows}
 
-{--
-updateActiveWindow: DataWindow.Msg -> Model -> (Model, Maybe DataWindow.OutMsg)
-updateActiveWindow windowMsg model =
-    let updatedWindows = 
-        List.map(
-            \w ->
-                if model.activeWindow == Just w.windowId then
-                    let (updatedWindow, outmsg) = DataWindow.update windowMsg w
-                        _ = Debug.log "Main active window outmsg" outmsg
-                    in (updatedWindow,outmsg)
-                else
-                    (w,Nothing) 
-        ) model.openedWindows
-        (openedWindows, outmsgs) = List.unzip (updatedWindows)
-    in
-    ({model | openedWindows = openedWindows}
-    , Utils.fstNoneEmpty outmsgs
-    )
---}
 
 activateFirstWindow: Model -> Model
 activateFirstWindow model =
