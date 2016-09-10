@@ -15,7 +15,6 @@ import Mode exposing
 
 import Dao exposing 
     (Dao
-    ,DaoState
     ,TableDao
     ,Value(Bool,I8,I16,I32,I64,U8,U16,U32,U64,F32,F64,String,Date,DateTime,Uuid)
     )
@@ -76,17 +75,15 @@ type Msg
     | TabReceived Tab
     | TabDataReceived TableDao
     | SelectionAll Bool
-    | LookupTabsReceived (List Tab)
-    | LookupDataReceived (List Field.LookupData)
     | Open
     | Close
     | Toggle
     | ChangeAllocatedHeight Int
-    | FormRecordClose
     | BrowserDimensionChanged BrowserDimension
     | TabDataNextPageReceived TableDao
     | ReceivedScrollBottomEvent
     | RecordsUpdated Dao.UpdateResponse
+    | ReplaceRow Int Row.Model
 
 type OutMsg
     = LoadNextPage
@@ -113,11 +110,6 @@ tabDecoder =
         |: (Decode.maybe ("icon" := Decode.string))
         |: (Decode.maybe ("estimated_row_count" := Decode.int))
         
-lookupDataDecoder: Decode.Decoder Field.LookupData
-lookupDataDecoder = 
-    Decode.succeed Field.LookupData
-        |: ("table" := Decode.string)
-        |: ("dao_list" := Decode.list Dao.daoDecoder)
 
 
 
@@ -231,19 +223,6 @@ view model =
         [tabView]
                 
 
-
-formView model =
-    let focused = focusedRow model
-    in
-    div []
-        [div [class "form"] 
-           [case focused of
-               Just focused ->
-                  App.map (UpdateRow focused.rowId) (Row.view focused)
-               Nothing ->
-                text "No focused row"
-           ]
-        ]
 
 calcMainTableWidth model =  
     let widthDeductions = 325
@@ -442,6 +421,19 @@ updateFocusedRow rowId model =
      }
         
 
+-- replace the row preserving the presentation and mode
+replaceRow: Model -> Int -> Row.Model -> Model
+replaceRow model rowId replacement =
+    { model | rows =
+        List.map(
+            \r ->
+                if r.rowId == rowId then
+                   replacement
+                else
+                   r
+        ) model.rows
+
+    }
 
 updateSelectionAllRecords: Model -> Bool -> Model
 updateSelectionAllRecords model checked =
@@ -489,18 +481,6 @@ update msg model =
             (updateRows (Row.Selection checked) model
             , [])
 
-        LookupTabsReceived tabList ->
-            let listLookupFields = buildLookupField tabList
-            in
-            (updateRows (Row.LookupTabsReceived listLookupFields) model
-            , []
-            )
-
-        LookupDataReceived lookupDataList ->
-            (updateRows (Row.LookupDataReceived lookupDataList) model
-            , []
-            )
-
         Open ->
             ({model | isOpen = True}, [])
 
@@ -515,10 +495,6 @@ update msg model =
             , []
             )
         
-        FormRecordClose ->
-            ( looseFocusedRow model
-             , [])
-
         BrowserDimensionChanged browserDimension ->
             ({ model | browserDimension = browserDimension}
             , [])
@@ -546,17 +522,12 @@ update msg model =
                 )
              else
                 ( model', [])
+        ReplaceRow rowId replacement ->
+            (replaceRow model rowId replacement
+            ,[]
+            )
 
 
-looseFocusedRow: Model -> Model
-looseFocusedRow model =
-    { model | rows =
-        List.map(
-            \r ->
-             Row.update (Row.LooseFocusRecord) r
-             |> fst
-        ) model.rows
-     }
 
 handleRowOutMsg: List Row.OutMsg -> Int -> Model -> (Model, List OutMsg)
 handleRowOutMsg outmsgs rowId model =
@@ -581,9 +552,6 @@ shallAutoLoadNextPage: Model -> Bool
 shallAutoLoadNextPage model =
     let 
         rowLength = List.length model.rows
-        _ = Debug.log "rowLength" rowLength
-        _ = Debug.log "pageSize" model.pageSize
-        _ = Debug.log "loadingPage" model.loadingPage
     in
     case model.pageSize of
         Just pageSize ->
@@ -642,12 +610,12 @@ firstRow: Model -> Maybe Row.Model
 firstRow model =
     List.head model.rows
 
-createRows: Model -> List DaoState -> List Row.Model
+createRows: Model -> List Dao -> List Row.Model
 createRows model listDaoState =
     List.indexedMap (
         \index daoState ->
             let newRow = Row.create model.tab.fields (model.uid + index)
-                (mo, cmd) = Row.update (Row.DaoStateReceived daoState) newRow 
+                (mo, cmd) = Row.update (Row.SetDao daoState) newRow 
             in mo
         ) listDaoState 
 
@@ -704,14 +672,6 @@ completeTableName tab =
             schema ++ "." ++ tab.table
         Nothing ->
             tab.table
-
-buildLookupField: List Tab -> List Field.LookupTab
-buildLookupField tabList =
-    List.map(
-        \t ->
-           Field.newLookupTab (completeTableName t) t.fields
-           
-    ) tabList
 
 updateRow: Row.Msg -> Int -> Model -> (Model, List Row.OutMsg)
 updateRow rowMsg rowId model =

@@ -72,8 +72,6 @@ type Msg
     | UpdateTab Tab.Msg
     | WindowDetailReceived Window
     | WindowDataReceived (List TableDao)
-    | LookupTabsReceived (List Tab.Tab)
-    | LookupDataReceived (List Field.LookupData)
     | ActivateWindow
     | DeactivateWindow
     | OpenHasManyTab String
@@ -88,8 +86,10 @@ type Msg
     | ClickedCloseAlert
     | SetAlert String
     | RecordsUpdated (List Dao.UpdateResponse)
-    | UpdateRow Row.Msg
+    | UpdateFocusedRow Row.Msg
+    | UpdateExtensionRow Row.Msg
     | SetFocusRow (Maybe Row.Model)
+    | CloseFocusedRow
     | MaximizeForm
     | RestoreSize
     
@@ -181,8 +181,8 @@ formView model =
                         ,("padding", "20px")
                         ]
                     ]
-                    [App.map UpdateRow (Row.view focusedRow)
-                    ,extensionTabView model
+                    [App.map UpdateFocusedRow (Row.view focusedRow)
+                    ,extensionRowView model
                     ]
                  ,separator
                  ,div [class "related-container"
@@ -207,8 +207,8 @@ separator =
           ,onMouseDown 
           ] []
 
-extensionTabView: Model -> Html Msg
-extensionTabView model =
+extensionRowView: Model -> Html Msg
+extensionRowView model =
     div [] 
         <| 
          List.map (
@@ -234,7 +234,7 @@ extensionTabView model =
                                     Row.update (Row.ChangePresentation Row.Form) firstRow
                                         |> fst 
                                 in
-                                App.map UpdateRow (Row.view formedFirstRow)
+                                App.map UpdateExtensionRow (Row.view formedFirstRow)
                             Nothing ->
                                 text "No first row.."
                             
@@ -265,7 +265,7 @@ formRecordControls model =
             [span [class "icon icon-text icon-resize-small"] []
             ,text "Restore Size"
             ]
-        ,button [class "btn btn-large btn-default", onClick (SetFocusRow Nothing)]
+        ,button [class "btn btn-large btn-default", onClick CloseFocusedRow]
             [span [class "icon icon-text icon-cancel"] []
             ,text "Close"
             ]
@@ -396,9 +396,21 @@ update msg model =
             in
                 handleTabOutMsg model' outmsg                 
 
-        UpdateRow rowMsg ->
+        UpdateFocusedRow rowMsg ->
             let _ = Debug.log "Updating row" rowMsg
             in
+            ({model | focusedRow = 
+                case model.focusedRow of
+                    Just focusedRow ->
+                        Just (Row.update rowMsg focusedRow
+                                |> fst
+                             )
+                    Nothing ->
+                        Nothing
+             }
+            , [])
+         
+        UpdateExtensionRow rowMsg ->
             (model, [])
                         
         WindowDetailReceived window ->
@@ -427,16 +439,6 @@ update msg model =
 
         DeactivateWindow ->
             ({model | isActive = False}, [])
-
-        LookupTabsReceived tabList ->
-            let (model', outmsg) =
-                updateMainTab (Tab.LookupTabsReceived tabList) model
-            in (model', [])
-
-        LookupDataReceived lookupDataList ->
-            let (model', outmsg) =
-                updateMainTab (Tab.LookupDataReceived lookupDataList) model
-            in (model', [])
 
         OpenHasManyTab table ->
             (updateAllMergedTab Tab.Close model
@@ -534,6 +536,7 @@ update msg model =
                 Nothing ->
                     ( model, [])
          
+        -- update the focused row in the main tab from here
         SetFocusRow row ->
             ({ model | focusedRow = row }
             ,case row of
@@ -542,6 +545,20 @@ update msg model =
                 Nothing ->
                     []
             )
+        CloseFocusedRow ->
+            case model.focusedRow of
+                Just focusedRow ->
+                    let focusedRow' = 
+                        Row.update (Row.ChangePresentation Row.Table) focusedRow
+                                |> fst 
+                    in
+                    ({model | focusedRow = Nothing}
+                        |> updateMainTab (Tab.ReplaceRow focusedRow'.rowId focusedRow')
+                        |> fst
+                    ,[])
+                Nothing ->
+                    (model, [])
+            
         MaximizeForm ->
             ({ model | formHeight = calcMainTableHeight model
                 , formMargin = 0
