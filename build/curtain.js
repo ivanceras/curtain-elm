@@ -11802,6 +11802,8 @@ var _user$project$Field$alignment = function (field) {
 			return _user$project$Field$rightAlign;
 		case 'DateTime':
 			return _user$project$Field$rightAlign;
+		case 'Uuid':
+			return _user$project$Field$leftAlign;
 		default:
 			return _user$project$Field$leftAlign;
 	}
@@ -11809,7 +11811,7 @@ var _user$project$Field$alignment = function (field) {
 var _user$project$Field$stringifyValue = function (model) {
 	return _user$project$Dao$stringifyMaybeValue(model.value);
 };
-var _user$project$Field$fieldReadNoLookup = function (model) {
+var _user$project$Field$fieldRead = function (model) {
 	var _p6 = model.value;
 	if (_p6.ctor === 'Just') {
 		var _p7 = _p6._0;
@@ -11902,6 +11904,8 @@ var _user$project$Field$fieldReadNoLookup = function (model) {
 			case 'DateTime':
 				return _elm_lang$html$Html$text(
 					_user$project$Utils$simpleDate(_p7._0));
+			case 'Uuid':
+				return _elm_lang$html$Html$text(_p7._0);
 			default:
 				return _elm_lang$html$Html$text(
 					_elm_lang$core$Basics$toString(_elm_lang$html$Html_Attributes$value));
@@ -11909,9 +11913,6 @@ var _user$project$Field$fieldReadNoLookup = function (model) {
 	} else {
 		return _elm_lang$html$Html$text('');
 	}
-};
-var _user$project$Field$fieldRead = function (model) {
-	return _user$project$Field$fieldReadNoLookup(model);
 };
 var _user$project$Field$isEmptyValue = function (value) {
 	var _p11 = value;

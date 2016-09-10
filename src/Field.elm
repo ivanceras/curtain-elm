@@ -412,10 +412,6 @@ fieldEntry model =
 
 fieldRead: Model -> Html Msg
 fieldRead model = 
-    fieldReadNoLookup model
-
-fieldReadNoLookup: Model -> Html Msg 
-fieldReadNoLookup model =
     case model.value of
         Just fieldValue ->
             case fieldValue of
@@ -454,6 +450,9 @@ fieldReadNoLookup model =
                 DateTime d ->
                     text (Utils.simpleDate d)
 
+                Uuid v ->
+                    text v
+
                 _  ->
                     text (toString value)
 
@@ -480,6 +479,7 @@ alignment field =
         "I64" -> rightAlign
         "Date" -> rightAlign
         "DateTime" -> rightAlign
+        "Uuid" -> leftAlign
         _ -> leftAlign
  
 
