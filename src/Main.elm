@@ -50,8 +50,6 @@ type Msg
     | WindowDetailReceived DataWindow.Window
     | GetWindowData String
     | WindowDataReceived WindowId (List Dao.TableDao) 
-    | LookupTabsReceived WindowId (List Tab.Tab)
-    | LookupDataReceived WindowId (List Field.LookupData)
     | FetchError Http.Error
     | FocusedRecordDataReceived WindowId RowId (List Dao.TableDao)
     | WindowResize BrowserWindow.Size
@@ -259,20 +257,9 @@ update msg model =
         WindowDataReceived windowId tableDaoList ->
             (updateWindow model (DataWindow.WindowDataReceived tableDaoList) windowId
                 |> fst
-            ,fetchLookupTabs model windowId
+            , Cmd.none
             )
         
-        LookupTabsReceived windowId tabList -> --update the window and propage the data down to the fields
-            (updateWindow model (DataWindow.LookupTabsReceived tabList) windowId
-                |> fst
-            , fetchLookupData model windowId
-            )
-
-        LookupDataReceived windowId lookupData ->
-            (updateWindow model (DataWindow.LookupDataReceived lookupData) windowId
-                |> fst
-            , Cmd.none)
-
         FetchError e ->
             let _ = Debug.log "There was an error fetching records" e
             in
@@ -437,6 +424,9 @@ handleWindowOutMsg outmsgs model windowId =
                         (model, cmds ++ [ loadNextPage windowId model ])
                     DataWindow.UpdateRecords mainTable body ->
                         (model, cmds ++ [httpUpdateRecords model windowId mainTable body])
+                    DataWindow.FocusedRow focusedRow ->
+                        (model, cmds ++ [fetchFocusedRecordDetail model windowId focusedRow.rowId])
+
 
             ) (model, []) outmsgs
       in
@@ -524,25 +514,6 @@ updateAllWindow windowMsg model =
     in
     {model | openedWindows = updatedWindows}
 
-{--
-updateActiveWindow: DataWindow.Msg -> Model -> (Model, Maybe DataWindow.OutMsg)
-updateActiveWindow windowMsg model =
-    let updatedWindows = 
-        List.map(
-            \w ->
-                if model.activeWindow == Just w.windowId then
-                    let (updatedWindow, outmsg) = DataWindow.update windowMsg w
-                        _ = Debug.log "Main active window outmsg" outmsg
-                    in (updatedWindow,outmsg)
-                else
-                    (w,Nothing) 
-        ) model.openedWindows
-        (openedWindows, outmsgs) = List.unzip (updatedWindows)
-    in
-    ({model | openedWindows = openedWindows}
-    , Utils.fstNoneEmpty outmsgs
-    )
---}
 
 activateFirstWindow: Model -> Model
 activateFirstWindow model =
@@ -726,29 +697,6 @@ pageSize size =
 pageSizeQuery p size = 
     page p ++ "&" ++ pageSize size
 
-fetchLookupTabs: Model -> WindowId -> Cmd Msg
-fetchLookupTabs model windowId =
-    let mainTable = getWindowTable model windowId
-    in
-    case mainTable of
-        Just mainTable ->
-            httpGet model ("/lookup_tabs/" ++ mainTable)
-                |> Http.fromJson (Decode.list Tab.tabDecoder)
-                |> Task.perform FetchError (LookupTabsReceived windowId)
-        Nothing ->
-           Debug.crash "Unable to get matching table" 
-
-fetchLookupData: Model -> WindowId -> Cmd Msg
-fetchLookupData model windowId =
-    let mainTable = getWindowTable model windowId
-    in
-    case mainTable of
-        Just mainTable ->
-            httpGet model ("/lookup_data/" ++ mainTable)
-               |> Http.fromJson (Decode.list Tab.lookupDataDecoder)
-               |> Task.perform FetchError (LookupDataReceived windowId)
-        Nothing ->
-           Debug.crash "Unable to get matching table" 
 
 fetchFocusedRecordDetail: Model -> WindowId -> RowId ->  Cmd Msg
 fetchFocusedRecordDetail model windowId rowId =

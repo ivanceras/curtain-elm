@@ -13,7 +13,7 @@ import Mode exposing
     (Mode (Edit,Read)
     ,Density(Compact, Medium, Expanded))
 
-import Dao exposing (DaoState)
+import Dao exposing (Dao)
 
 type alias Model =
     { rowId: Int
@@ -90,13 +90,11 @@ type Msg
     | ChangePresentation Presentation
     | UpdateField String Field.Msg
     | ChangeDensity Density
-    | DaoStateReceived DaoState
+    | SetDao Dao
     | Selection Bool
     | ToggleSelect
     | FocusRecord
     | LooseFocusRecord
-    | LookupTabsReceived (List Field.LookupTab)
-    | LookupDataReceived (List Field.LookupData)
     | EditRecordInForm
     | EditRecordInPlace
     | ClickedCancelChanges
@@ -283,11 +281,11 @@ update msg model =
                     f
               ) }, [])
 
-        DaoStateReceived daoState ->
+        SetDao dao ->
             let fieldModels =
                 List.map(
                     \f ->
-                        let value = Dict.get f.field.column daoState.dao
+                        let value = Dict.get f.field.column dao
                         in
                         case value of
                             Just value ->
@@ -297,8 +295,7 @@ update msg model =
                             Nothing -> f
                 ) model.fieldModels
             in
-            ({model | isFocused = daoState.focused
-                    , fieldModels = fieldModels
+            ({model | fieldModels = fieldModels
               }
             , []
             )
@@ -314,14 +311,6 @@ update msg model =
         LooseFocusRecord ->
             ({model | isFocused = False}, [])
 
-        LookupTabsReceived lookupTabFields ->
-            (updateLookupFields (Field.LookupTabsReceived lookupTabFields) model
-            , []
-            ) 
-        LookupDataReceived lookupDataList ->
-            (updateLookupFields (Field.LookupDataReceived lookupDataList) model
-            , []
-            ) 
         EditRecordInForm -> -- tapped in Tab
             ({ model | mode = Edit
                 , isFocused = True

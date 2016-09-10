@@ -8,7 +8,7 @@ import Json.Decode.Extra as Extra exposing ((|:))
 
 type alias TableDao =
     { table: String
-    , daoList: List DaoState
+    , daoList: List Dao
     , page: Maybe Int
     , pageSize: Maybe Int
     , total: Maybe Int
@@ -17,20 +17,14 @@ type alias TableDao =
 tableDaoDecoder =
     Decode.object5 TableDao
         ("table" := Decode.string)
-        ("dao_list" := Decode.list daoStateDecoder)
+        ("dao_list" := Decode.list daoDecoder)
         (Decode.maybe ("page" := Decode.int))
         (Decode.maybe ("page_size" := Decode.int))
         (Decode.maybe ("total" := Decode.int))
 
-type alias DaoState =
-    { dao: Dao
-    , focused: Bool
-    }
-
-type alias Uuid = String
 
 type alias DaoInsert = 
-    { recordId: Uuid
+    { recordId: String
     , dao: Dao
     }
 
@@ -122,11 +116,6 @@ daoUpdateEncoder daoUpdate =
         [("original", daoEncoder daoUpdate.original)
         ,("updated", daoEncoder daoUpdate.updated)
         ]
-
-daoStateDecoder =
-    Decode.object2 DaoState
-        ("dao" := daoDecoder)
-        ("focused" := Decode.bool)
 
 type alias Dao = Dict.Dict String Value
 
