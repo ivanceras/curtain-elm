@@ -12073,7 +12073,7 @@ var _user$project$Field$computeSizeFromField = F2(
 		var _p12 = field.displayLength;
 		if (_p12.ctor === 'Just') {
 			var _p13 = _p12._0;
-			return ((_elm_lang$core$Native_Utils.cmp(_p13, 250) > -1) && _elm_lang$core$Native_Utils.eq(presentation, _user$project$Field$Form)) ? {ctor: '_Tuple2', _0: 250, _1: (_p13 / 250) | 0} : ((_elm_lang$core$Native_Utils.cmp(_p13, 4) < 0) ? {ctor: '_Tuple2', _0: 40, _1: 20} : {ctor: '_Tuple2', _0: 10 * _p13, _1: 20});
+			return (_elm_lang$core$Native_Utils.cmp(_p13, 250) > -1) ? (_elm_lang$core$Native_Utils.eq(presentation, _user$project$Field$Form) ? {ctor: '_Tuple2', _0: 250, _1: 140} : {ctor: '_Tuple2', _0: 400, _1: 20}) : ((_elm_lang$core$Native_Utils.cmp(_p13, 4) < 0) ? {ctor: '_Tuple2', _0: 40, _1: 20} : {ctor: '_Tuple2', _0: 10 * _p13, _1: 20});
 		} else {
 			return {ctor: '_Tuple2', _0: 200, _1: 20};
 		}
@@ -16776,6 +16776,7 @@ var _user$project$Settings$view = function (model) {
 						_elm_lang$core$Native_List.fromArray(
 							[
 								_elm_lang$html$Html_Events$onClick(_user$project$Settings$ClickedConnect),
+								_elm_lang$html$Html_Attributes$class('btn btn-default btn-large'),
 								_elm_lang$html$Html_Attributes$style(
 								_elm_lang$core$Native_List.fromArray(
 									[

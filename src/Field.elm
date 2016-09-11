@@ -434,8 +434,11 @@ computeSize model =
 computeSizeFromField field presentation =
     case field.displayLength of
         Just len -> 
-            if len >= 250 && presentation == Form then
-                (250, len // 250) -- only in form presentation
+            if len >= 250 then
+                if presentation == Form then
+                    (250, 140) 
+                else --table/grid 
+                    (400, 20)
             else if len < 4 then
                 (40, 20)
             else

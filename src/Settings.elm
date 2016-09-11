@@ -85,6 +85,7 @@ view model =
                         ] []
                    ]
             ,button [onClick ClickedConnect
+                    ,class "btn btn-default btn-large"
                     ,style [("margin-top", "30px")]
                     ]
                     [text "Connect to Server"]
