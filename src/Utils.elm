@@ -11,6 +11,10 @@ import String
 
 -}
 
+px: number -> String
+px number =
+    (toString number) ++ "px"
+
 simpleDate: String -> String
 simpleDate str =
     if not (String.isEmpty str) then

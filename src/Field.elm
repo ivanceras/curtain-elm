@@ -32,6 +32,7 @@ type alias Model =
     , density: Density
     }
 
+create: Field -> Model
 create field =
     { field = field
     , value = Nothing
