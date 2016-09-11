@@ -12900,31 +12900,6 @@ var _user$project$Row$Model = F7(
 	function (a, b, c, d, e, f, g) {
 		return {rowId: a, fieldModels: b, mode: c, presentation: d, density: e, isFocused: f, isSelected: g};
 	});
-var _user$project$Row$Grid = {ctor: 'Grid'};
-var _user$project$Row$Form = {ctor: 'Form'};
-var _user$project$Row$Table = {ctor: 'Table'};
-var _user$project$Row$empty = {
-	rowId: 0,
-	fieldModels: _elm_lang$core$Native_List.fromArray(
-		[]),
-	mode: _user$project$Mode$Read,
-	presentation: _user$project$Row$Table,
-	density: _user$project$Mode$Expanded,
-	isFocused: false,
-	isSelected: false
-};
-var _user$project$Row$create = F2(
-	function (listFields, rowId) {
-		var fieldModels = A2(
-			_elm_lang$core$List$map,
-			function (f) {
-				return _user$project$Field$create(f);
-			},
-			listFields);
-		return _elm_lang$core$Native_Utils.update(
-			_user$project$Row$empty,
-			{fieldModels: fieldModels, rowId: rowId});
-	});
 var _user$project$Row$ClickedSaveChanges = {ctor: 'ClickedSaveChanges'};
 var _user$project$Row$ClickedCancelChanges = {ctor: 'ClickedCancelChanges'};
 var _user$project$Row$EditRecordInPlace = {ctor: 'EditRecordInPlace'};
@@ -13233,6 +13208,32 @@ var _user$project$Row$ChangeMode = function (a) {
 var _user$project$Row$FocusChanged = {ctor: 'FocusChanged'};
 var _user$project$Row$SaveChanges = {ctor: 'SaveChanges'};
 var _user$project$Row$CancelChanges = {ctor: 'CancelChanges'};
+var _user$project$Row$Remove = {ctor: 'Remove'};
+var _user$project$Row$Grid = {ctor: 'Grid'};
+var _user$project$Row$Form = {ctor: 'Form'};
+var _user$project$Row$Table = {ctor: 'Table'};
+var _user$project$Row$empty = {
+	rowId: 0,
+	fieldModels: _elm_lang$core$Native_List.fromArray(
+		[]),
+	mode: _user$project$Mode$Read,
+	presentation: _user$project$Row$Table,
+	density: _user$project$Mode$Expanded,
+	isFocused: false,
+	isSelected: false
+};
+var _user$project$Row$create = F2(
+	function (listFields, rowId) {
+		var fieldModels = A2(
+			_elm_lang$core$List$map,
+			function (f) {
+				return _user$project$Field$create(f);
+			},
+			listFields);
+		return _elm_lang$core$Native_Utils.update(
+			_user$project$Row$empty,
+			{fieldModels: fieldModels, rowId: rowId});
+	});
 var _user$project$Row$update = F2(
 	function (msg, model) {
 		var _p10 = msg;
@@ -13412,7 +13413,6 @@ var _user$project$Row$update = F2(
 				};
 		}
 	});
-var _user$project$Row$Remove = {ctor: 'Remove'};
 
 var _user$project$Tab$getRow = F2(
 	function (model, rowId) {

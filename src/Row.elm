@@ -15,6 +15,26 @@ import Mode exposing
 
 import Dao exposing (Dao)
 
+type Msg
+    = ChangeMode Mode
+    | ChangePresentation Presentation
+    | UpdateField String Field.Msg
+    | ChangeDensity Density
+    | SetDao Dao
+    | Selection Bool
+    | ToggleSelect
+    | FocusRecord
+    | LooseFocusRecord
+    | EditRecordInForm
+    | EditRecordInPlace
+    | ClickedCancelChanges
+    | ClickedSaveChanges
+
+type OutMsg = Remove
+    | CancelChanges
+    | SaveChanges
+    | FocusChanged
+
 type alias Model =
     { rowId: Int
     , fieldModels: List Field.Model
@@ -84,171 +104,6 @@ create listFields rowId =
      {empty | fieldModels = fieldModels
             , rowId = rowId
      }
-
-type Msg
-    = ChangeMode Mode
-    | ChangePresentation Presentation
-    | UpdateField String Field.Msg
-    | ChangeDensity Density
-    | SetDao Dao
-    | Selection Bool
-    | ToggleSelect
-    | FocusRecord
-    | LooseFocusRecord
-    | EditRecordInForm
-    | EditRecordInPlace
-    | ClickedCancelChanges
-    | ClickedSaveChanges
-
-type OutMsg = Remove
-    | CancelChanges
-    | SaveChanges
-    | FocusChanged
-
-
-equalDao: Model -> Dao.Dao -> Bool
-equalDao model dao =
-    dao == getOrigDao model
-
-excludeKeyfields: List Field.Field -> List Field.Field
-excludeKeyfields fieldList =
-    List.filter (\f -> not f.isKeyfield) fieldList
-
-
-excludeKeyfieldModels: List Field.Model -> List Field.Model
-excludeKeyfieldModels fieldModels =
-    List.filter (\f -> not f.field.isKeyfield) fieldModels 
-
-keyFieldModels: List Field.Model -> List Field.Model
-keyFieldModels fieldModels =
-    List.filter (\f -> f.field.isKeyfield) fieldModels
-
-
--- get the focused record param expressed in [pk_value1, pk_value2]
-focusedRecordParam: Model -> String
-focusedRecordParam model =
-    keyFieldModels model.fieldModels
-        |> List.map(
-            \f ->
-              Field.stringifyValue f 
-        )
-        |> String.join ","
-
-view: Model -> Html Msg
-view model = 
-    let fieldModels = filterFieldModelsWithDensity model
-                        |> excludeKeyfieldModels
-    in
-    case model.presentation of
-        Form ->
-            div []
-                [Html.form [style [("display", "flex"), ("flex-wrap", "wrap"), ("align-items", "flex-end")]] 
-                  (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| fieldModels)
-                ]
-        Table ->
-            tr [onDoubleClick EditRecordInForm
-               ,onClick FocusRecord
-               ,classList [
-                     ("focused", model.isFocused)
-                    ,("selected", model.isSelected)
-                    ,("modified", isModified model)
-                    ,("inserted", isNew model)
-                   ]
-               ,style [("height", "35px")]
-               ] 
-               (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| fieldModels)
-        Grid ->
-            div []
-                [ div [style [("border", "1px solid green"), ("width", "200px")]] 
-                  (List.map (\f -> 
-                        App.map (UpdateField f.field.name) <| Field.view f 
-                     ) <| fieldModels
-                  )
-               ]
-
-
-onClickNoPropagate: msg -> Attribute msg
-onClickNoPropagate msg = 
-    Decode.succeed msg
-        |> onWithOptions "click" {defaultOptions | stopPropagation = True}
-
-onDoubleClickNoPropagate: msg -> Attribute msg
-onDoubleClickNoPropagate msg = 
-    Decode.succeed msg
-        |> onWithOptions "dblclick" {defaultOptions | stopPropagation = True}
-
-
-
-rowShadowRecordControls: Model -> Html Msg
-rowShadowRecordControls model =
-    tr [onDoubleClick EditRecordInForm
-       ,onClick FocusRecord
-       ,classList [
-             ("focused", model.isFocused)
-            ,("selected", model.isSelected)
-            ,("modified", isModified model)
-            ,("inserted", isNew model)
-            ]
-       ,style [("height", "35px")]
-       ] 
-       (tabularRecordControls model)
-
-
-tabularRecordControls: Model -> List (Html Msg)
-tabularRecordControls model =
-    let selection = 
-        let tooltipText = if model.isSelected then "Click to unselect this record"
-            else "Click to select this record"
-        in
-        td [class "tooltip"
-           , onClickNoPropagate ToggleSelect
-             -- prevent unexpected opening of record in form
-           , onDoubleClickNoPropagate ToggleSelect
-           ] 
-                [input [type' "checkbox"
-                       , checked model.isSelected
-                       , onCheckNoPropagate Selection
-                       , onDoubleCheckNoPropagate Selection
-                       ] []
-                ,span [class "tooltiptext"] [text tooltipText]
-                ]
-
-        modificationControls = 
-            case model.mode of
-                Read ->
-                    td [class "record_control"] 
-                        [div [class "icon icon-menu tooltip"
-                              ,onClickNoPropagate EditRecordInForm] 
-                               [span [class "tooltiptext"] [text "Click to open record in a form"]
-                               ]
-                        ,div [class "icon icon-pencil tooltip"
-                             ,onClick EditRecordInPlace]
-                               [span [class "tooltiptext"] [text "Click to edit record in the grid"]
-                               ]
-                        ]
-                Edit ->
-                    td [class "record_control"] 
-                                [div [class "icon icon-block tooltip"
-                                      ,onClick ClickedCancelChanges] 
-                                    [span [class "tooltiptext"][text "Click to cancel your changes"]
-                                    ]
-                                ,div [class "icon icon-floppy tooltip"
-                                        ,onClick ClickedSaveChanges]
-                                    [span [class "tooltiptext"][text "Click to save your changes to the database"]
-                                    ]
-                                ]
-                  
-
-    in
-        selection :: [modificationControls]
-
-
-mapFieldPresentation: Presentation -> Field.Presentation
-mapFieldPresentation presentation =
-    case presentation of
-        Form -> Field.Form
-        Table -> Field.Table
-        Grid -> Field.Grid
 
 update: Msg -> Model -> (Model, List OutMsg)
 update msg model =
@@ -337,6 +192,153 @@ update msg model =
              ,presentation = Table
              }
             , [SaveChanges])
+
+
+view: Model -> Html Msg
+view model = 
+    let fieldModels = filterFieldModelsWithDensity model
+                        |> excludeKeyfieldModels
+    in
+    case model.presentation of
+        Form ->
+            div []
+                [Html.form [style [("display", "flex"), ("flex-wrap", "wrap"), ("align-items", "flex-end")]] 
+                  (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| fieldModels)
+                ]
+        Table ->
+            tr [onDoubleClick EditRecordInForm
+               ,onClick FocusRecord
+               ,classList [
+                     ("focused", model.isFocused)
+                    ,("selected", model.isSelected)
+                    ,("modified", isModified model)
+                    ,("inserted", isNew model)
+                   ]
+               ,style [("height", "35px")]
+               ] 
+               (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| fieldModels)
+        Grid ->
+            div []
+                [ div [style [("border", "1px solid green"), ("width", "200px")]] 
+                  (List.map (\f -> 
+                        App.map (UpdateField f.field.name) <| Field.view f 
+                     ) <| fieldModels
+                  )
+               ]
+
+
+equalDao: Model -> Dao.Dao -> Bool
+equalDao model dao =
+    dao == getOrigDao model
+
+excludeKeyfields: List Field.Field -> List Field.Field
+excludeKeyfields fieldList =
+    List.filter (\f -> not f.isKeyfield) fieldList
+
+
+excludeKeyfieldModels: List Field.Model -> List Field.Model
+excludeKeyfieldModels fieldModels =
+    List.filter (\f -> not f.field.isKeyfield) fieldModels 
+
+keyFieldModels: List Field.Model -> List Field.Model
+keyFieldModels fieldModels =
+    List.filter (\f -> f.field.isKeyfield) fieldModels
+
+
+-- get the focused record param expressed in [pk_value1, pk_value2]
+focusedRecordParam: Model -> String
+focusedRecordParam model =
+    keyFieldModels model.fieldModels
+        |> List.map(
+            \f ->
+              Field.stringifyValue f 
+        )
+        |> String.join ","
+
+
+onClickNoPropagate: msg -> Attribute msg
+onClickNoPropagate msg = 
+    Decode.succeed msg
+        |> onWithOptions "click" {defaultOptions | stopPropagation = True}
+
+onDoubleClickNoPropagate: msg -> Attribute msg
+onDoubleClickNoPropagate msg = 
+    Decode.succeed msg
+        |> onWithOptions "dblclick" {defaultOptions | stopPropagation = True}
+
+
+
+rowShadowRecordControls: Model -> Html Msg
+rowShadowRecordControls model =
+    tr [onDoubleClick EditRecordInForm
+       ,onClick FocusRecord
+       ,classList [
+             ("focused", model.isFocused)
+            ,("selected", model.isSelected)
+            ,("modified", isModified model)
+            ,("inserted", isNew model)
+            ]
+       ,style [("height", "35px")]
+       ] 
+       (tabularRecordControls model)
+
+
+tabularRecordControls: Model -> List (Html Msg)
+tabularRecordControls model =
+    let selection = 
+        let tooltipText = if model.isSelected then "Click to unselect this record"
+            else "Click to select this record"
+        in
+        td [class "tooltip"
+           , onClickNoPropagate ToggleSelect
+             -- prevent unexpected opening of record in form
+           , onDoubleClickNoPropagate ToggleSelect
+           ] 
+                [input [type' "checkbox"
+                       , checked model.isSelected
+                       , onCheckNoPropagate Selection
+                       , onDoubleCheckNoPropagate Selection
+                       ] []
+                ,span [class "tooltiptext"] [text tooltipText]
+                ]
+
+        modificationControls = 
+            case model.mode of
+                Read ->
+                    td [class "record_control"] 
+                        [div [class "icon icon-menu tooltip"
+                              ,onClickNoPropagate EditRecordInForm] 
+                               [span [class "tooltiptext"] [text "Click to open record in a form"]
+                               ]
+                        ,div [class "icon icon-pencil tooltip"
+                             ,onClick EditRecordInPlace]
+                               [span [class "tooltiptext"] [text "Click to edit record in the grid"]
+                               ]
+                        ]
+                Edit ->
+                    td [class "record_control"] 
+                                [div [class "icon icon-block tooltip"
+                                      ,onClick ClickedCancelChanges] 
+                                    [span [class "tooltiptext"][text "Click to cancel your changes"]
+                                    ]
+                                ,div [class "icon icon-floppy tooltip"
+                                        ,onClick ClickedSaveChanges]
+                                    [span [class "tooltiptext"][text "Click to save your changes to the database"]
+                                    ]
+                                ]
+                  
+
+    in
+        selection :: [modificationControls]
+
+
+mapFieldPresentation: Presentation -> Field.Presentation
+mapFieldPresentation presentation =
+    case presentation of
+        Form -> Field.Form
+        Table -> Field.Table
+        Grid -> Field.Grid
+
 
 
 --determine whether at least 1 field of the row is modified
