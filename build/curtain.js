@@ -14555,7 +14555,7 @@ var _user$project$Tab$handleRowOutMsg = F3(
 			},
 			outmsgs);
 	});
-var _user$project$Tab$updateRowThenHandleOutMsg = F3(
+var _user$project$Tab$updateThenHandleRowMsg = F3(
 	function (rowMsg, rowId, model) {
 		var _p28 = A3(_user$project$Tab$updateRow, rowMsg, rowId, model);
 		var model$ = _p28._0;
@@ -14568,7 +14568,7 @@ var _user$project$Tab$update = F2(
 		var _p29 = msg;
 		switch (_p29.ctor) {
 			case 'UpdateRow':
-				return A3(_user$project$Tab$updateRowThenHandleOutMsg, _p29._1, _p29._0, model);
+				return A3(_user$project$Tab$updateThenHandleRowMsg, _p29._1, _p29._0, model);
 			case 'ChangeMode':
 				var _p30 = _p29._0;
 				return {
@@ -14719,7 +14719,7 @@ var _user$project$Tab$update = F2(
 				};
 			default:
 				return A3(
-					_user$project$Tab$updateRowThenHandleOutMsg,
+					_user$project$Tab$updateThenHandleRowMsg,
 					_user$project$Row$UpdateDao(_p29._1),
 					_p29._0,
 					model);

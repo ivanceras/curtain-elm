@@ -438,7 +438,7 @@ update: Msg -> Model -> (Model, List OutMsg)
 update msg model =
     case msg of
         UpdateRow rowId rowMsg ->
-            updateRowThenHandleOutMsg rowMsg rowId model
+            updateThenHandleRowMsg rowMsg rowId model
                     
         ChangeMode mode ->
             ({ model | mode = mode}
@@ -507,7 +507,7 @@ update msg model =
              else
                 ( model', [])
         UpdateRowDao rowId dao ->
-            updateRowThenHandleOutMsg (Row.UpdateDao dao) rowId model
+            updateThenHandleRowMsg (Row.UpdateDao dao) rowId model
 
 
 updateRow: Row.Msg -> Int -> Model -> (Model, List Row.OutMsg)
@@ -524,8 +524,8 @@ updateRow rowMsg rowId model =
      ({ model | rows = rows }, List.concat outmsgs)
 
 
-updateRowThenHandleOutMsg: Row.Msg -> Int -> Model -> (Model, List OutMsg)
-updateRowThenHandleOutMsg rowMsg rowId model =
+updateThenHandleRowMsg: Row.Msg -> Int -> Model -> (Model, List OutMsg)
+updateThenHandleRowMsg rowMsg rowId model =
     let (model', rowOutMsgs) =
         updateRow rowMsg rowId model
      in
