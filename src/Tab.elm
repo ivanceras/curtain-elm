@@ -158,7 +158,6 @@ view model =
                     [div [class "row_shadow_and_header"] 
                          [div [style [("width", px rowShadowWidth)
                                      ,("height", "70px")
-                                     --,("border-right", "1px solid #ccc")
                                      ]
                               ]
                               [frozenControlHead model]
@@ -194,6 +193,7 @@ view model =
                             ,attribute "onscroll" ("alignScroll(event, '"++model.tab.table++"','"++columnShadowId++"','"++rowShadowId++"')")
                             ]
                             [table [id "main_table"
+                                    ,class "main_table"
                                    ] 
                                 [tbody [                               ]
                                 (model.rows
@@ -267,21 +267,17 @@ theadView model =
             ]
              (List.map (
                 \f -> 
-                    let fieldWidth = 
-                        case f.displayLength of
-                            Just len -> 10 * len
-                            Nothing -> 100
-                        width = 
-                            if fieldWidth <= 20 then --minimum width
-                                20
-                            else fieldWidth
+                    let (width, height) =
+                        Field.computeSizeFromField f Field.Table
                     in
-                    th [Field.alignment f] 
-                        [div [class "tooltip"
-                             ,style [("width", (toString width)++"px")]
+                    th [style [
+                               ("text-align", "center")
+                              ]
+                       ] 
+                        [div [style [("width", (toString width)++"px")]
+                             ,title <| Maybe.withDefault "" f.description
                              ]
                             [text f.name
-                            ,Field.tooltipText f
                             ]
                         ]
                     ) filteredFields
@@ -307,25 +303,6 @@ selectedRowCount model =
     selectedRows model |> List.length
 
 
-rowCountStatusView model = 
-    let rows = List.length model.rows
-        selected = selectedRowCount model
-        rowCountOverTotal = 
-            case model.totalRecords of
-                Just totalRecords ->
-                    toString rows ++"/"++ toString totalRecords
-                Nothing ->
-                    toString rows
-
-        selectedStr = 
-            if selected > 0 then
-                (toString selected)
-            else ""
-    in
-    [th [] [text selectedStr]
-    ,th [style [("text-align","left")]] 
-           [text rowCountOverTotal]
-    ] 
 
 tabFilters: Model ->List Field.Field -> Html Msg
 tabFilters model filteredFields =
@@ -335,26 +312,24 @@ tabFilters model filteredFields =
        ]
         (List.map (
             \f -> 
-               let width = case f.displayLength of
-                    Just len -> len * 10
-                    Nothing -> 200
+                let (width, height) =
+                    Field.computeSizeFromField f Field.Table
+                    search_width = width - 18
                 in
-                th [Field.alignment f
-                   ,style [("border-right", "1px solid #ddd")]
+                th [style [("border-right", "1px solid #ddd")]
                    ] 
-                    [input [style [("width", px width)
+                    [input [style [("width", px search_width)
                                   ,("border-radius", "6px")
-                                  ,("border", "1px solid #ccc")
+                                  ,("border", "1px  solid #ccc")
+                                  ,("padding-right", "18px")
                                   ]
                             ,type' "text"
-                            ,Field.alignment f
                             ,name "search"
-                            --,placeholder ("Search "++f.column++"...")
                            ] []
                       ,i [class "fa fa-search"
                          ,style [("left", "-15px")
                                 ,("position", "relative")
-                                ,("color", "#efefef")
+                                ,("color", "#ddd")
                                 ]
                          ][]
                     ]
@@ -363,6 +338,30 @@ tabFilters model filteredFields =
 
 -- the upper right corner that won't move
 frozenControlHead model =
+    let rows = List.length model.rows
+        allSelected = areAllRecordSelected model
+        unselect = if allSelected then "unselect" else "select"
+        selectAllTooltipText = 
+            "Click to "++unselect++" "++(toString rows)++" record(s)"
+        selected = selectedRowCount model
+        (rowCountOverTotal, rowCountOverTotalTooltip) = 
+            case model.totalRecords of
+                Just totalRecords ->
+                    (toString rows ++"/"++ toString totalRecords
+                    ,"There are " ++(toString rows) ++" loaded of " ++(toString totalRecords) ++"  total"
+                    )
+                Nothing ->
+                    (toString rows
+                    ,""
+                    )
+
+        (selectedStr,selectedTooltip) = 
+            if selected > 0 then
+                (toString selected
+                ,"There are "++(toString selected)++" records selected"
+                )
+            else ("","")
+    in
     table [class "frozenControlHead"]
         [thead [style [("height", "60px")
                       ]
@@ -370,26 +369,31 @@ frozenControlHead model =
             [tr [style [("height", "38px")
                        ]
                 ] 
-                (rowCountStatusView model)
-            ,tr [style [("height","30px")]] (recordControlsHead model)
+                [th [title selectedTooltip] [text selectedStr]
+                ,th [] 
+                    [
+                    button [class "btn btn-mini btn-default"
+                           ,title "Click to clear filter"
+                           ]
+                        [i [class "fa fa-filter"] []]
+                    ]
+                ] 
+            ,tr [style [("height","30px")]] 
+                [th [style [("height", "30px")]
+                    ] 
+                    [input [type' "checkbox"
+                           ,onCheck SelectionAll
+                           ,checked allSelected
+                           ,title selectAllTooltipText
+                           ] []
+                    ]
+                ,th [title rowCountOverTotalTooltip] 
+                    [text rowCountOverTotal
+                    ]
+                ]
             ]
         ]
 
-recordControlsHead model =
-    let rows = List.length model.rows
-        allSelected = areAllRecordSelected model
-        unselect = if allSelected then "unselect" else "select"
-        tooltipText = 
-            "Click to "++unselect++" "++(toString rows)++" record(s)"
-    in
-    [th [class "tooltip"
-        ,style [("height", "30px")]
-        ] 
-        [input [type' "checkbox", onCheck SelectionAll, checked allSelected] []
-        ,span[class "tooltiptext"] [text tooltipText]
-        ]
-    ,th [] []
-    ]
 
 areAllRecordSelected: Model -> Bool
 areAllRecordSelected model =

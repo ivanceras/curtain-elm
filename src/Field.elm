@@ -153,9 +153,8 @@ view model =
                     ,tooltipText model.field
                     ]
                 ]
-         width = case model.field.displayLength of
-            Just len -> len * 10
-            Nothing -> 200
+         (width, height) =
+            computeSize model
 
      in
      case model.presentation of
@@ -245,14 +244,13 @@ view model =
                                     div[] []
 
                             Expanded -> --all fields are displayed
-                                let textStyle = if model.field.isSignificant then
-                                        style [("font-weight", "bold")]
-                                    else
-                                        style []
+                                let textStyle = 
+                                        if model.field.isSignificant then
+                                            style [("font-weight", "bold")]
+                                        else
+                                            style []
 
-                                    width = case model.field.displayLength of
-                                        Just len -> len * 10
-                                        Nothing -> 200
+                                    (width, height) = computeSize model 
                                 in
                                 div [ textStyle, style [("width", (toString width)++"px")]] 
                                     [(fieldRead model)
@@ -312,14 +310,14 @@ fieldEntry model =
     let focusedField = case model.focused of
             True -> class "focused_field"
             False -> class ""
-        width = case model.field.displayLength of
-            Just len -> len * 10
-            Nothing -> 200
+        (width, height) = computeSize model
 
-        fieldCheck = if isMandatoryOk model then
-            style []
-        else
-            style [("border", "1px solid red")]
+        fieldCheck = 
+            if isMandatoryOk model then
+                style []
+            else
+                style [("border", "1px solid red")]
+           
         textWidth = 
               style [("width", (toString width)++"px")
                     ,("border","0")
@@ -331,19 +329,26 @@ fieldEntry model =
 
         case model.field.dataType of
             "String" ->
-                if width > 200 && model.presentation == Form then
-                    let r = width // 300
-                    in
-                    textarea [style [("width", "300px")], rows r] [text (Dao.stringifyMaybeValue model.value)]
-                else 
-                    input [ type' "text"
-                          , fieldCheck
-                          , leftAlign
-                          , textWidth
-                          , focusedField
-                          , value (Dao.stringifyMaybeValue model.value)
-                          , onInput ChangeValue
-                          ] []
+                case model.field.displayLength of
+                    Just displayLength ->
+                        if displayLength > 250 && model.presentation == Form then
+                            textarea [style [
+                                             ("width", px width)
+                                            ,("height", px height)
+                                            ]
+                                     ] 
+                                     [text (Dao.stringifyMaybeValue model.value)]
+                        else 
+                            input [ type' "text"
+                                  , fieldCheck
+                                  , leftAlign
+                                  , textWidth
+                                  , focusedField
+                                  , value (Dao.stringifyMaybeValue model.value)
+                                  , onInput ChangeValue
+                                  ] []
+                    Nothing ->
+                            text ""
 
 
             "Bool" ->
@@ -416,25 +421,39 @@ fieldEntry model =
                       ] []
         
 
+computeWidth model =
+    computeSize model |> fst
+
+computeHeight model =
+    computeSize model |> snd
+
+computeSize model =
+    computeSizeFromField model.field model.presentation
+
+
+computeSizeFromField field presentation =
+    case field.displayLength of
+        Just len -> 
+            if len >= 250 && presentation == Form then
+                (250, len // 250) -- only in form presentation
+            else if len < 4 then
+                (40, 20)
+            else
+                (10 * len, 20)
+        Nothing -> 
+            (200, 20)
 
 
 fieldRead: Model -> Html Msg
 fieldRead model = 
+    let (width, height) = computeSize model
+    in
     case model.value of
         Just fieldValue ->
             case fieldValue of
                 String s -> 
-                    let (width, height) = 
-                            case model.field.displayLength of
-                                Just len -> 
-                                    if len >= 250 && model.presentation == Form then
-                                        (250, 200) -- only in form presentation
-                                    else
-                                        (10 * len, 20)
-                                Nothing -> 
-                                    (200, 20)
-
-                        fieldStyle = 
+                   let (width, height) = computeSize model
+                       fieldStyle = 
                             style [("width", px width)
                                   ,("height", px height)
                                   ,("overflow", "hidden")
@@ -444,18 +463,20 @@ fieldRead model =
                                   else
                                       ("border", "0px")
                                   ]
-                        emptyStyle = style [("border-bottom", "1px solid #eee")]
+                       emptyStyle = style [("border-bottom", "1px solid #eee")]
                     in
                     if String.isEmpty s then
                         div [fieldStyle, emptyStyle] []
                     else
                         div [fieldStyle] [text s]
                 Bool b ->
-                    case b of
-                        True ->
-                            span [class "icon icon-check text-center", style [("color", "green")]] []
-                        False ->
-                            span [class "icon icon-cancel text-center", style [("color", "red")]] []
+                    div [style [("width", px width)]]
+                        [case b of
+                            True ->
+                                span [class "icon icon-check text-center", style [("color", "green")]] []
+                            False ->
+                                span [class "icon icon-cancel text-center", style [("color", "red")]] []
+                         ]
                 I32 v ->
                     text (toString v)
                 I64 v ->

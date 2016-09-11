@@ -233,7 +233,7 @@ update msg model =
 
 view: Model -> Html Msg
 view model = 
-    let fieldModels = filterFieldModelsWithDensity model
+    let fieldModels = filterFieldModelsWithDensity model.fieldModels model.density
                         |> excludeKeyfieldModels
     in
     case model.presentation of
@@ -433,14 +433,14 @@ toList arg =
         Nothing -> []
 
 
-filterFieldModelsWithDensity: Model -> List Field.Model
-filterFieldModelsWithDensity model =
-    case model.density of
+filterFieldModelsWithDensity: List Field.Model  -> Density -> List Field.Model
+filterFieldModelsWithDensity fieldModels density =
+    case density of
         Compact -> --only the most significant
-            toList (Field.mostSignificantModel model.fieldModels)
+            toList (Field.mostSignificantModel fieldModels)
         Medium -> -- all significant fields
-            Field.significantModels model.fieldModels
-        Expanded -> model.fieldModels -- all fields
+            Field.significantModels fieldModels
+        Expanded -> fieldModels -- all fields
  
 
 filterFieldsWithDensity: List Field.Field -> Density -> List Field.Field

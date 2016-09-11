@@ -104,17 +104,17 @@ tr.focused{
     background-color: #eee; /* no need to highlight */
 }
 tr.clicked{
-    background-color: #efefef; /* no need to highlight */
+    background-color: #efefef!important;/*if selecting modified ones */
 }
 
 tr.selected{
     background-color: #eee;
 }
 tr.modified{
-    background-color: #cf9;
+    background-color: #fdfedf;
 }
 tr.new_record{
-    background-color: yellow;
+    background-color: #cf9;
 }
 
 table.frozenControlHead thead th {
@@ -122,6 +122,9 @@ table.frozenControlHead thead th {
 }
 table.frozenControlHead {
     border-right: 1px dashed #ccc;
+}
+table.main_table td{
+   border-right: 1px solid #ccc; 
 }
 
 tr,th,td{
