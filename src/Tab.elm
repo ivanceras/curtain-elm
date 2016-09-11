@@ -267,9 +267,14 @@ theadView model =
             ]
              (List.map (
                 \f -> 
-                    let width = case f.displayLength of
-                        Just len -> 10 * len
-                        Nothing -> 100
+                    let fieldWidth = 
+                        case f.displayLength of
+                            Just len -> 10 * len
+                            Nothing -> 100
+                        width = 
+                            if fieldWidth <= 20 then --minimum width
+                                20
+                            else fieldWidth
                     in
                     th [Field.alignment f] 
                         [div [class "tooltip"
@@ -646,6 +651,16 @@ createRows model listDao =
                 (mo, cmd) = Row.update (Row.SetDao dao) newRow 
             in mo
         ) listDao 
+
+-- create a new row in Form for inserting a new record
+newRowInForm: Model -> Row.Model
+newRowInForm model =
+    Row.create model.tab.fields (model.uid + 1)
+    |> Row.update (Row.ChangeMode Edit)
+    |> fst
+    |> Row.update (Row.ChangePresentation Row.Form)
+    |> fst
+
 
 
 hydrateModel: Model -> List Row.Model -> TableDao -> Model

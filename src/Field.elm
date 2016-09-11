@@ -185,7 +185,13 @@ view model =
                         case model.field.dataType of
                             "Bool" ->
                                 div [formContainerStyle]
-                                    [div [style [("padding", "2px"), ("display", "inline-block")]] [(fieldRead model)]
+                                    [div 
+                                        [style 
+                                            [("padding", "2px")
+                                            ,("display", "inline-block")
+                                            ]
+                                        ] 
+                                        [(fieldRead model)]
                                     ,labelBool
                                     ]
                             _ ->

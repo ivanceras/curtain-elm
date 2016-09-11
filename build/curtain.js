@@ -13513,6 +13513,17 @@ var _user$project$Tab$hydrateModel = F3(
 				}()
 			});
 	});
+var _user$project$Tab$newRowInForm = function (model) {
+	return _elm_lang$core$Basics$fst(
+		A2(
+			_user$project$Row$update,
+			_user$project$Row$ChangePresentation(_user$project$Row$Form),
+			_elm_lang$core$Basics$fst(
+				A2(
+					_user$project$Row$update,
+					_user$project$Row$ChangeMode(_user$project$Mode$Edit),
+					A2(_user$project$Row$create, model.tab.fields, model.uid + 1)))));
+};
 var _user$project$Tab$createRows = F2(
 	function (model, listDao) {
 		return A2(
@@ -13894,7 +13905,7 @@ var _user$project$Tab$theadView = function (model) {
 				A2(
 					_elm_lang$core$List$map,
 					function (f) {
-						var width = function () {
+						var fieldWidth = function () {
 							var _p13 = f.displayLength;
 							if (_p13.ctor === 'Just') {
 								return 10 * _p13._0;
@@ -13902,6 +13913,7 @@ var _user$project$Tab$theadView = function (model) {
 								return 100;
 							}
 						}();
+						var width = (_elm_lang$core$Native_Utils.cmp(fieldWidth, 20) < 1) ? 20 : fieldWidth;
 						return A2(
 							_elm_lang$html$Html$th,
 							_elm_lang$core$Native_List.fromArray(
@@ -15141,6 +15153,7 @@ var _user$project$DataWindow$create = F3(
 			openSequence: openSequence
 		};
 	});
+var _user$project$DataWindow$NewRecordInForm = {ctor: 'NewRecordInForm'};
 var _user$project$DataWindow$EditFocusedRow = {ctor: 'EditFocusedRow'};
 var _user$project$DataWindow$RestoreSize = {ctor: 'RestoreSize'};
 var _user$project$DataWindow$MaximizeForm = {ctor: 'MaximizeForm'};
@@ -15619,7 +15632,8 @@ var _user$project$DataWindow$toolbar = function (model) {
 				_elm_lang$html$Html$button,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip')
+						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
+						_elm_lang$html$Html_Events$onClick(_user$project$DataWindow$NewRecordInForm)
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -16371,7 +16385,7 @@ var _user$project$DataWindow$update = F2(
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
 				};
-			default:
+			case 'EditFocusedRow':
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
@@ -16387,6 +16401,18 @@ var _user$project$DataWindow$update = F2(
 											focusedRow));
 								},
 								model.focusedRow)
+						}),
+					_1: _elm_lang$core$Native_List.fromArray(
+						[])
+				};
+			default:
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							focusedRow: _elm_lang$core$Maybe$Just(
+								_user$project$Tab$newRowInForm(model.mainTab))
 						}),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])

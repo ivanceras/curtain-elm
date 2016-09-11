@@ -95,6 +95,7 @@ type Msg
     | MaximizeForm
     | RestoreSize
     | EditFocusedRow
+    | NewRecordInForm
     
 type OutMsg = LoadNextPage Tab.Model
     | UpdateRecords String String
@@ -316,7 +317,9 @@ toolbar model=
                     "Save "++(toString modifiedRowCount)++" "++records++" into the database"
     in    
         div [class "btn-group"]
-            [button [class "btn btn-large btn-default tooltip"]
+            [button [class "btn btn-large btn-default tooltip"
+                    , onClick NewRecordInForm
+                    ]
                 [span [class "icon icon-plus icon-text tab-action"] []
                 ,text "New record" 
                 ,span [class "tooltiptext"] [text "Create a new record in a form"]
@@ -591,6 +594,11 @@ update msg model =
                         Row.update (Row.ChangeMode Edit) focusedRow
                             |> fst
                 ) model.focusedRow
+             }
+             ,[]
+            )
+        NewRecordInForm ->
+            ({ model | focusedRow = Just (Tab.newRowInForm model.mainTab)
              }
              ,[]
             )
