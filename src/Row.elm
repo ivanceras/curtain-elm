@@ -21,6 +21,7 @@ type Msg
     | UpdateField String Field.Msg
     | ChangeDensity Density
     | SetDao Dao
+    | UpdateDao Dao
     | Selection Bool
     | ToggleSelect
     | FocusRecord
@@ -145,6 +146,25 @@ update msg model =
                         case value of
                             Just value ->
                                 let (field', outmsg') = Field.update (Field.SetValue value) f
+                                in 
+                                    field'
+                            Nothing -> f
+                ) model.fieldModels
+            in
+            ({model | fieldModels = fieldModels
+              }
+            , []
+            )
+
+        UpdateDao dao ->
+            let fieldModels =
+                List.map(
+                    \f ->
+                        let value = Dict.get f.field.column dao
+                        in
+                        case value of
+                            Just value ->
+                                let (field', outmsg') = Field.update (Field.UpdateValue value) f
                                 in 
                                     field'
                             Nothing -> f

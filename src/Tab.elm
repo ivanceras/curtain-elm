@@ -83,7 +83,7 @@ type Msg
     | TabDataNextPageReceived TableDao
     | ReceivedScrollBottomEvent
     | RecordsUpdated Dao.UpdateResponse
-    | ReplaceRow Int Row.Model
+    | UpdateRowDao Int Dao 
 
 type OutMsg
     = LoadNextPage
@@ -421,19 +421,6 @@ updateFocusedRow rowId model =
      }
         
 
--- replace the row preserving the presentation and mode
-replaceRow: Model -> Int -> Row.Model -> Model
-replaceRow model rowId replacement =
-    { model | rows =
-        List.map(
-            \r ->
-                if r.rowId == rowId then
-                   replacement
-                else
-                   r
-        ) model.rows
-
-    }
 
 updateSelectionAllRecords: Model -> Bool -> Model
 updateSelectionAllRecords model checked =
@@ -451,10 +438,7 @@ update: Msg -> Model -> (Model, List OutMsg)
 update msg model =
     case msg of
         UpdateRow rowId rowMsg ->
-            let (model',outmsgs) = updateRow rowMsg rowId model
-            in 
-                handleRowOutMsg outmsgs rowId model'
-
+            updateRowThenHandleOutMsg rowMsg rowId model
                     
         ChangeMode mode ->
             ({ model | mode = mode}
@@ -522,12 +506,30 @@ update msg model =
                 )
              else
                 ( model', [])
-        ReplaceRow rowId replacement ->
-            (replaceRow model rowId replacement
-            ,[]
-            )
+        UpdateRowDao rowId dao ->
+            updateRowThenHandleOutMsg (Row.UpdateDao dao) rowId model
 
 
+updateRow: Row.Msg -> Int -> Model -> (Model, List Row.OutMsg)
+updateRow rowMsg rowId model =
+    let rows_out  = 
+        List.map (\r -> 
+            if r.rowId == rowId then
+                Row.update rowMsg r 
+             else
+                (r, [])
+            ) model.rows 
+        (rows,outmsgs) = List.unzip rows_out
+     in
+     ({ model | rows = rows }, List.concat outmsgs)
+
+
+updateRowThenHandleOutMsg: Row.Msg -> Int -> Model -> (Model, List OutMsg)
+updateRowThenHandleOutMsg rowMsg rowId model =
+    let (model', rowOutMsgs) =
+        updateRow rowMsg rowId model
+     in
+        handleRowOutMsg rowOutMsgs rowId model'
 
 handleRowOutMsg: List Row.OutMsg -> Int -> Model -> (Model, List OutMsg)
 handleRowOutMsg outmsgs rowId model =
@@ -673,18 +675,6 @@ completeTableName tab =
         Nothing ->
             tab.table
 
-updateRow: Row.Msg -> Int -> Model -> (Model, List Row.OutMsg)
-updateRow rowMsg rowId model =
-    let rows_out  = 
-        List.map (\r -> 
-            if r.rowId == rowId then
-                Row.update rowMsg r 
-             else
-                (r, [])
-            ) model.rows 
-        (rows,outmsgs) = List.unzip rows_out
-     in
-     ({ model | rows = rows }, List.concat outmsgs)
 
 getRow: Model -> Int -> Maybe Row.Model
 getRow model rowId =

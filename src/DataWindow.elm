@@ -548,12 +548,8 @@ update msg model =
         CloseFocusedRow ->
             case model.focusedRow of
                 Just focusedRow ->
-                    let focusedRow' = 
-                        Row.update (Row.ChangePresentation Row.Table) focusedRow
-                                |> fst 
-                    in
                     ({model | focusedRow = Nothing}
-                        |> updateMainTab (Tab.ReplaceRow focusedRow'.rowId focusedRow')
+                        |> updateMainTab (Tab.UpdateRowDao focusedRow.rowId (Row.getDao focusedRow))
                         |> fst
                     ,[])
                 Nothing ->
