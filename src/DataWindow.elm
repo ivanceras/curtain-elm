@@ -37,6 +37,7 @@ type alias Model =
     , focusedRow: Maybe Row.Model -- the focused row
     , formHeight: Int
     , formMargin: Int
+    , openSequence: Int -- the highest number determine which window last opened
     }
 
 
@@ -44,11 +45,11 @@ generateTabId: Window -> Int -> String
 generateTabId window windowId =
     (window.table++"["++(toString windowId)++"]")
 
-create: Window -> Int -> Model
-create window windowId =
+create: Window -> Int -> Int -> Model
+create window windowId openSequence =
     { presentation = Table
     , mode = Read
-    , isActive = True
+    , isActive = False
     , extTabs = []
     , hasManyMergedTabs = []
     , name = window.name
@@ -62,6 +63,7 @@ create window windowId =
     , focusedRow = Nothing
     , formHeight = 200
     , formMargin = 150 -- margin if want to show the table listing
+    , openSequence = openSequence 
     }
 
 type Presentation = Table | Grid
@@ -72,7 +74,7 @@ type Msg
     | UpdateTab Tab.Msg
     | WindowDetailReceived Window
     | WindowDataReceived (List TableDao)
-    | ActivateWindow
+    | ActivateWindow Int
     | DeactivateWindow
     | OpenHasManyTab String
     | FocusedRecordDataReceived Int (List TableDao)
@@ -355,6 +357,11 @@ toolbar model=
                 ,span [class "tooltiptext"] [text "Refresh the current data from the database"]
                 ]
             ,button [class "btn btn-large btn-default tooltip"]
+                [span [class "icon icon-trophy icon-text"] []
+                ,text "Clear Filter"
+                ,span [class "tooltiptext"] [text "Remove the filters"]
+                ]
+            ,button [class "btn btn-large btn-default tooltip"]
                 [span [class "icon icon-export icon-text"] []
                 ,text "Export"
                 ,span [class "tooltiptext"] [text "Export to spreadsheet"]
@@ -434,8 +441,10 @@ update msg model =
             , []
             )
 
-        ActivateWindow ->
-            ({model | isActive = True}, [])
+        ActivateWindow openSequence ->
+            ({model | isActive = True
+                , openSequence = openSequence
+             }, [])
 
         DeactivateWindow ->
             ({model | isActive = False}, [])

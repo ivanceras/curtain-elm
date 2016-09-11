@@ -25,7 +25,6 @@ type alias Model =
     , openedWindows: List DataWindow.Model
     , error: Maybe String
     , uid: Int -- id for the opened windows
-    , activeWindow: Maybe Int
     , isSettingsOpened: Bool
     , browserDimension: Tab.BrowserDimension
     , defaultPageSize: Int
@@ -67,7 +66,6 @@ appModel =
     , openedWindows = []
     , error = Nothing 
     , uid = 0
-    , activeWindow = Nothing
     , isSettingsOpened = True 
     , browserDimension = 
         { width=0
@@ -137,13 +135,13 @@ view model =
                                                 \w ->
                                                     div [classList [("tab-item", True)
                                                                     ,("active", w.isActive)
-                                                                    ,("flex", (List.length model.openedWindows) > 5)
+                                                                    ,("flex", (List.length model.openedWindows) > 3) -- if (tab-item-width * windowCount > allocatedWidth)
                                                                     ]
                                                         ,onClick (ActivateWindow w.windowId)
                                                         ]
-                                                        [ span [ onClickNoPropagate (CloseWindow w.windowId)
+                                                        [ text w.name
+                                                         ,i [ onClickNoPropagate (CloseWindow w.windowId)
                                                                 ,class "icon icon-cancel icon-close-tab"] []
-                                                          ,text w.name
                                                         ]
                                             )
                                         )
@@ -204,20 +202,14 @@ update: Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         UpdateWindow windowId windowMsg -> 
-            let (model', outmsg) = updateWindow model windowMsg windowId
-            in 
-                handleWindowOutMsg outmsg model' windowId
+            updateThenHandleWindowMsg model windowMsg windowId
 
         CloseWindow windowId ->
             (closeWindow model windowId 
-                |> updateActivatedWindows 
-                |> updateActivatedWindowList
             , Cmd.none)
 
         ActivateWindow windowId -> --set focus to the window
-             ( {model | activeWindow = Just windowId}
-                |> updateActivatedWindows
-                |> updateActivatedWindowList
+             ( activateWindow windowId model
              , Cmd.none)
         
         UpdateWindowList msg ->
@@ -242,8 +234,6 @@ update msg model =
        
         WindowDetailReceived window ->
             ( displayWindowDetail model window
-                |> activateFirstWindow
-                |> updateActivatedWindowList
             , getWindowData model window.table model.uid
             )
 
@@ -297,16 +287,7 @@ update msg model =
             , Cmd.none)
 
         ReceivedScrollBottomEvent table ->
-            let _ = Debug.log "main received scrollbottom event" table in
-            case model.activeWindow of
-                Just windowId ->
-                    let (model', outmsg) =
-                        updateWindow model (DataWindow.ReceivedScrollBottomEvent table) windowId
-                    in 
-                        handleWindowOutMsg outmsg model' windowId
-
-                Nothing -> 
-                     (model,Cmd.none)
+            updateActiveWindow model (DataWindow.ReceivedScrollBottomEvent table)
 
         WindowDataNextPageReceived windowId tableDaoList ->
             let _ = Debug.log "got next page for " windowId
@@ -373,10 +354,7 @@ update msg model =
 
 
         RecordsUpdated windowId updateResponse ->
-            let _ = Debug.log "Update response: " updateResponse 
-                (model',outmsg) = updateWindow model (DataWindow.RecordsUpdated updateResponse) windowId
-            in
-                handleWindowOutMsg outmsg model' windowId
+               updateThenHandleWindowMsg model (DataWindow.RecordsUpdated updateResponse) windowId
 
         UpdateError windowId error ->
             let _ = Debug.log "Update error" error
@@ -408,6 +386,13 @@ handleSettingsOutMsg model outmsgs =
                   ) (model, []) outmsgs
     in
         (model'', Cmd.batch newoutList)
+
+
+updateThenHandleWindowMsg: Model -> DataWindow.Msg -> Int -> (Model, Cmd Msg)
+updateThenHandleWindowMsg model windowMsg windowId =
+    let (model', outmsg) = updateWindow model windowMsg windowId
+    in 
+        handleWindowOutMsg outmsg model' windowId
 
 handleWindowOutMsg: List DataWindow.OutMsg -> Model -> Int -> ( Model, Cmd Msg)
 handleWindowOutMsg outmsgs model windowId =
@@ -453,30 +438,51 @@ sizeToMsg size =
 
 addWindow: Model -> DataWindow.Window -> Model
 addWindow model window =
-    let newWindow = DataWindow.create window model.uid
-        (mo, _) = DataWindow.update (DataWindow.WindowDetailReceived window) newWindow 
-        (mo1, _) = DataWindow.update (DataWindow.BrowserDimensionChanged model.browserDimension) mo 
-        allWindows = mo1 :: model.openedWindows
+    let window' = DataWindow.create window model.uid (nextOpenSequence model)
+        (window'', _) = DataWindow.update (DataWindow.WindowDetailReceived window) window' 
+        (window''', _) = DataWindow.update (DataWindow.BrowserDimensionChanged model.browserDimension) window''
+        allWindows = model.openedWindows ++ [window''']
     in
     { model | openedWindows = allWindows 
-    , activeWindow = Just mo.windowId
     , uid = model.uid + 1
     } 
+        |> activateWindow window'''.windowId
         
 
 displayWindowDetail: Model -> DataWindow.Window -> Model
 displayWindowDetail model window =
     addWindow model window
-        |> updateActivatedWindows
         
 
 closeWindow: Model -> Int -> Model
 closeWindow model windowId =
-    let openedWindows = List.filter (\w -> w.windowId /= windowId ) model.openedWindows
-    in
-    {model | openedWindows =  openedWindows
+    {model | openedWindows =  
+            List.filter (\w -> w.windowId /= windowId ) model.openedWindows
     }
+        |> openLastActivatedWindow
 
+openLastActivatedWindow: Model -> Model
+openLastActivatedWindow model =
+    case lastOpenedWindow model of
+        Just window ->
+            activateWindow window.windowId model
+        Nothing ->
+            model
+
+updateActiveWindow: Model -> DataWindow.Msg -> (Model, Cmd Msg)
+updateActiveWindow model windowMsg =
+    let activeWindow = 
+            List.filter(
+                \window ->
+                    window.isActive
+            ) model.openedWindows
+        |> List.head
+     in
+        case activeWindow of
+            Just activeWindow ->
+                updateThenHandleWindowMsg model windowMsg activeWindow.windowId
+            Nothing ->
+                (model, Cmd.none)
 
 updateWindow: Model -> DataWindow.Msg -> Int -> (Model, List DataWindow.OutMsg)
 updateWindow model windowMsg windowId =
@@ -511,86 +517,39 @@ updateAllWindow windowMsg model =
     {model | openedWindows = updatedWindows}
 
 
-activateFirstWindow: Model -> Model
-activateFirstWindow model =
-    case List.head model.openedWindows of
-        Just window ->
-            let (updatedWindow, cmd) = DataWindow.update DataWindow.ActivateWindow window
-                allWindows = updatedWindow :: Maybe.withDefault [] (List.tail model.openedWindows)
-            in
-            {model | activeWindow = Just window.windowId
-            ,openedWindows = allWindows
-            }
-        Nothing -> 
-            model
+lastOpenedWindow: Model -> Maybe DataWindow.Model
+lastOpenedWindow model =
+    List.sortBy .openSequence model.openedWindows
+        |> List.head
 
-
--- Note: closing a window activates it first since the click on the close button 
--- propagates to the the tabm thereby activating that window
-
-updateActivatedWindows: Model -> Model
-updateActivatedWindows model =
-    let model = deactivateOpenedWindows model
-    in
-    case model.activeWindow of
-        Just activeWindow ->
-            if inOpenedWindows model activeWindow then
-                let updatedWindows = 
-                    model.openedWindows
-                        |> List.map(
-                            \w ->
-                                if w.windowId == activeWindow then
-                                    let (mo, cmd) = DataWindow.update DataWindow.ActivateWindow w
-                                    in mo
-                                else
-                                    w
-                        )
-                in
-                {model | openedWindows = updatedWindows}
-            else
-                activateFirstWindow model
-        Nothing -> model
-
-
-deactivateOpenedWindows: Model -> Model
-deactivateOpenedWindows model =
-    let updatedWindows = 
-        List.map(
-            \w ->
-                let (mo, cmd) = DataWindow.update DataWindow.DeactivateWindow w
-                in mo
-        ) model.openedWindows
-    in
-    {model | openedWindows = updatedWindows}
-    
-getActiveWindow: Model -> Maybe DataWindow.Model
-getActiveWindow model =
-    case model.activeWindow of
-        Just activeWindow ->
-            List.filter (\w -> w.windowId == activeWindow) model.openedWindows
-            |> List.head
-        Nothing -> Nothing
-
-getActiveWindowId: Model -> Maybe Int
-getActiveWindowId model =
-    case getActiveWindow model of
-        Just window ->
-            Just window.windowId
+highestOpenSequence: Model -> Int
+highestOpenSequence model =
+    case lastOpenedWindow model of
+        Just lastOpened ->
+            lastOpened.openSequence
         Nothing ->
-            Nothing
+            0
+            
+
+nextOpenSequence model =
+    (highestOpenSequence model )+ 1
 
 
-updateActivatedWindowList: Model -> Model
-updateActivatedWindowList model =
-    let windowList =
-        case getActiveWindow model of
-            Just window ->
-                let (mo, cmd) = WindowList.update (WindowList.UpdateActivated window.mainTab.tab.table) model.windowList
-                in mo
-            Nothing ->
-                model.windowList
-    in
-    {model | windowList = windowList}
+activateWindow: Int -> Model ->  Model
+activateWindow windowId model =
+    { model | openedWindows =
+        List.map (
+            \ window ->
+                if window.windowId == windowId then
+                    DataWindow.update (DataWindow.ActivateWindow (nextOpenSequence model)) window
+                        |> fst
+                else
+                    DataWindow.update DataWindow.DeactivateWindow window
+                        |> fst
+        ) model.openedWindows
+    }
+
+
 
 -- check to see if the windowId is in openedWindows
 inOpenedWindows model windowId =

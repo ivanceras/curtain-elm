@@ -133,6 +133,11 @@ form * {
     white-space: nowrap;
 }
 
+.tab-item .icon-close-tab{
+    left: auto; /* set to 5px in photonkit */
+    right: 5px; /* put the icon to the right */
+}
+
 .flex{
     flex: 1
 }
