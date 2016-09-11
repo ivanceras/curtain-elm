@@ -15394,14 +15394,31 @@ var _user$project$DataWindow$separator = A2(
 			_elm_lang$html$Html_Attributes$style(
 			_elm_lang$core$Native_List.fromArray(
 				[
-					{ctor: '_Tuple2', _0: 'background-color', _1: '#b8b6b8'},
+					{ctor: '_Tuple2', _0: 'background-color', _1: '#ccc'},
 					{ctor: '_Tuple2', _0: 'height', _1: '10px'},
-					{ctor: '_Tuple2', _0: 'cursor', _1: 'ns-resize'}
+					{ctor: '_Tuple2', _0: 'cursor', _1: 'ns-resize'},
+					{ctor: '_Tuple2', _0: 'text-align', _1: 'center'},
+					{ctor: '_Tuple2', _0: 'color', _1: '#333'}
 				])),
 			_user$project$DataWindow$onMouseDown
 		]),
 	_elm_lang$core$Native_List.fromArray(
-		[]));
+		[
+			A2(
+			_elm_lang$html$Html$i,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Attributes$class('icon icon-dot-3'),
+					_elm_lang$html$Html_Attributes$style(
+					_elm_lang$core$Native_List.fromArray(
+						[
+							{ctor: '_Tuple2', _0: 'position', _1: 'absolute'},
+							{ctor: '_Tuple2', _0: 'margin-top', _1: '-5px'}
+						]))
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[]))
+		]));
 var _user$project$DataWindow$ReceivedScrollBottomEvent = function (a) {
 	return {ctor: 'ReceivedScrollBottomEvent', _0: a};
 };

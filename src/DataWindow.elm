@@ -204,12 +204,20 @@ onMouseDown =
 
 separator = 
      div [class "separator"
-          ,style [("background-color","#b8b6b8")
+          ,style [("background-color","#ccc")
                  ,("height", "10px")
                  ,("cursor", "ns-resize")
+                 ,("text-align", "center")
+                 ,("color", "#333")
                  ]
           ,onMouseDown 
-          ] []
+          ] 
+          [i [class "icon icon-dot-3"
+             ,style [("position","absolute")
+                    ,("margin-top", "-5px")
+                    ]
+             ] []
+          ]
 
 extensionRowView: Model -> Html Msg
 extensionRowView model =
