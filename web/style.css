@@ -103,6 +103,9 @@ tr:active{
 tr.focused{
     background-color: #eee; /* no need to highlight */
 }
+tr.clicked{
+    background-color: #efefef; /* no need to highlight */
+}
 
 tr.selected{
     background-color: #eee;

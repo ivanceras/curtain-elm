@@ -94,6 +94,7 @@ type Msg
     | CloseFocusedRow
     | MaximizeForm
     | RestoreSize
+    | EditFocusedRow
     
 type OutMsg = LoadNextPage Tab.Model
     | UpdateRecords String String
@@ -254,6 +255,12 @@ formRecordControls model =
         ,button [class "btn btn-large btn-default"]
             [span [class "icon icon-text icon-right-open"] []
             ,text "Next"
+            ]
+        ,button [class "btn btn-large btn-default"
+                ,onClick EditFocusedRow
+                ]
+            [span [class "icon icon-text icon-pencil"] []
+            ,text "Edit Record"
             ]
         ,button [class "btn btn-large btn-default"
                 ,onClick MaximizeForm
@@ -573,6 +580,17 @@ update msg model =
         RestoreSize ->
             ({ model | formMargin = 150
                 , formHeight = 2 * (calcMainTableHeight model) // 3
+             }
+             ,[]
+            )
+        
+        EditFocusedRow ->
+            ({ model | focusedRow =
+                Maybe.map (
+                    \ focusedRow ->
+                        Row.update (Row.ChangeMode Edit) focusedRow
+                            |> fst
+                ) model.focusedRow
              }
              ,[]
             )

@@ -30,11 +30,14 @@ type Msg
     | EditRecordInPlace
     | ClickedCancelChanges
     | ClickedSaveChanges
+    | RowClicked
+    | LooseRowClicked
 
 type OutMsg = Remove
     | CancelChanges
     | SaveChanges
     | FocusChanged
+    | ClickedChanged
 
 type alias Model =
     { rowId: Int
@@ -43,6 +46,7 @@ type alias Model =
     , presentation: Presentation
     , density: Density
     , isFocused: Bool --determine by dao state
+    , isClicked: Bool
     , isSelected: Bool
     }
 
@@ -94,6 +98,7 @@ empty =
     , presentation = Table
     , density = Expanded
     , isFocused = False
+    , isClicked = False
     , isSelected = False
     }
 
@@ -183,9 +188,11 @@ update msg model =
             ({model | isSelected = not model.isSelected}, [])
 
         FocusRecord ->
-            ({model | isFocused = True}, [FocusChanged])
+            ({model | isFocused = True
+             }, [FocusChanged])
         LooseFocusRecord ->
-            ({model | isFocused = False}, [])
+            ({model | isFocused = False
+             },[FocusChanged])
 
         EditRecordInForm -> -- tapped in Tab
             ({ model | mode = Edit
@@ -206,14 +213,23 @@ update msg model =
              ,presentation = Table
              }
                 |> updateFields Field.CancelChanges
+                |> updateFields (Field.ChangeMode Read)
             , [CancelChanges])
 
         ClickedSaveChanges ->
             ({model | mode = Read
              ,presentation = Table
              }
+                |> updateFields (Field.ChangeMode Read)
             , [SaveChanges])
 
+        RowClicked ->
+            ({model | isClicked = True}
+            ,[ClickedChanged])
+
+        LooseRowClicked ->
+            ({model | isClicked = False}
+            ,[ClickedChanged])
 
 view: Model -> Html Msg
 view model = 
@@ -227,14 +243,9 @@ view model =
                   (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| fieldModels)
                 ]
         Table ->
-            tr [onDoubleClick EditRecordInForm
-               ,onClick FocusRecord
-               ,classList [
-                     ("focused", model.isFocused)
-                    ,("selected", model.isSelected)
-                    ,("modified", isModified model)
-                    ,("inserted", isNew model)
-                   ]
+            tr [onDoubleClick FocusRecord
+               ,onClick RowClicked
+               ,rowClassList model
                ,style [("height", "35px")]
                ] 
                (List.map (\f -> App.map (UpdateField f.field.column) <| Field.view f ) <| fieldModels)
@@ -288,17 +299,19 @@ onDoubleClickNoPropagate msg =
         |> onWithOptions "dblclick" {defaultOptions | stopPropagation = True}
 
 
+rowClassList model =
+   classList [
+         ("focused", model.isFocused)
+        ,("selected", model.isSelected)
+        ,("clicked", model.isClicked)
+        ,("modified", isModified model)
+        ,("inserted", isNew model)
+        ]
 
 rowShadowRecordControls: Model -> Html Msg
 rowShadowRecordControls model =
-    tr [onDoubleClick EditRecordInForm
-       ,onClick FocusRecord
-       ,classList [
-             ("focused", model.isFocused)
-            ,("selected", model.isSelected)
-            ,("modified", isModified model)
-            ,("inserted", isNew model)
-            ]
+    tr [onDoubleClick FocusRecord
+       ,rowClassList model
        ,style [("height", "35px")]
        ] 
        (tabularRecordControls model)
@@ -311,9 +324,6 @@ tabularRecordControls model =
             else "Click to select this record"
         in
         td [class "tooltip"
-           , onClickNoPropagate ToggleSelect
-             -- prevent unexpected opening of record in form
-           , onDoubleClickNoPropagate ToggleSelect
            ] 
                 [input [type' "checkbox"
                        , checked model.isSelected

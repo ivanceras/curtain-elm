@@ -415,6 +415,33 @@ updateFocusedRow rowId model =
             ) model.rows
      }
         
+-- no focused row
+setNoFocusedRow: Model -> Model
+setNoFocusedRow model =
+    {model | rows =
+        List.map
+            (\r ->
+               Row.update Row.LooseFocusRecord r
+                    |> fst
+            ) model.rows
+     }
+
+updateClickedRow: Int -> Model -> Model
+updateClickedRow rowId model =
+    {model | rows =
+        List.map
+            (\r ->
+                if r.rowId == rowId then
+                   Row.update Row.RowClicked r 
+                    |> fst
+                else
+                   Row.update Row.LooseRowClicked r
+                    |> fst
+            ) model.rows
+     }
+      |> setNoFocusedRow
+        
+
 
 
 updateSelectionAllRecords: Model -> Bool -> Model
@@ -540,6 +567,10 @@ handleRowOutMsg outmsgs rowId model =
                 Row.FocusChanged ->
                     (updateFocusedRow rowId model
                     , newout ++ [FocusRow (focusedRow model)]
+                    )
+                Row.ClickedChanged ->
+                    (updateClickedRow rowId model
+                    ,newout
                     )
         ) (model, []) outmsgs
 

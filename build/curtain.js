@@ -12801,6 +12801,25 @@ var _user$project$Row$mapFieldPresentation = function (presentation) {
 			return _user$project$Field$Grid;
 	}
 };
+var _user$project$Row$rowClassList = function (model) {
+	return _elm_lang$html$Html_Attributes$classList(
+		_elm_lang$core$Native_List.fromArray(
+			[
+				{ctor: '_Tuple2', _0: 'focused', _1: model.isFocused},
+				{ctor: '_Tuple2', _0: 'selected', _1: model.isSelected},
+				{ctor: '_Tuple2', _0: 'clicked', _1: model.isClicked},
+				{
+				ctor: '_Tuple2',
+				_0: 'modified',
+				_1: _user$project$Row$isModified(model)
+			},
+				{
+				ctor: '_Tuple2',
+				_0: 'inserted',
+				_1: _user$project$Row$isNew(model)
+			}
+			]));
+};
 var _user$project$Row$onDoubleClickNoPropagate = function (msg) {
 	return A3(
 		_elm_lang$html$Html_Events$onWithOptions,
@@ -12902,10 +12921,12 @@ var _user$project$Row$getDaoInsert = function (model) {
 		dao: _user$project$Row$getDao(model)
 	};
 };
-var _user$project$Row$Model = F7(
-	function (a, b, c, d, e, f, g) {
-		return {rowId: a, fieldModels: b, mode: c, presentation: d, density: e, isFocused: f, isSelected: g};
+var _user$project$Row$Model = F8(
+	function (a, b, c, d, e, f, g, h) {
+		return {rowId: a, fieldModels: b, mode: c, presentation: d, density: e, isFocused: f, isClicked: g, isSelected: h};
 	});
+var _user$project$Row$LooseRowClicked = {ctor: 'LooseRowClicked'};
+var _user$project$Row$RowClicked = {ctor: 'RowClicked'};
 var _user$project$Row$ClickedSaveChanges = {ctor: 'ClickedSaveChanges'};
 var _user$project$Row$ClickedCancelChanges = {ctor: 'ClickedCancelChanges'};
 var _user$project$Row$EditRecordInPlace = {ctor: 'EditRecordInPlace'};
@@ -13027,9 +13048,7 @@ var _user$project$Row$tabularRecordControls = function (model) {
 			_elm_lang$html$Html$td,
 			_elm_lang$core$Native_List.fromArray(
 				[
-					_elm_lang$html$Html_Attributes$class('tooltip'),
-					_user$project$Row$onClickNoPropagate(_user$project$Row$ToggleSelect),
-					_user$project$Row$onDoubleClickNoPropagate(_user$project$Row$ToggleSelect)
+					_elm_lang$html$Html_Attributes$class('tooltip')
 				]),
 			_elm_lang$core$Native_List.fromArray(
 				[
@@ -13067,24 +13086,8 @@ var _user$project$Row$rowShadowRecordControls = function (model) {
 		_elm_lang$html$Html$tr,
 		_elm_lang$core$Native_List.fromArray(
 			[
-				_elm_lang$html$Html_Events$onDoubleClick(_user$project$Row$EditRecordInForm),
-				_elm_lang$html$Html_Events$onClick(_user$project$Row$FocusRecord),
-				_elm_lang$html$Html_Attributes$classList(
-				_elm_lang$core$Native_List.fromArray(
-					[
-						{ctor: '_Tuple2', _0: 'focused', _1: model.isFocused},
-						{ctor: '_Tuple2', _0: 'selected', _1: model.isSelected},
-						{
-						ctor: '_Tuple2',
-						_0: 'modified',
-						_1: _user$project$Row$isModified(model)
-					},
-						{
-						ctor: '_Tuple2',
-						_0: 'inserted',
-						_1: _user$project$Row$isNew(model)
-					}
-					])),
+				_elm_lang$html$Html_Events$onDoubleClick(_user$project$Row$FocusRecord),
+				_user$project$Row$rowClassList(model),
 				_elm_lang$html$Html_Attributes$style(
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -13145,24 +13148,9 @@ var _user$project$Row$view = function (model) {
 				_elm_lang$html$Html$tr,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Events$onDoubleClick(_user$project$Row$EditRecordInForm),
-						_elm_lang$html$Html_Events$onClick(_user$project$Row$FocusRecord),
-						_elm_lang$html$Html_Attributes$classList(
-						_elm_lang$core$Native_List.fromArray(
-							[
-								{ctor: '_Tuple2', _0: 'focused', _1: model.isFocused},
-								{ctor: '_Tuple2', _0: 'selected', _1: model.isSelected},
-								{
-								ctor: '_Tuple2',
-								_0: 'modified',
-								_1: _user$project$Row$isModified(model)
-							},
-								{
-								ctor: '_Tuple2',
-								_0: 'inserted',
-								_1: _user$project$Row$isNew(model)
-							}
-							])),
+						_elm_lang$html$Html_Events$onDoubleClick(_user$project$Row$FocusRecord),
+						_elm_lang$html$Html_Events$onClick(_user$project$Row$RowClicked),
+						_user$project$Row$rowClassList(model),
 						_elm_lang$html$Html_Attributes$style(
 						_elm_lang$core$Native_List.fromArray(
 							[
@@ -13214,6 +13202,7 @@ var _user$project$Row$ChangePresentation = function (a) {
 var _user$project$Row$ChangeMode = function (a) {
 	return {ctor: 'ChangeMode', _0: a};
 };
+var _user$project$Row$ClickedChanged = {ctor: 'ClickedChanged'};
 var _user$project$Row$FocusChanged = {ctor: 'FocusChanged'};
 var _user$project$Row$SaveChanges = {ctor: 'SaveChanges'};
 var _user$project$Row$CancelChanges = {ctor: 'CancelChanges'};
@@ -13229,6 +13218,7 @@ var _user$project$Row$empty = {
 	presentation: _user$project$Row$Table,
 	density: _user$project$Mode$Expanded,
 	isFocused: false,
+	isClicked: false,
 	isSelected: false
 };
 var _user$project$Row$create = F2(
@@ -13400,7 +13390,7 @@ var _user$project$Row$update = F2(
 						model,
 						{isFocused: false}),
 					_1: _elm_lang$core$Native_List.fromArray(
-						[])
+						[_user$project$Row$FocusChanged])
 				};
 			case 'EditRecordInForm':
 				return {
@@ -13431,21 +13421,45 @@ var _user$project$Row$update = F2(
 					ctor: '_Tuple2',
 					_0: A2(
 						_user$project$Row$updateFields,
-						_user$project$Field$CancelChanges,
+						_user$project$Field$ChangeMode(_user$project$Mode$Read),
+						A2(
+							_user$project$Row$updateFields,
+							_user$project$Field$CancelChanges,
+							_elm_lang$core$Native_Utils.update(
+								model,
+								{mode: _user$project$Mode$Read, presentation: _user$project$Row$Table}))),
+					_1: _elm_lang$core$Native_List.fromArray(
+						[_user$project$Row$CancelChanges])
+				};
+			case 'ClickedSaveChanges':
+				return {
+					ctor: '_Tuple2',
+					_0: A2(
+						_user$project$Row$updateFields,
+						_user$project$Field$ChangeMode(_user$project$Mode$Read),
 						_elm_lang$core$Native_Utils.update(
 							model,
 							{mode: _user$project$Mode$Read, presentation: _user$project$Row$Table})),
 					_1: _elm_lang$core$Native_List.fromArray(
-						[_user$project$Row$CancelChanges])
+						[_user$project$Row$SaveChanges])
+				};
+			case 'RowClicked':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{isClicked: true}),
+					_1: _elm_lang$core$Native_List.fromArray(
+						[_user$project$Row$ClickedChanged])
 				};
 			default:
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{mode: _user$project$Mode$Read, presentation: _user$project$Row$Table}),
+						{isClicked: false}),
 					_1: _elm_lang$core$Native_List.fromArray(
-						[_user$project$Row$SaveChanges])
+						[_user$project$Row$ClickedChanged])
 				};
 		}
 	});
@@ -13636,6 +13650,35 @@ var _user$project$Tab$updateSelectionAllRecords = F2(
 		return _elm_lang$core$Native_Utils.update(
 			model,
 			{rows: rows});
+	});
+var _user$project$Tab$setNoFocusedRow = function (model) {
+	return _elm_lang$core$Native_Utils.update(
+		model,
+		{
+			rows: A2(
+				_elm_lang$core$List$map,
+				function (r) {
+					return _elm_lang$core$Basics$fst(
+						A2(_user$project$Row$update, _user$project$Row$LooseFocusRecord, r));
+				},
+				model.rows)
+		});
+};
+var _user$project$Tab$updateClickedRow = F2(
+	function (rowId, model) {
+		return _user$project$Tab$setNoFocusedRow(
+			_elm_lang$core$Native_Utils.update(
+				model,
+				{
+					rows: A2(
+						_elm_lang$core$List$map,
+						function (r) {
+							return _elm_lang$core$Native_Utils.eq(r.rowId, rowId) ? _elm_lang$core$Basics$fst(
+								A2(_user$project$Row$update, _user$project$Row$RowClicked, r)) : _elm_lang$core$Basics$fst(
+								A2(_user$project$Row$update, _user$project$Row$LooseRowClicked, r));
+						},
+						model.rows)
+				}));
 	});
 var _user$project$Tab$updateFocusedRow = F2(
 	function (rowId, model) {
@@ -14509,7 +14552,7 @@ var _user$project$Tab$handleRowOutMsg = F3(
 							return {ctor: '_Tuple2', _0: _p21, _1: _p22};
 						case 'Remove':
 							return {ctor: '_Tuple2', _0: _p21, _1: _p22};
-						default:
+						case 'FocusChanged':
 							return {
 								ctor: '_Tuple2',
 								_0: A2(_user$project$Tab$updateFocusedRow, rowId, _p21),
@@ -14521,6 +14564,12 @@ var _user$project$Tab$handleRowOutMsg = F3(
 											_user$project$Tab$FocusRow(
 											_user$project$Tab$focusedRow(_p21))
 										]))
+							};
+						default:
+							return {
+								ctor: '_Tuple2',
+								_0: A2(_user$project$Tab$updateClickedRow, rowId, _p21),
+								_1: _p22
 							};
 					}
 				}),
@@ -15092,6 +15141,7 @@ var _user$project$DataWindow$create = F3(
 			openSequence: openSequence
 		};
 	});
+var _user$project$DataWindow$EditFocusedRow = {ctor: 'EditFocusedRow'};
 var _user$project$DataWindow$RestoreSize = {ctor: 'RestoreSize'};
 var _user$project$DataWindow$MaximizeForm = {ctor: 'MaximizeForm'};
 var _user$project$DataWindow$CloseFocusedRow = {ctor: 'CloseFocusedRow'};
@@ -15139,6 +15189,25 @@ var _user$project$DataWindow$formRecordControls = function (model) {
 						_elm_lang$core$Native_List.fromArray(
 							[])),
 						_elm_lang$html$Html$text('Next')
+					])),
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default'),
+						_elm_lang$html$Html_Events$onClick(_user$project$DataWindow$EditFocusedRow)
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$span,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('icon icon-text icon-pencil')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[])),
+						_elm_lang$html$Html$text('Edit Record')
 					])),
 				A2(
 				_elm_lang$html$Html$button,
@@ -16290,7 +16359,7 @@ var _user$project$DataWindow$update = F2(
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
 				};
-			default:
+			case 'RestoreSize':
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
@@ -16298,6 +16367,26 @@ var _user$project$DataWindow$update = F2(
 						{
 							formMargin: 150,
 							formHeight: ((2 * _user$project$DataWindow$calcMainTableHeight(model)) / 3) | 0
+						}),
+					_1: _elm_lang$core$Native_List.fromArray(
+						[])
+				};
+			default:
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							focusedRow: A2(
+								_elm_lang$core$Maybe$map,
+								function (focusedRow) {
+									return _elm_lang$core$Basics$fst(
+										A2(
+											_user$project$Row$update,
+											_user$project$Row$ChangeMode(_user$project$Mode$Edit),
+											focusedRow));
+								},
+								model.focusedRow)
 						}),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
