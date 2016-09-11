@@ -20,7 +20,7 @@ import Dao exposing
     ,Value(Bool,I8,I16,I32,I64,U8,U16,U32,U64,F32,F64,String,Date,DateTime,Uuid)
     )
 
-import Utils
+import Utils exposing (px)
 
 type alias Model = 
     { field: Field
@@ -197,7 +197,8 @@ view model =
                             _ ->
                                 div [formContainerStyle]
                                     [labelHtml
-                                    ,div [style [("padding", "2px")], alignment model.field] [(fieldRead model)]
+                                    ,div [style [("padding", "2px")], alignment model.field] 
+                                        [(fieldRead model)]
                                     ]
 
             Table ->
@@ -423,15 +424,25 @@ fieldRead model =
         Just fieldValue ->
             case fieldValue of
                 String s -> 
-                    let width = case model.field.displayLength of
-                            Just len -> 10 * len
-                            Nothing -> 200
+                    let (width, height) = 
+                            case model.field.displayLength of
+                                Just len -> 
+                                    if len >= 250 && model.presentation == Form then
+                                        (250, 200) -- only in form presentation
+                                    else
+                                        (10 * len, 20)
+                                Nothing -> 
+                                    (200, 20)
 
                         fieldStyle = 
-                            style [("width", (toString width)++"px")
-                                  ,("height", "20px")
+                            style [("width", px width)
+                                  ,("height", px height)
                                   ,("overflow", "hidden")
                                   ,("text-overflow", "ellipsis")
+                                  ,if model.presentation == Form then
+                                      ("border", "1px solid #ccc")
+                                  else
+                                      ("border", "0px")
                                   ]
                         emptyStyle = style [("border-bottom", "1px solid #eee")]
                     in

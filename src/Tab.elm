@@ -158,7 +158,7 @@ view model =
                     [div [class "row_shadow_and_header"] 
                          [div [style [("width", px rowShadowWidth)
                                      ,("height", "70px")
-                                     ,("border-right", "1px solid #ccc")
+                                     --,("border-right", "1px solid #ccc")
                                      ]
                               ]
                               [frozenControlHead model]
@@ -184,7 +184,7 @@ view model =
                                     ,("height", "70px")
                                     ]
                              ]
-                            [table []
+                            [table [class "colum_head"]
                                 [theadView model]
                             ]
                         ,div [style [("height", (toString model.allocatedHeight)++"px")
@@ -330,8 +330,7 @@ rowCountStatusView model =
 tabFilters: Model ->List Field.Field -> Html Msg
 tabFilters model filteredFields =
     tr [class "tab_filters"
-       ,style [("background-color", "#fefefe")
-              ,("height","38px")
+       ,style [("height","38px")
               ]
        ]
         (List.map (
@@ -340,8 +339,13 @@ tabFilters model filteredFields =
                     Just len -> len * 10
                     Nothing -> 200
                 in
-                th [Field.alignment f] 
-                    [input [style [("width", (toString width)++"px")]
+                th [Field.alignment f
+                   ,style [("border-right", "1px solid #ddd")]
+                   ] 
+                    [input [style [("width", px width)
+                                  ,("border-radius", "6px")
+                                  ,("border", "1px solid #ccc")
+                                  ]
                             ,type' "text"
                             ,Field.alignment f
                             ,placeholder ("Search "++f.column++"...")
@@ -350,8 +354,9 @@ tabFilters model filteredFields =
             ) filteredFields
         )
 
+-- the upper right corner that won't move
 frozenControlHead model =
-    table []
+    table [class "frozenControlHead"]
         [thead [style [("height", "60px")
                       ]
                ]

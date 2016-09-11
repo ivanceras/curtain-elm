@@ -113,6 +113,16 @@ tr.selected{
 tr.modified{
     background-color: #cf9;
 }
+tr.new_record{
+    background-color: yellow;
+}
+
+table.frozenControlHead thead th {
+    border: 0px;    
+}
+table.frozenControlHead {
+    border-right: 1px dashed #ccc;
+}
 
 tr,th,td{
   -webkit-user-select: text;
