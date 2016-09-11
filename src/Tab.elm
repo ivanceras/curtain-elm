@@ -348,8 +348,15 @@ tabFilters model filteredFields =
                                   ]
                             ,type' "text"
                             ,Field.alignment f
-                            ,placeholder ("Search "++f.column++"...")
+                            ,name "search"
+                            --,placeholder ("Search "++f.column++"...")
                            ] []
+                      ,i [class "fa fa-search"
+                         ,style [("left", "-15px")
+                                ,("position", "relative")
+                                ,("color", "#efefef")
+                                ]
+                         ][]
                     ]
             ) filteredFields
         )

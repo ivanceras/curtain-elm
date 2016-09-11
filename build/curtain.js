@@ -13784,11 +13784,22 @@ var _user$project$Tab$tabFilters = F2(
 											])),
 										_elm_lang$html$Html_Attributes$type$('text'),
 										_user$project$Field$alignment(f),
-										_elm_lang$html$Html_Attributes$placeholder(
-										A2(
-											_elm_lang$core$Basics_ops['++'],
-											'Search ',
-											A2(_elm_lang$core$Basics_ops['++'], f.column, '...')))
+										_elm_lang$html$Html_Attributes$name('search')
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[])),
+								A2(
+								_elm_lang$html$Html$i,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$class('fa fa-search'),
+										_elm_lang$html$Html_Attributes$style(
+										_elm_lang$core$Native_List.fromArray(
+											[
+												{ctor: '_Tuple2', _0: 'left', _1: '-15px'},
+												{ctor: '_Tuple2', _0: 'position', _1: 'relative'},
+												{ctor: '_Tuple2', _0: 'color', _1: '#efefef'}
+											]))
 									]),
 								_elm_lang$core$Native_List.fromArray(
 									[]))
