@@ -18,7 +18,7 @@ import Dao exposing
     ,TableDao
     ,Value(Bool,I8,I16,I32,I64,U8,U16,U32,U64,F32,F64,String,Date,DateTime,Uuid)
     )
-import Utils
+import Utils exposing (px)
 import Update.Extra exposing (andThen)
 
 type Presentation = Table | Grid
@@ -139,7 +139,7 @@ defaultBrowserDimension =
     , scrollBarWidth = 13
     } 
 
-
+rowShadowWidth = 125
 
 
 view: Model -> Html Msg
@@ -156,8 +156,9 @@ view model =
                            ]
                     ]
                     [div [class "row_shadow_and_header"] 
-                         [div [style [("width", "100px")
+                         [div [style [("width", px rowShadowWidth)
                                      ,("height", "70px")
+                                     ,("border-right", "1px solid #ccc")
                                      ]
                               ]
                               [frozenControlHead model]
@@ -165,8 +166,9 @@ view model =
                          ,div [class "row_shadow"
                              ,id rowShadowId
                              ,style [("height", (toString (model.allocatedHeight-model.browserDimension.scrollBarWidth))++"px")
-                                    ,("width", "100px")
+                                    ,("width", px rowShadowWidth)
                                     ,("overflow", "hidden")
+                                    ,("border-right", "1px dashed #ccc")
                                     ]
                              ]
                             [rowShadow model]
@@ -225,9 +227,9 @@ view model =
 
 
 calcMainTableWidth model =  
-    let widthDeductions = 325
+    let widthDeductions = 225
     in
-    model.browserDimension.width - widthDeductions
+    model.browserDimension.width - ( widthDeductions + rowShadowWidth )
 
 onTableScroll msg =
     let _ = Debug.log "scrolling..." msg
@@ -239,15 +241,14 @@ onTableScroll msg =
 
 rowShadow model =
    table []
-        (List.map(
-            \row -> 
-                tr []
-                    [(App.map (UpdateRow row.rowId)
+         [tbody []
+             (List.map(
+                \row -> 
+                    App.map (UpdateRow row.rowId)
                         (Row.rowShadowRecordControls row)
-                    )
-                    ]
-            ) model.rows
-        )
+                ) model.rows
+              )
+          ]
 
 theadView: Model -> Html Msg
 theadView model =
@@ -301,15 +302,15 @@ selectedRowCount model =
     selectedRows model |> List.length
 
 
-filterStatusView model = 
+rowCountStatusView model = 
     let rows = List.length model.rows
         selected = selectedRowCount model
-        rowCountText = 
+        rowCountOverTotal = 
             case model.totalRecords of
                 Just totalRecords ->
-                    text (toString totalRecords)
+                    toString rows ++"/"++ toString totalRecords
                 Nothing ->
-                    text (toString rows)
+                    toString rows
 
         selectedStr = 
             if selected > 0 then
@@ -317,14 +318,8 @@ filterStatusView model =
             else ""
     in
     [th [] [text selectedStr]
-    ,th [] [rowCountText
-           ,span [class "tooltip"]
-                [i [style [("margin-left", "10px")]
-                    ,class "icon ion-funnel"
-                   ][] 
-                 ,span [class "tooltiptext"] [text "Click to clear filter"]
-                ]
-           ]
+    ,th [style [("text-align","left")]] 
+           [text rowCountOverTotal]
     ] 
 
 tabFilters: Model ->List Field.Field -> Html Msg
@@ -358,7 +353,7 @@ frozenControlHead model =
             [tr [style [("height", "38px")
                        ]
                 ] 
-                (filterStatusView model)
+                (rowCountStatusView model)
             ,tr [style [("height","30px")]] (recordControlsHead model)
             ]
         ]
@@ -613,59 +608,48 @@ firstRow model =
     List.head model.rows
 
 createRows: Model -> List Dao -> List Row.Model
-createRows model listDaoState =
+createRows model listDao =
     List.indexedMap (
-        \index daoState ->
+        \index dao ->
             let newRow = Row.create model.tab.fields (model.uid + index)
-                (mo, cmd) = Row.update (Row.SetDao daoState) newRow 
+                (mo, cmd) = Row.update (Row.SetDao dao) newRow 
             in mo
-        ) listDaoState 
+        ) listDao 
 
-setTabRows: Model -> TableDao -> Model
-setTabRows model tableDao =
-    let rows = createRows model tableDao.daoList
-    in
+
+hydrateModel: Model -> List Row.Model -> TableDao -> Model
+hydrateModel model rows tableDao =
     {model | rows = rows
     ,uid = model.uid + List.length rows
     ,loadingPage = False
-    ,page = Debug.log "page" tableDao.page
-    ,pageSize = Debug.log "page size" tableDao.pageSize
+    ,page = tableDao.page
+    ,pageSize = tableDao.pageSize
     ,totalRecords = tableDao.total
     ,totalPage = case tableDao.total of
             Just total ->
                 case tableDao.pageSize of
                     Just pageSize ->
                         let totalPage = (total + pageSize - 1 ) // pageSize
-                            _ = Debug.log "totalPage: " totalPage
                         in 
                         Just totalPage
 
                     Nothing -> Nothing
             Nothing -> Nothing
     }
+
+setTabRows: Model -> TableDao -> Model
+setTabRows model tableDao =
+    let rows = 
+            createRows model tableDao.daoList
+    in
+        hydrateModel model rows tableDao
     
 addToRows: Model -> TableDao -> Model
 addToRows model tableDao =
-    let rows = createRows model tableDao.daoList
+    let rows = 
+            createRows model tableDao.daoList
     in
-    {model | rows = model.rows ++ rows
-    ,uid = model.uid + List.length rows
-    ,loadingPage = False
-    ,page = Debug.log "page" tableDao.page
-    ,pageSize = Debug.log "page size" tableDao.pageSize
-    ,totalRecords = tableDao.total
-    ,totalPage = case tableDao.total of
-            Just total ->
-                case tableDao.pageSize of
-                    Just pageSize ->
-                        let totalPage = (total + pageSize - 1 ) // pageSize
-                            _ = Debug.log "totalPage: " totalPage
-                        in 
-                        Just totalPage
-
-                    Nothing -> Nothing
-            Nothing -> Nothing
-    }
+        hydrateModel model (model.rows ++ rows) tableDao
 
 completeTableName: Tab -> String
 completeTableName tab =

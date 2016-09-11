@@ -98,6 +98,7 @@ empty =
     }
 
 
+create: List Field.Field -> Int -> Model
 create listFields rowId =
      let fieldModels = 
         List.map (\f -> Field.create f) listFields
