@@ -33,36 +33,32 @@ type alias Model =
     }
 
 
-type alias WindowId = Int
-type alias RowId = Int
-
-
 
 type Msg
     = GetWindowList
     | WindowListReceived (List WindowList.WindowName) 
-    | CloseWindow WindowId
-    | ActivateWindow WindowId
-    | UpdateWindow WindowId DataWindow.Msg
+    | CloseWindow Int
+    | ActivateWindow Int
+    | UpdateWindow Int DataWindow.Msg
     | UpdateWindowList WindowList.Msg
     | UpdateSettings Settings.Msg
     | ToggleSettingsWindow
     | WindowDetailReceived DataWindow.Window
     | GetWindowData String
-    | WindowDataReceived WindowId (List Dao.TableDao) 
+    | WindowDataReceived Int (List Dao.TableDao) 
     | FetchError Http.Error
-    | FocusedRecordDataReceived WindowId RowId (List Dao.TableDao)
+    | FocusedRecordDataReceived Int Int (List Dao.TableDao)
     | WindowResize BrowserWindow.Size
     | ReceivedScrollBarWidth Int 
     | ReceivedScrollBottomEvent String 
     | ReceivedSettingsDbUrl String
     | ReceivedSettingsApiServer String
-    | WindowDataNextPageReceived WindowId (List Dao.TableDao)
+    | WindowDataNextPageReceived Int (List Dao.TableDao)
     | CacheReset String
     | DbConnectionTested String
     | DbConnectionTestError Http.Error
-    | RecordsUpdated WindowId (List Dao.UpdateResponse)
-    | UpdateError WindowId Http.Error
+    | RecordsUpdated Int (List Dao.UpdateResponse)
+    | UpdateError Int Http.Error
 
 
 appModel =
@@ -413,7 +409,7 @@ handleSettingsOutMsg model outmsgs =
     in
         (model'', Cmd.batch newoutList)
 
-handleWindowOutMsg: List DataWindow.OutMsg -> Model -> WindowId -> ( Model, Cmd Msg)
+handleWindowOutMsg: List DataWindow.OutMsg -> Model -> Int -> ( Model, Cmd Msg)
 handleWindowOutMsg outmsgs model windowId =
     let (model', cmdlist) =
         List.foldl
@@ -474,7 +470,7 @@ displayWindowDetail model window =
         |> updateActivatedWindows
         
 
-closeWindow: Model -> WindowId -> Model
+closeWindow: Model -> Int -> Model
 closeWindow model windowId =
     let openedWindows = List.filter (\w -> w.windowId /= windowId ) model.openedWindows
     in
@@ -482,7 +478,7 @@ closeWindow model windowId =
     }
 
 
-updateWindow: Model -> DataWindow.Msg -> WindowId -> (Model, List DataWindow.OutMsg)
+updateWindow: Model -> DataWindow.Msg -> Int -> (Model, List DataWindow.OutMsg)
 updateWindow model windowMsg windowId =
     let updated_outmsgs = 
         List.map(
@@ -575,7 +571,7 @@ getActiveWindow model =
             |> List.head
         Nothing -> Nothing
 
-getActiveWindowId: Model -> Maybe WindowId
+getActiveWindowId: Model -> Maybe Int
 getActiveWindowId model =
     case getActiveWindow model of
         Just window ->
@@ -602,14 +598,14 @@ inOpenedWindows model windowId =
         |> List.isEmpty 
         |> not
 
-getWindow: Model -> WindowId -> Maybe DataWindow.Model
+getWindow: Model -> Int -> Maybe DataWindow.Model
 getWindow model windowId =
     List.filter (\w -> w.windowId == windowId ) model.openedWindows
         |> List.head
 
 
 -- get the table name of this windowId
-getWindowTable: Model -> WindowId -> Maybe String
+getWindowTable: Model -> Int -> Maybe String
 getWindowTable model windowId =
     case getWindow model windowId of
         Just window ->
@@ -647,7 +643,7 @@ testDbConnection model =
         |> Http.fromJson Decode.string
         |> Task.perform DbConnectionTestError DbConnectionTested
 
-httpUpdateRecords: Model -> WindowId -> String -> String -> Cmd Msg
+httpUpdateRecords: Model -> Int -> String -> String -> Cmd Msg
 httpUpdateRecords model windowId mainTable body =
     Debug.log "httpUpdateRecords"
     httpPost model (Http.string body) ("/app/"++mainTable)
@@ -668,7 +664,7 @@ fetchWindowDetail model table =
         |> Http.fromJson DataWindow.windowDecoder
         |> Task.perform FetchError WindowDetailReceived
 
-getWindowData: Model -> String -> WindowId -> Cmd Msg
+getWindowData: Model -> String -> Int -> Cmd Msg
 getWindowData model mainTable windowId =
     httpGet model ("/app/" ++ mainTable ++ "?"++pageSizeQuery 0 model.defaultPageSize)
         |> Http.fromJson (Decode.list Dao.tableDaoDecoder)
@@ -698,7 +694,7 @@ pageSizeQuery p size =
     page p ++ "&" ++ pageSize size
 
 
-fetchFocusedRecordDetail: Model -> WindowId -> RowId ->  Cmd Msg
+fetchFocusedRecordDetail: Model -> Int -> Int ->  Cmd Msg
 fetchFocusedRecordDetail model windowId rowId =
     let mainTable = getWindowTable model windowId
     in
