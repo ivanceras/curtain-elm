@@ -124,7 +124,7 @@ table.frozenControlHead {
     border-right: 1px dashed #ccc;
 }
 table.main_table td{
-   border-right: 1px solid #ccc; 
+   border-right: 1px solid #dfdfdf; 
 }
 
 tr,th,td{

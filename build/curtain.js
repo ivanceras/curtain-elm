@@ -12271,7 +12271,7 @@ var _user$project$Field$fieldEntry = function (model) {
 		case 'String':
 			var _p21 = model.field.displayLength;
 			if (_p21.ctor === 'Just') {
-				return ((_elm_lang$core$Native_Utils.cmp(_p21._0, 250) > 0) && _elm_lang$core$Native_Utils.eq(model.presentation, _user$project$Field$Form)) ? A2(
+				return ((_elm_lang$core$Native_Utils.cmp(_p21._0, 250) > -1) && _elm_lang$core$Native_Utils.eq(model.presentation, _user$project$Field$Form)) ? A2(
 					_elm_lang$html$Html$textarea,
 					_elm_lang$core$Native_List.fromArray(
 						[

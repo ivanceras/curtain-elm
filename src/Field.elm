@@ -331,7 +331,7 @@ fieldEntry model =
             "String" ->
                 case model.field.displayLength of
                     Just displayLength ->
-                        if displayLength > 250 && model.presentation == Form then
+                        if displayLength >= 250 && model.presentation == Form then
                             textarea [style [
                                              ("width", px width)
                                             ,("height", px height)
