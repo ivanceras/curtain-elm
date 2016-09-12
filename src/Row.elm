@@ -435,20 +435,31 @@ toList arg =
 
 filterFieldModelsWithDensity: List Field.Model  -> Density -> List Field.Model
 filterFieldModelsWithDensity fieldModels density =
-    case density of
-        Compact -> --only the most significant
-            toList (Field.mostSignificantModel fieldModels)
-        Medium -> -- all significant fields
-            Field.significantModels fieldModels
-        Expanded -> fieldModels -- all fields
- 
+    let fields = 
+        case density of
+            Compact -> --only the most significant
+                toList (Field.mostSignificantModel fieldModels)
+            Medium -> -- all significant fields
+                Field.significantModels fieldModels
+            Expanded ->
+                fieldModels -- all fields
+    in
+        List.sortWith
+            Field.compareSequence
+            fields
 
 filterFieldsWithDensity: List Field.Field -> Density -> List Field.Field
 filterFieldsWithDensity fields density =
-    case density of
-        Compact -> toList (Field.mostSignificantField fields)
-        Medium -> Field.significantFields fields
-        Expanded -> fields
+    let fields =
+        case density of
+            Compact -> toList (Field.mostSignificantField fields)
+            Medium -> Field.significantFields fields
+            Expanded -> 
+                    fields
             
+     in
+        List.sortWith
+            Field.compareFieldSequence
+            fields
             
             

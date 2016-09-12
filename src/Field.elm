@@ -560,28 +560,38 @@ significantFields fields =
 mostSignificantModel: List Model -> Maybe Model
 mostSignificantModel fieldModels =
     let significants = significantModels fieldModels
-        sorted = List.sortWith (
-                    \a b -> case a.field.significancePriority of
-                            Just a ->
-                                case b.field.significancePriority of
-                                    Just b -> compare a b
-                                    Nothing -> EQ
-                            Nothing -> EQ
-
-                     ) significants
+        sorted = List.sortWith 
+                      compareSignificancePriority
+                      significants
     in List.head sorted
 
 
 mostSignificantField: List Field -> Maybe Field
 mostSignificantField fields =
     let significants = significantFields fields
-        sorted = List.sortWith (
-                    \a b -> case a.significancePriority of
-                            Just a ->
-                                case b.significancePriority of
-                                    Just b -> compare a b
-                                    Nothing -> EQ
-                            Nothing -> EQ
-
-                     ) significants
+        sorted = List.sortWith 
+                    compareFieldSignificancePriority
+                    significants
     in List.head sorted
+
+
+compareSignificancePriority: Model -> Model -> Order
+compareSignificancePriority a b =
+    compareFieldSignificancePriority a.field b.field
+
+compareFieldSignificancePriority: Field -> Field -> Order
+compareFieldSignificancePriority a b =
+    case a.significancePriority of
+        Just a ->
+            case b.significancePriority of
+                Just b -> compare a b
+                Nothing -> EQ
+        Nothing -> EQ
+
+compareSequence: Model -> Model -> Order
+compareSequence a b =
+    compareFieldSequence a.field b.field
+
+compareFieldSequence: Field -> Field -> Order
+compareFieldSequence a b =
+    compare a.seqNo b.seqNo

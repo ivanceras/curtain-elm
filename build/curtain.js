@@ -11706,6 +11706,32 @@ var _user$project$Utils$px = function (number) {
 		'px');
 };
 
+var _user$project$Field$compareFieldSequence = F2(
+	function (a, b) {
+		return A2(_elm_lang$core$Basics$compare, a.seqNo, b.seqNo);
+	});
+var _user$project$Field$compareSequence = F2(
+	function (a, b) {
+		return A2(_user$project$Field$compareFieldSequence, a.field, b.field);
+	});
+var _user$project$Field$compareFieldSignificancePriority = F2(
+	function (a, b) {
+		var _p0 = a.significancePriority;
+		if (_p0.ctor === 'Just') {
+			var _p1 = b.significancePriority;
+			if (_p1.ctor === 'Just') {
+				return A2(_elm_lang$core$Basics$compare, _p0._0, _p1._0);
+			} else {
+				return _elm_lang$core$Basics$EQ;
+			}
+		} else {
+			return _elm_lang$core$Basics$EQ;
+		}
+	});
+var _user$project$Field$compareSignificancePriority = F2(
+	function (a, b) {
+		return A2(_user$project$Field$compareFieldSignificancePriority, a.field, b.field);
+	});
 var _user$project$Field$significantFields = function (fields) {
 	return A2(
 		_elm_lang$core$List$filter,
@@ -11716,23 +11742,7 @@ var _user$project$Field$significantFields = function (fields) {
 };
 var _user$project$Field$mostSignificantField = function (fields) {
 	var significants = _user$project$Field$significantFields(fields);
-	var sorted = A2(
-		_elm_lang$core$List$sortWith,
-		F2(
-			function (a, b) {
-				var _p0 = a.significancePriority;
-				if (_p0.ctor === 'Just') {
-					var _p1 = b.significancePriority;
-					if (_p1.ctor === 'Just') {
-						return A2(_elm_lang$core$Basics$compare, _p0._0, _p1._0);
-					} else {
-						return _elm_lang$core$Basics$EQ;
-					}
-				} else {
-					return _elm_lang$core$Basics$EQ;
-				}
-			}),
-		significants);
+	var sorted = A2(_elm_lang$core$List$sortWith, _user$project$Field$compareFieldSignificancePriority, significants);
 	return _elm_lang$core$List$head(sorted);
 };
 var _user$project$Field$significantModels = function (fieldModels) {
@@ -11745,23 +11755,7 @@ var _user$project$Field$significantModels = function (fieldModels) {
 };
 var _user$project$Field$mostSignificantModel = function (fieldModels) {
 	var significants = _user$project$Field$significantModels(fieldModels);
-	var sorted = A2(
-		_elm_lang$core$List$sortWith,
-		F2(
-			function (a, b) {
-				var _p2 = a.field.significancePriority;
-				if (_p2.ctor === 'Just') {
-					var _p3 = b.field.significancePriority;
-					if (_p3.ctor === 'Just') {
-						return A2(_elm_lang$core$Basics$compare, _p2._0, _p3._0);
-					} else {
-						return _elm_lang$core$Basics$EQ;
-					}
-				} else {
-					return _elm_lang$core$Basics$EQ;
-				}
-			}),
-		significants);
+	var sorted = A2(_elm_lang$core$List$sortWith, _user$project$Field$compareSignificancePriority, significants);
 	return _elm_lang$core$List$head(sorted);
 };
 var _user$project$Field$getValue = F2(
@@ -11769,8 +11763,8 @@ var _user$project$Field$getValue = F2(
 		return A2(_elm_lang$core$Dict$get, field.column, dao);
 	});
 var _user$project$Field$isNew = function (model) {
-	var _p4 = model.orig_value;
-	if (_p4.ctor === 'Just') {
+	var _p2 = model.orig_value;
+	if (_p2.ctor === 'Just') {
 		return false;
 	} else {
 		return true;
@@ -11790,8 +11784,8 @@ var _user$project$Field$leftAlign = _elm_lang$html$Html_Attributes$style(
 			{ctor: '_Tuple2', _0: 'text-align', _1: 'left'}
 		]));
 var _user$project$Field$alignment = function (field) {
-	var _p5 = field.dataType;
-	switch (_p5) {
+	var _p3 = field.dataType;
+	switch (_p3) {
 		case 'Bool':
 			return _user$project$Field$leftAlign;
 		case 'String':
@@ -11818,11 +11812,11 @@ var _user$project$Field$stringifyValue = function (model) {
 	return _user$project$Dao$stringifyMaybeValue(model.value);
 };
 var _user$project$Field$isEmptyValue = function (value) {
-	var _p6 = value;
-	if (_p6.ctor === 'Just') {
-		var _p7 = _p6._0;
-		if (_p7.ctor === 'String') {
-			return _elm_lang$core$String$isEmpty(_p7._0);
+	var _p4 = value;
+	if (_p4.ctor === 'Just') {
+		var _p5 = _p4._0;
+		if (_p5.ctor === 'String') {
+			return _elm_lang$core$String$isEmpty(_p5._0);
 		} else {
 			return false;
 		}
@@ -11835,8 +11829,8 @@ var _user$project$Field$isMandatoryOk = function (model) {
 };
 var _user$project$Field$update = F2(
 	function (msg, model) {
-		var _p8 = msg;
-		switch (_p8.ctor) {
+		var _p6 = msg;
+		switch (_p6.ctor) {
 			case 'ChangeValue':
 				return {
 					ctor: '_Tuple2',
@@ -11844,7 +11838,7 @@ var _user$project$Field$update = F2(
 						model,
 						{
 							value: _elm_lang$core$Maybe$Just(
-								_user$project$Dao$String(_p8._0))
+								_user$project$Dao$String(_p6._0))
 						}),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
@@ -11856,7 +11850,7 @@ var _user$project$Field$update = F2(
 						model,
 						{
 							value: _elm_lang$core$Maybe$Just(
-								_user$project$Dao$Bool(_p8._0))
+								_user$project$Dao$Bool(_p6._0))
 						}),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
@@ -11875,7 +11869,7 @@ var _user$project$Field$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{mode: _p8._0}),
+						{mode: _p6._0}),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
 				};
@@ -11884,7 +11878,7 @@ var _user$project$Field$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{presentation: _p8._0}),
+						{presentation: _p6._0}),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
 				};
@@ -11893,19 +11887,19 @@ var _user$project$Field$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{density: _p8._0}),
+						{density: _p6._0}),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
 				};
 			case 'SetValue':
-				var _p9 = _p8._0;
+				var _p7 = _p6._0;
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							value: _elm_lang$core$Maybe$Just(_p9),
-							orig_value: _elm_lang$core$Maybe$Just(_p9)
+							value: _elm_lang$core$Maybe$Just(_p7),
+							orig_value: _elm_lang$core$Maybe$Just(_p7)
 						}),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
@@ -11916,7 +11910,7 @@ var _user$project$Field$update = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							value: _elm_lang$core$Maybe$Just(_p8._0)
+							value: _elm_lang$core$Maybe$Just(_p6._0)
 						}),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
@@ -11924,12 +11918,12 @@ var _user$project$Field$update = F2(
 		}
 	});
 var _user$project$Field$tooltipText = function (field) {
-	var _p10 = field.description;
-	if (_p10.ctor === 'Just') {
-		var _p11 = _p10._0;
+	var _p8 = field.description;
+	if (_p8.ctor === 'Just') {
+		var _p9 = _p8._0;
 		return _elm_lang$core$Basics$not(
 			_elm_lang$core$String$isEmpty(
-				_elm_lang$core$String$trim(_p11))) ? A2(
+				_elm_lang$core$String$trim(_p9))) ? A2(
 			_elm_lang$html$Html$span,
 			_elm_lang$core$Native_List.fromArray(
 				[
@@ -11937,7 +11931,7 @@ var _user$project$Field$tooltipText = function (field) {
 				]),
 			_elm_lang$core$Native_List.fromArray(
 				[
-					_elm_lang$html$Html$text(_p11)
+					_elm_lang$html$Html$text(_p9)
 				])) : _elm_lang$html$Html$text('');
 	} else {
 		return _elm_lang$html$Html$text('');
@@ -12070,10 +12064,10 @@ var _user$project$Field$Grid = {ctor: 'Grid'};
 var _user$project$Field$Form = {ctor: 'Form'};
 var _user$project$Field$computeSizeFromField = F2(
 	function (field, presentation) {
-		var _p12 = field.displayLength;
-		if (_p12.ctor === 'Just') {
-			var _p13 = _p12._0;
-			return (_elm_lang$core$Native_Utils.cmp(_p13, 250) > -1) ? (_elm_lang$core$Native_Utils.eq(presentation, _user$project$Field$Form) ? {ctor: '_Tuple2', _0: 250, _1: 140} : {ctor: '_Tuple2', _0: 400, _1: 20}) : ((_elm_lang$core$Native_Utils.cmp(_p13, 4) < 0) ? {ctor: '_Tuple2', _0: 40, _1: 20} : {ctor: '_Tuple2', _0: 10 * _p13, _1: 20});
+		var _p10 = field.displayLength;
+		if (_p10.ctor === 'Just') {
+			var _p11 = _p10._0;
+			return (_elm_lang$core$Native_Utils.cmp(_p11, 250) > -1) ? (_elm_lang$core$Native_Utils.eq(presentation, _user$project$Field$Form) ? {ctor: '_Tuple2', _0: 250, _1: 140} : {ctor: '_Tuple2', _0: 400, _1: 20}) : ((_elm_lang$core$Native_Utils.cmp(_p11, 4) < 0) ? {ctor: '_Tuple2', _0: 40, _1: 20} : {ctor: '_Tuple2', _0: 10 * _p11, _1: 20});
 		} else {
 			return {ctor: '_Tuple2', _0: 200, _1: 20};
 		}
@@ -12090,23 +12084,23 @@ var _user$project$Field$computeHeight = function (model) {
 		_user$project$Field$computeSize(model));
 };
 var _user$project$Field$fieldRead = function (model) {
-	var _p14 = _user$project$Field$computeSize(model);
-	var width = _p14._0;
-	var height = _p14._1;
-	var _p15 = model.value;
-	if (_p15.ctor === 'Just') {
-		var _p16 = _p15._0;
-		switch (_p16.ctor) {
+	var _p12 = _user$project$Field$computeSize(model);
+	var width = _p12._0;
+	var height = _p12._1;
+	var _p13 = model.value;
+	if (_p13.ctor === 'Just') {
+		var _p14 = _p13._0;
+		switch (_p14.ctor) {
 			case 'String':
-				var _p18 = _p16._0;
+				var _p16 = _p14._0;
 				var emptyStyle = _elm_lang$html$Html_Attributes$style(
 					_elm_lang$core$Native_List.fromArray(
 						[
 							{ctor: '_Tuple2', _0: 'border-bottom', _1: '1px solid #eee'}
 						]));
-				var _p17 = _user$project$Field$computeSize(model);
-				var width = _p17._0;
-				var height = _p17._1;
+				var _p15 = _user$project$Field$computeSize(model);
+				var width = _p15._0;
+				var height = _p15._1;
 				var fieldStyle = _elm_lang$html$Html_Attributes$style(
 					_elm_lang$core$Native_List.fromArray(
 						[
@@ -12124,7 +12118,7 @@ var _user$project$Field$fieldRead = function (model) {
 							{ctor: '_Tuple2', _0: 'text-overflow', _1: 'ellipsis'},
 							_elm_lang$core$Native_Utils.eq(model.presentation, _user$project$Field$Form) ? {ctor: '_Tuple2', _0: 'border', _1: '1px solid #ccc'} : {ctor: '_Tuple2', _0: 'border', _1: '0px'}
 						]));
-				return _elm_lang$core$String$isEmpty(_p18) ? A2(
+				return _elm_lang$core$String$isEmpty(_p16) ? A2(
 					_elm_lang$html$Html$div,
 					_elm_lang$core$Native_List.fromArray(
 						[fieldStyle, emptyStyle]),
@@ -12135,7 +12129,7 @@ var _user$project$Field$fieldRead = function (model) {
 						[fieldStyle]),
 					_elm_lang$core$Native_List.fromArray(
 						[
-							_elm_lang$html$Html$text(_p18)
+							_elm_lang$html$Html$text(_p16)
 						]));
 			case 'Bool':
 				return A2(
@@ -12155,8 +12149,8 @@ var _user$project$Field$fieldRead = function (model) {
 					_elm_lang$core$Native_List.fromArray(
 						[
 							function () {
-							var _p19 = _p16._0;
-							if (_p19 === true) {
+							var _p17 = _p14._0;
+							if (_p17 === true) {
 								return A2(
 									_elm_lang$html$Html$span,
 									_elm_lang$core$Native_List.fromArray(
@@ -12189,20 +12183,20 @@ var _user$project$Field$fieldRead = function (model) {
 						]));
 			case 'I32':
 				return _elm_lang$html$Html$text(
-					_elm_lang$core$Basics$toString(_p16._0));
+					_elm_lang$core$Basics$toString(_p14._0));
 			case 'I64':
 				return _elm_lang$html$Html$text(
-					_elm_lang$core$Basics$toString(_p16._0));
+					_elm_lang$core$Basics$toString(_p14._0));
 			case 'F64':
 				return _elm_lang$html$Html$text(
-					_elm_lang$core$Basics$toString(_p16._0));
+					_elm_lang$core$Basics$toString(_p14._0));
 			case 'Date':
-				return _elm_lang$html$Html$text(_p16._0);
+				return _elm_lang$html$Html$text(_p14._0);
 			case 'DateTime':
 				return _elm_lang$html$Html$text(
-					_user$project$Utils$simpleDate(_p16._0));
+					_user$project$Utils$simpleDate(_p14._0));
 			case 'Uuid':
-				return _elm_lang$html$Html$text(_p16._0);
+				return _elm_lang$html$Html$text(_p14._0);
 			default:
 				return _elm_lang$html$Html$text(
 					_elm_lang$core$Basics$toString(_elm_lang$html$Html_Attributes$value));
@@ -12245,9 +12239,9 @@ var _user$project$Field$fieldEntry = function (model) {
 			[
 				{ctor: '_Tuple2', _0: 'border', _1: '1px solid red'}
 			]));
-	var _p20 = _user$project$Field$computeSize(model);
-	var width = _p20._0;
-	var height = _p20._1;
+	var _p18 = _user$project$Field$computeSize(model);
+	var width = _p18._0;
+	var height = _p18._1;
 	var textWidth = _elm_lang$html$Html_Attributes$style(
 		_elm_lang$core$Native_List.fromArray(
 			[
@@ -12265,19 +12259,19 @@ var _user$project$Field$fieldEntry = function (model) {
 				{ctor: '_Tuple2', _0: 'background-color', _1: '#fff'}
 			]));
 	var focusedField = function () {
-		var _p21 = model.focused;
-		if (_p21 === true) {
+		var _p19 = model.focused;
+		if (_p19 === true) {
 			return _elm_lang$html$Html_Attributes$class('focused_field');
 		} else {
 			return _elm_lang$html$Html_Attributes$class('');
 		}
 	}();
-	var _p22 = model.field.dataType;
-	switch (_p22) {
+	var _p20 = model.field.dataType;
+	switch (_p20) {
 		case 'String':
-			var _p23 = model.field.displayLength;
-			if (_p23.ctor === 'Just') {
-				return ((_elm_lang$core$Native_Utils.cmp(_p23._0, 250) > 0) && _elm_lang$core$Native_Utils.eq(model.presentation, _user$project$Field$Form)) ? A2(
+			var _p21 = model.field.displayLength;
+			if (_p21.ctor === 'Just') {
+				return ((_elm_lang$core$Native_Utils.cmp(_p21._0, 250) > 0) && _elm_lang$core$Native_Utils.eq(model.presentation, _user$project$Field$Form)) ? A2(
 					_elm_lang$html$Html$textarea,
 					_elm_lang$core$Native_List.fromArray(
 						[
@@ -12320,9 +12314,9 @@ var _user$project$Field$fieldEntry = function (model) {
 			}
 		case 'Bool':
 			var boolValue = function () {
-				var _p24 = model.value;
-				if ((_p24.ctor === 'Just') && (_p24._0.ctor === 'Bool')) {
-					return _p24._0._0;
+				var _p22 = model.value;
+				if ((_p22.ctor === 'Just') && (_p22._0.ctor === 'Bool')) {
+					return _p22._0._0;
 				} else {
 					return false;
 				}
@@ -12440,9 +12434,9 @@ var _user$project$Field$fieldEntry = function (model) {
 	}
 };
 var _user$project$Field$view = function (model) {
-	var _p25 = _user$project$Field$computeSize(model);
-	var width = _p25._0;
-	var height = _p25._1;
+	var _p23 = _user$project$Field$computeSize(model);
+	var width = _p23._0;
+	var height = _p23._1;
 	var labelCheck = _user$project$Field$isMandatoryOk(model) ? _elm_lang$html$Html_Attributes$style(
 		_elm_lang$core$Native_List.fromArray(
 			[])) : _elm_lang$html$Html_Attributes$style(
@@ -12479,8 +12473,8 @@ var _user$project$Field$view = function (model) {
 						_user$project$Field$tooltipText(model.field)
 					]))
 			]));
-	var _p26 = model.presentation;
-	switch (_p26.ctor) {
+	var _p24 = model.presentation;
+	switch (_p24.ctor) {
 		case 'Form':
 			var labelBool = A2(
 				_elm_lang$html$Html$label,
@@ -12503,10 +12497,10 @@ var _user$project$Field$view = function (model) {
 						{ctor: '_Tuple2', _0: 'width', _1: '350px'},
 						{ctor: '_Tuple2', _0: 'padding', _1: '2px'}
 					]));
-			var _p27 = model.mode;
-			if (_p27.ctor === 'Edit') {
-				var _p28 = model.field.dataType;
-				if (_p28 === 'Bool') {
+			var _p25 = model.mode;
+			if (_p25.ctor === 'Edit') {
+				var _p26 = model.field.dataType;
+				if (_p26 === 'Bool') {
 					return A2(
 						_elm_lang$html$Html$div,
 						_elm_lang$core$Native_List.fromArray(
@@ -12535,8 +12529,8 @@ var _user$project$Field$view = function (model) {
 							[labelHtml, editField]));
 				}
 			} else {
-				var _p29 = model.field.dataType;
-				if (_p29 === 'Bool') {
+				var _p27 = model.field.dataType;
+				if (_p27 === 'Bool') {
 					return A2(
 						_elm_lang$html$Html$div,
 						_elm_lang$core$Native_List.fromArray(
@@ -12594,8 +12588,8 @@ var _user$project$Field$view = function (model) {
 					[
 						{ctor: '_Tuple2', _0: 'border', _1: '1px solid red'}
 					]));
-			var _p30 = model.mode;
-			if (_p30.ctor === 'Edit') {
+			var _p28 = model.mode;
+			if (_p28.ctor === 'Edit') {
 				return A2(
 					_elm_lang$html$Html$td,
 					_elm_lang$core$Native_List.fromArray(
@@ -12638,12 +12632,12 @@ var _user$project$Field$view = function (model) {
 						]));
 			}
 		default:
-			var _p31 = model.mode;
-			if (_p31.ctor === 'Edit') {
+			var _p29 = model.mode;
+			if (_p29.ctor === 'Edit') {
 				return editField;
 			} else {
-				var _p32 = model.density;
-				switch (_p32.ctor) {
+				var _p30 = model.density;
+				switch (_p30.ctor) {
 					case 'Compact':
 						return model.field.isSignificant ? A2(
 							_elm_lang$html$Html$div,
@@ -12682,9 +12676,9 @@ var _user$project$Field$view = function (model) {
 									[]));
 						}
 					default:
-						var _p33 = _user$project$Field$computeSize(model);
-						var width = _p33._0;
-						var height = _p33._1;
+						var _p31 = _user$project$Field$computeSize(model);
+						var width = _p31._0;
+						var height = _p31._1;
 						var textStyle = model.field.isSignificant ? _elm_lang$html$Html_Attributes$style(
 							_elm_lang$core$Native_List.fromArray(
 								[
@@ -12732,29 +12726,35 @@ var _user$project$Row$toList = function (arg) {
 };
 var _user$project$Row$filterFieldModelsWithDensity = F2(
 	function (fieldModels, density) {
-		var _p1 = density;
-		switch (_p1.ctor) {
-			case 'Compact':
-				return _user$project$Row$toList(
-					_user$project$Field$mostSignificantModel(fieldModels));
-			case 'Medium':
-				return _user$project$Field$significantModels(fieldModels);
-			default:
-				return fieldModels;
-		}
+		var fields = function () {
+			var _p1 = density;
+			switch (_p1.ctor) {
+				case 'Compact':
+					return _user$project$Row$toList(
+						_user$project$Field$mostSignificantModel(fieldModels));
+				case 'Medium':
+					return _user$project$Field$significantModels(fieldModels);
+				default:
+					return fieldModels;
+			}
+		}();
+		return A2(_elm_lang$core$List$sortWith, _user$project$Field$compareSequence, fields);
 	});
 var _user$project$Row$filterFieldsWithDensity = F2(
 	function (fields, density) {
-		var _p2 = density;
-		switch (_p2.ctor) {
-			case 'Compact':
-				return _user$project$Row$toList(
-					_user$project$Field$mostSignificantField(fields));
-			case 'Medium':
-				return _user$project$Field$significantFields(fields);
-			default:
-				return fields;
-		}
+		var fields = function () {
+			var _p2 = density;
+			switch (_p2.ctor) {
+				case 'Compact':
+					return _user$project$Row$toList(
+						_user$project$Field$mostSignificantField(fields));
+				case 'Medium':
+					return _user$project$Field$significantFields(fields);
+				default:
+					return fields;
+			}
+		}();
+		return A2(_elm_lang$core$List$sortWith, _user$project$Field$compareFieldSequence, fields);
 	});
 var _user$project$Row$onDoubleCheckNoPropagate = function (msg) {
 	return A3(
