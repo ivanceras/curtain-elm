@@ -425,7 +425,7 @@ main =
 subscriptions: Model -> Sub Msg 
 subscriptions model = 
     let _ = Debug.log "setting up subscription" "" in
-     Sub.batch [(BrowserWindow.resizes sizeToMsg)
+     Sub.batch [BrowserWindow.resizes sizeToMsg
                ,receiveScrollBarWidth ReceivedScrollBarWidth
                ,receiveScrollBottomEvent ReceivedScrollBottomEvent
                ,receiveSettingsDbUrl ReceivedSettingsDbUrl

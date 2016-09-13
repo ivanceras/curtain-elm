@@ -11,9 +11,8 @@ function sendScrollBarWidth(){
 
 var prevScrollTop;
 var prevScrollLeft;
-
 function isScrolledBottom(el, table){
-    scrollAllowance = 200;
+    var scrollAllowance = 200;
     var totalScrollHeight = el.scrollTop + el.offsetHeight + scrollAllowance; 
     if ( el.scrollTop > prevScrollTop){
         if (totalScrollHeight >= el.firstChild.offsetHeight){
@@ -26,10 +25,17 @@ function isScrolledBottom(el, table){
 }
 
 
+var ticking = false;
+//https://developer.mozilla.org/en-US/docs/Web/Events/scroll
 function alignScroll(event, table, column_shadow_id, row_shadow_id){
-    isScrolledBottom(event.target, table);
-    alignScrollElements(event, table, column_shadow_id, row_shadow_id);
-
+    if(!ticking){
+        window.requestAnimationFrame(function(){
+            isScrolledBottom(event.target, table);
+            alignScrollElements(event, table, column_shadow_id, row_shadow_id);
+            ticking = false;
+        });
+        ticking = true;
+    }
 }
 
 
