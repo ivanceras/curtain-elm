@@ -10,7 +10,11 @@ curtain.js : $(ELM_FILES)
 build_web: $(WEB_FILES)
 	cp -r web/* build
 
-all: build_web curtain.js
+compress: curtain.js
+	uglify -s build/curtain.js -o build/curtain.min.js
+	sed -i -- 's/curtain.js/curtain.min.js/g' build/index.html
+
+all: build_web curtain.js compress
 
 
 clean: 
