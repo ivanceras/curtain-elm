@@ -84,6 +84,7 @@ type Msg
     | ReceivedScrollBottomEvent String 
     | ResizeStart Mouse.Position
     | ClickedDeleteRecords
+    | ClickedRefreshRecords
     | ClickedSaveChanges
     | ClickedCloseAlert
     | SetAlert String
@@ -100,6 +101,7 @@ type Msg
 type OutMsg = LoadNextPage Tab.Model
     | UpdateRecords String String
     | FocusedRow Row.Model
+    | RefreshRecords Int String
     
 type alias Window =
     { name: String
@@ -324,7 +326,7 @@ toolbar model=
                 else
                     "Save "++(toString modifiedRowCount)++" "++records++" into the database"
     in    
-        div [class "btn-group"]
+        div [class "btn-group", style [("height", "30px")]]
             [button [class "btn btn-large btn-default tooltip"
                     , onClick NewRecordInForm
                     ]
@@ -369,7 +371,10 @@ toolbar model=
                 ,text "Delete"
                 ,span [class "tooltiptext"] [text deleteTooltip] 
                 ]
-            ,button [class "btn btn-large btn-default tooltip"]
+            ,button [
+                class "btn btn-large btn-default tooltip"
+                , onClick ClickedRefreshRecords
+                ]
                 [span [class "icon icon-arrows-ccw icon-text"] []
                 ,text "Refresh"
                 ,span [class "tooltiptext"] [text "Refresh the current data from the database"]
@@ -518,6 +523,11 @@ update msg model =
             in 
             (model, [UpdateRecords table encoded])
 
+        ClickedRefreshRecords ->
+            let _  = Debug.log "Refreshing records" ""
+            in
+            (model, [RefreshRecords model.windowId model.mainTab.tab.table])
+
          -- updated and inserted records
         ClickedSaveChanges ->
             let _ = Debug.log "Saving changes" ""
@@ -546,7 +556,9 @@ update msg model =
                 mainResponse = 
                     List.filter (
                         \ur ->
-                            ur.table == model.mainTab.tab.table
+                            let _ = Debug.log ("update: "++ur.table) model.mainTab.tab
+                            in
+                            Tab.completeTableName model.mainTab.tab == ur.table
                     ) updateResponse
                         |> List.head
             in
@@ -833,5 +845,9 @@ updateWindow window model =
 getMainTabFocusedRow: Model -> Int -> Maybe Row.Model
 getMainTabFocusedRow model rowId =
     Tab.getRow model.mainTab rowId
+
+subscriptions: Model -> Sub Msg
+subscriptions model =
+    Sub.batch []
     
     

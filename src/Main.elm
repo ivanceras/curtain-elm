@@ -28,6 +28,7 @@ type alias Model =
     , isSettingsOpened: Bool
     , browserDimension: Tab.BrowserDimension
     , defaultPageSize: Int
+    , dragListenWindow: Maybe Int
     , settings: Settings.Model
     }
 
@@ -58,6 +59,8 @@ type Msg
     | DbConnectionTestError Http.Error
     | RecordsUpdated Int (List Dao.UpdateResponse)
     | UpdateError Int Http.Error
+    | DragAt Mouse.Position
+    | DragEnd Mouse.Position
 
 
 appModel =
@@ -73,6 +76,7 @@ appModel =
         , scrollBarWidth = 13
         }
     , defaultPageSize = 40
+    , dragListenWindow = Nothing
     , settings = Settings.init "" "" 
     }
 
@@ -362,6 +366,16 @@ update msg model =
             (updateWindow model (DataWindow.SetAlert (toString error)) windowId
                 |> fst
             , Cmd.none)
+        
+        DragAt position ->
+            let _ = Debug.log "DragAt" position
+            in
+            (model, Cmd.none)
+
+        DragEnd position ->
+            let _ = Debug.log "DragEnd" position
+            in
+            (model, Cmd.none)
 
 handleSettingsOutMsg: Model -> List Settings.OutMsg -> (Model, Cmd Msg)
 handleSettingsOutMsg model outmsgs =           
@@ -407,6 +421,8 @@ handleWindowOutMsg outmsgs model windowId =
                         (model, cmds ++ [httpUpdateRecords model windowId mainTable body])
                     DataWindow.FocusedRow focusedRow ->
                         (model, cmds ++ [fetchFocusedRecordDetail model windowId focusedRow.rowId])
+                    DataWindow.RefreshRecords windowId table->
+                        (model, cmds ++ [getWindowData model table windowId])
 
 
             ) (model, []) outmsgs
@@ -430,7 +446,17 @@ subscriptions model =
                ,receiveScrollBottomEvent ReceivedScrollBottomEvent
                ,receiveSettingsDbUrl ReceivedSettingsDbUrl
                ,receiveSettingsApiServer ReceivedSettingsApiServer
+               ,case model.dragListenWindow of
+                    Just windowId ->
+                        case getWindow model windowId of
+                            Just windowModel ->
+                                Sub.map (UpdateWindow windowId) (DataWindow.subscriptions windowModel)
+                            Nothing ->
+                                Sub.none
+                    Nothing ->
+                        Sub.none
                ]
+
 
 sizeToMsg: BrowserWindow.Size -> Msg
 sizeToMsg size = 
