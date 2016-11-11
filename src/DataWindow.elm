@@ -171,6 +171,7 @@ formView model =
                 maxFormWidth = (calcMainTableWidth model) - formMargin
                 maxFormHeight = calcMainTableHeight model
                 mergeTabHeight = 28 + (maxFormHeight - model.formHeight)
+                _ = Debug.log "focusedRow isNew" (Row.isNew focusedRow)
 
             in
             div[class "master_container record_detail"
@@ -296,6 +297,15 @@ toolbar model=
     let 
         selectedRowCount = Tab.selectedRowCount model.mainTab
         modifiedRowCount = Tab.modifiedRowCount model.mainTab
+        insertedRowCount = Tab.insertedRowCount model.mainTab
+        dirtyRecordCount = modifiedRowCount + insertedRowCount
+        _= case model.focusedRow of
+                Just focusedRow ->
+                    Debug.log "Record isNew in Toolbar: " (Row.isNew focusedRow)
+                Nothing ->
+                    False
+            
+
         deleteTooltip = 
             case model.presentation of
                 Table ->
@@ -316,15 +326,15 @@ toolbar model=
         saveTooltip =
            let
                 records =
-                    if modifiedRowCount > 1 then
+                    if dirtyRecordCount > 1 then
                         "records"
                     else 
                         "record"
             in
-                if modifiedRowCount == 0 then
+                if dirtyRecordCount == 0 then
                     "No changes to save"
                 else
-                    "Save "++(toString modifiedRowCount)++" "++records++" into the database"
+                    "Save "++(toString dirtyRecordCount)++" "++records++" into the database"
     in    
         div [class "btn-group", style [("height", "30px")]]
             [button [class "btn btn-large btn-default tooltip"
@@ -342,11 +352,11 @@ toolbar model=
                 ]
             ,button [class "btn btn-large btn-default tooltip"
                     , onClick ClickedSaveChanges
-                    , disabled <| modifiedRowCount == 0
+                    , disabled <| dirtyRecordCount == 0
                     ]
-                [if modifiedRowCount > 0 then 
+                [if dirtyRecordCount > 0 then 
                     span [class "badge badge-changes animated flash"] 
-                        [text (toString modifiedRowCount)]
+                        [text (toString dirtyRecordCount)]
                  else text ""
                 ,span [class "icon icon-floppy icon-text"] []
                 ,text "Save"
@@ -587,10 +597,16 @@ update msg model =
         CloseFocusedRow ->
             case model.focusedRow of
                 Just focusedRow ->
-                    ({model | focusedRow = Nothing}
-                        |> updateMainTab (Tab.UpdateRowDao focusedRow.rowId (Row.getDao focusedRow))
-                        |> fst
-                    ,[])
+                    if Row.isNew focusedRow then
+                        ({model | focusedRow = Nothing}
+                            |> updateMainTab (Tab.AddRowDao (Row.getDao focusedRow))
+                            |> fst
+                        ,[])
+                    else
+                        ({model | focusedRow = Nothing}
+                            |> updateMainTab (Tab.UpdateRowDao focusedRow.rowId (Row.getDao focusedRow))
+                            |> fst
+                        ,[])
                 Nothing ->
                     (model, [])
             

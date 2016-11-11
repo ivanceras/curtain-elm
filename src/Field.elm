@@ -530,7 +530,7 @@ alignment field =
 -- determine if the field has been touched and modified
 isModified: Model -> Bool
 isModified model =
-    model.value /= model.orig_value
+    model.orig_value /= Nothing &&model.value /= model.orig_value
 
 -- determine if the field instantiated via new record
 isNew: Model -> Bool
