@@ -20,6 +20,8 @@ import Dao exposing
     )
 import Utils exposing (px)
 import Update.Extra exposing (andThen)
+import Array
+import String
 
 type Presentation = Table | Grid
 
@@ -67,6 +69,27 @@ type alias Tab =
     }
 
 
+matches_table: String -> Tab -> Bool
+matches_table ts tab =
+    ts == tab.table ||
+    (
+    let splinters = String.split "." ts
+    in
+    if List.length splinters == 2 then
+        let arr = Array.fromList splinters
+            schema = Array.get 0 arr
+            table = Array.get 1 arr
+        in
+        case table of
+            Just table ->
+                tab.table == table
+                && tab.schema == schema
+            Nothing ->
+                False
+    else
+        False
+    )
+        
 type Msg
     = ChangeMode Mode
     | ChangePresentation Presentation

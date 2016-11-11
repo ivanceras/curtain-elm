@@ -324,7 +324,7 @@ toolbar model=
                 else
                     "Save "++(toString modifiedRowCount)++" "++records++" into the database"
     in    
-        div [class "btn-group"]
+        div [class "btn-group", style [("height", "30px")]]
             [button [class "btn btn-large btn-default tooltip"
                     , onClick NewRecordInForm
                     ]
@@ -546,7 +546,9 @@ update msg model =
                 mainResponse = 
                     List.filter (
                         \ur ->
-                            ur.table == model.mainTab.tab.table
+                            let _ = Debug.log ("update: "++ur.table) model.mainTab.tab
+                            in
+                            Tab.matches_table ur.table model.mainTab.tab 
                     ) updateResponse
                         |> List.head
             in
@@ -833,5 +835,9 @@ updateWindow window model =
 getMainTabFocusedRow: Model -> Int -> Maybe Row.Model
 getMainTabFocusedRow model rowId =
     Tab.getRow model.mainTab rowId
+
+subscriptions: Model -> Sub Msg
+subscriptions model =
+    Sub.batch []
     
     
