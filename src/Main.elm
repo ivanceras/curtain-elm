@@ -421,6 +421,8 @@ handleWindowOutMsg outmsgs model windowId =
                         (model, cmds ++ [httpUpdateRecords model windowId mainTable body])
                     DataWindow.FocusedRow focusedRow ->
                         (model, cmds ++ [fetchFocusedRecordDetail model windowId focusedRow.rowId])
+                    DataWindow.RefreshRecords windowId table->
+                        (model, cmds ++ [getWindowData model table windowId])
 
 
             ) (model, []) outmsgs

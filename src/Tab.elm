@@ -69,26 +69,6 @@ type alias Tab =
     }
 
 
-matches_table: String -> Tab -> Bool
-matches_table ts tab =
-    ts == tab.table ||
-    (
-    let splinters = String.split "." ts
-    in
-    if List.length splinters == 2 then
-        let arr = Array.fromList splinters
-            schema = Array.get 0 arr
-            table = Array.get 1 arr
-        in
-        case table of
-            Just table ->
-                tab.table == table
-                && tab.schema == schema
-            Nothing ->
-                False
-    else
-        False
-    )
         
 type Msg
     = ChangeMode Mode
@@ -646,18 +626,45 @@ shallLoadNextPage model =
         totalRecords > rowLength &&  not model.loadingPage
 
 -- retain only what's not in deleted
-
+-- update the updated rows
 updateRecordFromResponse: Model -> Dao.UpdateResponse -> Model
-updateRecordFromResponse model ur =
-        { model | rows = 
-            List.filter (
-                \row ->
-                not (inDeleted ur row)
-            ) model.rows
-            , totalRecords = Just ur.totalRecords
+updateRecordFromResponse model updateResponse =
+        let rows =
+                List.filter (
+                    \row ->
+                        not (inDeleted updateResponse row)
+                ) model.rows
+            updatedRows = 
+                List.map (
+                    \row -> 
+                       updateRowFromResponse updateResponse row
+                ) rows
+        in 
+        { model | rows = updatedRows
+            , totalRecords = Just updateResponse.totalRecords
         }
 
+updateRowFromResponse: Dao.UpdateResponse -> Row.Model -> Row.Model
+updateRowFromResponse updateResponse row =
+    let matchedDao = 
+        List.filter (
+            \r -> Row.matchPrimary row r
+        ) updateResponse.updated
+        |> List.head
 
+        _ = Debug.log "matched dao" matchedDao
+        
+        updatedRow =
+            case matchedDao of 
+                Just dao ->
+                    let (updatedRow, outmsg) =
+                            Row.update (Row.SetDao dao) row
+                        (updatedRow2, outmsg2) =
+                            Row.update (Row.ChangeMode Mode.Read) updatedRow
+                    in updatedRow2
+                Nothing ->
+                    row
+    in updatedRow
 
 inDeleted: Dao.UpdateResponse -> Row.Model -> Bool
 inDeleted updateResponse row =

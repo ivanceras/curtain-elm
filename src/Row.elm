@@ -263,6 +263,19 @@ equalDao: Model -> Dao.Dao -> Bool
 equalDao model dao =
     dao == getOrigDao model
 
+matchPrimary: Model -> Dao.Dao -> Bool
+matchPrimary model dao =    
+    let keyFields = keyFieldModels model.fieldModels
+        origDao = getOrigDao model
+    in
+        List.all (
+            \key ->
+            let _ = Debug.log "keyfield" key
+            in
+            Dict.get key.field.column origDao == Dict.get key.field.column dao
+        ) keyFields
+
+
 excludeKeyfields: List Field.Field -> List Field.Field
 excludeKeyfields fieldList =
     List.filter (\f -> not f.isKeyfield) fieldList
