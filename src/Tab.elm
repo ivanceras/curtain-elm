@@ -87,6 +87,7 @@ type Msg
     | ReceivedScrollBottomEvent
     | RecordsUpdated Dao.UpdateResponse
     | UpdateRowDao Int Dao 
+    | AddRowDao Dao
 
 type OutMsg
     = LoadNextPage
@@ -301,6 +302,10 @@ selectedRows model =
 insertedRows: Model -> List Row.Model
 insertedRows model =
     List.filter (\r -> Row.isNew r ) model.rows
+
+insertedRowCount: Model -> Int
+insertedRowCount model =
+    List.length <| insertedRows model
 
 selectedRowCount model = 
     selectedRows model |> List.length
@@ -555,6 +560,15 @@ update msg model =
         UpdateRowDao rowId dao ->
             updateThenHandleRowMsg (Row.UpdateDao dao) rowId model
 
+        AddRowDao dao ->
+            let newRow = Row.create model.tab.fields (model.uid + 1)
+                |> Row.update (Row.ChangeMode Read) |> fst
+                |> Row.update (Row.ChangePresentation Row.Table) |> fst
+                |> Row.update (Row.UpdateDao dao) |> fst
+            in
+            ({model | rows = model.rows ++ [newRow]
+             } ,[])
+
 
 updateRow: Row.Msg -> Int -> Model -> (Model, List Row.OutMsg)
 updateRow rowMsg rowId model =
@@ -627,6 +641,7 @@ shallLoadNextPage model =
 
 -- retain only what's not in deleted
 -- update the updated rows
+-- TODO: append the newly inserted rows
 updateRecordFromResponse: Model -> Dao.UpdateResponse -> Model
 updateRecordFromResponse model updateResponse =
         let rows =

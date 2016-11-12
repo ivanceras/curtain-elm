@@ -40,6 +40,9 @@ type alias Model =
     , openSequence: Int -- the highest number determine which window last opened
     }
 
+-- enable/disable the hasMany Related Tables
+-- Disables, False at first release
+includeManyTab = False
 
 generateTabId: Window -> Int -> String
 generateTabId window windowId =
@@ -171,6 +174,12 @@ formView model =
                 maxFormWidth = (calcMainTableWidth model) - formMargin
                 maxFormHeight = calcMainTableHeight model
                 mergeTabHeight = 28 + (maxFormHeight - model.formHeight)
+                formHeight = if includeManyTab then
+                        model.formHeight
+                    else
+                        model.formHeight + mergeTabHeight
+
+                _ = Debug.log "focusedRow isNew" (Row.isNew focusedRow)
 
             in
             div[class "master_container record_detail"
@@ -181,21 +190,30 @@ formView model =
                        ]
                ] 
                 [formRecordControls model
-                ,div [style [("height", (toString model.formHeight)++"px")
+                ,div [style [("height", (toString formHeight)++"px")
                         ,("overflow", "auto")
                         ,("display", "block")
                         ,("padding", "20px")
                         ]
                     ]
                     [App.map UpdateFocusedRow (Row.view focusedRow)
-                    ,extensionRowView model
+                    ,if includeManyTab then
+                        extensionRowView model
+                     else 
+                        text ""
                     ]
-                 ,separator
-                 ,div [class "related-container"
+                 ,if includeManyTab then
+                    separator 
+                  else 
+                    text ""
+                 ,if includeManyTab then
+                    div [class "related-container"
                       ,style [("height", (toString mergeTabHeight)++"px")
                              ]
                       ]
                       [hasManyTabView model]
+                  else
+                    text ""
                 ]
         Nothing ->
             text ""
@@ -296,6 +314,15 @@ toolbar model=
     let 
         selectedRowCount = Tab.selectedRowCount model.mainTab
         modifiedRowCount = Tab.modifiedRowCount model.mainTab
+        insertedRowCount = Tab.insertedRowCount model.mainTab
+        dirtyRecordCount = modifiedRowCount + insertedRowCount
+        _= case model.focusedRow of
+                Just focusedRow ->
+                    Debug.log "Record isNew in Toolbar: " (Row.isNew focusedRow)
+                Nothing ->
+                    False
+            
+
         deleteTooltip = 
             case model.presentation of
                 Table ->
@@ -316,15 +343,15 @@ toolbar model=
         saveTooltip =
            let
                 records =
-                    if modifiedRowCount > 1 then
+                    if dirtyRecordCount > 1 then
                         "records"
                     else 
                         "record"
             in
-                if modifiedRowCount == 0 then
+                if dirtyRecordCount == 0 then
                     "No changes to save"
                 else
-                    "Save "++(toString modifiedRowCount)++" "++records++" into the database"
+                    "Save "++(toString dirtyRecordCount)++" "++records++" into the database"
     in    
         div [class "btn-group", style [("height", "30px")]]
             [button [class "btn btn-large btn-default tooltip"
@@ -335,18 +362,12 @@ toolbar model=
                 ,span [class "tooltiptext"] [text "Create a new record in a form"]
                 ]
             ,button [class "btn btn-large btn-default tooltip"
-                    , onClick (ChangeMode Read)]
-                [span [class "icon icon-list-add icon-text"] []
-                ,text "Insert row"
-                ,span [class "tooltiptext"] [text "Insert row"]
-                ]
-            ,button [class "btn btn-large btn-default tooltip"
                     , onClick ClickedSaveChanges
-                    , disabled <| modifiedRowCount == 0
+                    , disabled <| dirtyRecordCount == 0
                     ]
-                [if modifiedRowCount > 0 then 
+                [if dirtyRecordCount > 0 then 
                     span [class "badge badge-changes animated flash"] 
-                        [text (toString modifiedRowCount)]
+                        [text (toString dirtyRecordCount)]
                  else text ""
                 ,span [class "icon icon-floppy icon-text"] []
                 ,text "Save"
@@ -587,10 +608,18 @@ update msg model =
         CloseFocusedRow ->
             case model.focusedRow of
                 Just focusedRow ->
-                    ({model | focusedRow = Nothing}
-                        |> updateMainTab (Tab.UpdateRowDao focusedRow.rowId (Row.getDao focusedRow))
-                        |> fst
-                    ,[])
+                    if Row.isNew focusedRow then
+                        ({model | focusedRow = Nothing}
+                            |> updateMainTab (Tab.AddRowDao (Row.getDao focusedRow))
+                            |> fst
+                        ,[])
+                    else
+                        ({model | focusedRow = Nothing}
+                            |> updateMainTab (Tab.UpdateRowDao focusedRow.rowId (Row.getDao focusedRow))
+                            |> fst
+                            |> updateMainTab (Tab.UpdateRow focusedRow.rowId (Row.ChangeMode Read))
+                            |> fst
+                        ,[])
                 Nothing ->
                     (model, [])
             
