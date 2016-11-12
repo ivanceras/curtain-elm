@@ -40,6 +40,9 @@ type alias Model =
     , openSequence: Int -- the highest number determine which window last opened
     }
 
+-- enable/disable the hasMany Related Tables
+-- Disables, False at first release
+includeManyTab = False
 
 generateTabId: Window -> Int -> String
 generateTabId window windowId =
@@ -171,6 +174,11 @@ formView model =
                 maxFormWidth = (calcMainTableWidth model) - formMargin
                 maxFormHeight = calcMainTableHeight model
                 mergeTabHeight = 28 + (maxFormHeight - model.formHeight)
+                formHeight = if includeManyTab then
+                        model.formHeight
+                    else
+                        model.formHeight + mergeTabHeight
+
                 _ = Debug.log "focusedRow isNew" (Row.isNew focusedRow)
 
             in
@@ -182,21 +190,30 @@ formView model =
                        ]
                ] 
                 [formRecordControls model
-                ,div [style [("height", (toString model.formHeight)++"px")
+                ,div [style [("height", (toString formHeight)++"px")
                         ,("overflow", "auto")
                         ,("display", "block")
                         ,("padding", "20px")
                         ]
                     ]
                     [App.map UpdateFocusedRow (Row.view focusedRow)
-                    ,extensionRowView model
+                    ,if includeManyTab then
+                        extensionRowView model
+                     else 
+                        text ""
                     ]
-                 ,separator
-                 ,div [class "related-container"
+                 ,if includeManyTab then
+                    separator 
+                  else 
+                    text ""
+                 ,if includeManyTab then
+                    div [class "related-container"
                       ,style [("height", (toString mergeTabHeight)++"px")
                              ]
                       ]
                       [hasManyTabView model]
+                  else
+                    text ""
                 ]
         Nothing ->
             text ""
@@ -343,12 +360,6 @@ toolbar model=
                 [span [class "icon icon-plus icon-text tab-action"] []
                 ,text "New record" 
                 ,span [class "tooltiptext"] [text "Create a new record in a form"]
-                ]
-            ,button [class "btn btn-large btn-default tooltip"
-                    , onClick (ChangeMode Read)]
-                [span [class "icon icon-list-add icon-text"] []
-                ,text "Insert row"
-                ,span [class "tooltiptext"] [text "Insert row"]
                 ]
             ,button [class "btn btn-large btn-default tooltip"
                     , onClick ClickedSaveChanges
@@ -605,6 +616,8 @@ update msg model =
                     else
                         ({model | focusedRow = Nothing}
                             |> updateMainTab (Tab.UpdateRowDao focusedRow.rowId (Row.getDao focusedRow))
+                            |> fst
+                            |> updateMainTab (Tab.UpdateRow focusedRow.rowId (Row.ChangeMode Read))
                             |> fst
                         ,[])
                 Nothing ->

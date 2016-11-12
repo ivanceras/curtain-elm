@@ -336,6 +336,7 @@ fieldEntry model =
                                              ("width", px width)
                                             ,("height", px height)
                                             ]
+                                     ,onInput ChangeValue
                                      ] 
                                      [text (Dao.stringifyMaybeValue model.value)]
                         else 

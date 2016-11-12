@@ -12288,7 +12288,8 @@ var _user$project$Field$fieldEntry = function (model) {
 									_0: 'height',
 									_1: _user$project$Utils$px(height)
 								}
-								]))
+								])),
+							_elm_lang$html$Html_Events$onInput(_user$project$Field$ChangeValue)
 						]),
 					_elm_lang$core$Native_List.fromArray(
 						[
@@ -15234,6 +15235,7 @@ var _user$project$DataWindow$updateWindow = F2(
 					A2(_elm_lang$core$Basics_ops['++'], window.hasManyTabs, window.hasManyIndirectTabs))
 			});
 	});
+var _user$project$DataWindow$includeManyTab = false;
 var _user$project$DataWindow$Model = function (a) {
 	return function (b) {
 		return function (c) {
@@ -15687,6 +15689,7 @@ var _user$project$DataWindow$formView = function (model) {
 			_user$project$Row$isNew(_p16));
 		var maxFormHeight = _user$project$DataWindow$calcMainTableHeight(model);
 		var mergeTabHeight = 28 + (maxFormHeight - model.formHeight);
+		var formHeight = _user$project$DataWindow$includeManyTab ? model.formHeight : (model.formHeight + mergeTabHeight);
 		var formMargin = model.formMargin;
 		var maxFormWidth = _user$project$DataWindow$calcMainTableWidth(model) - formMargin;
 		return A2(
@@ -15732,7 +15735,7 @@ var _user$project$DataWindow$formView = function (model) {
 									_0: 'height',
 									_1: A2(
 										_elm_lang$core$Basics_ops['++'],
-										_elm_lang$core$Basics$toString(model.formHeight),
+										_elm_lang$core$Basics$toString(formHeight),
 										'px')
 								},
 									{ctor: '_Tuple2', _0: 'overflow', _1: 'auto'},
@@ -15746,10 +15749,10 @@ var _user$project$DataWindow$formView = function (model) {
 							_elm_lang$html$Html_App$map,
 							_user$project$DataWindow$UpdateFocusedRow,
 							_user$project$Row$view(_p16)),
-							_user$project$DataWindow$extensionRowView(model)
+							_user$project$DataWindow$includeManyTab ? _user$project$DataWindow$extensionRowView(model) : _elm_lang$html$Html$text('')
 						])),
-					_user$project$DataWindow$separator,
-					A2(
+					_user$project$DataWindow$includeManyTab ? _user$project$DataWindow$separator : _elm_lang$html$Html$text(''),
+					_user$project$DataWindow$includeManyTab ? A2(
 					_elm_lang$html$Html$div,
 					_elm_lang$core$Native_List.fromArray(
 						[
@@ -15770,7 +15773,7 @@ var _user$project$DataWindow$formView = function (model) {
 					_elm_lang$core$Native_List.fromArray(
 						[
 							_user$project$DataWindow$hasManyTabView(model)
-						]))
+						])) : _elm_lang$html$Html$text('')
 				]));
 	} else {
 		return _elm_lang$html$Html$text('');
@@ -15778,9 +15781,6 @@ var _user$project$DataWindow$formView = function (model) {
 };
 var _user$project$DataWindow$ChangePresentation = function (a) {
 	return {ctor: 'ChangePresentation', _0: a};
-};
-var _user$project$DataWindow$ChangeMode = function (a) {
-	return {ctor: 'ChangeMode', _0: a};
 };
 var _user$project$DataWindow$toolbar = function (model) {
 	var _p17 = function () {
@@ -15869,36 +15869,6 @@ var _user$project$DataWindow$toolbar = function (model) {
 						_elm_lang$core$Native_List.fromArray(
 							[
 								_elm_lang$html$Html$text('Create a new record in a form')
-							]))
-					])),
-				A2(
-				_elm_lang$html$Html$button,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
-						_elm_lang$html$Html_Events$onClick(
-						_user$project$DataWindow$ChangeMode(_user$project$Mode$Read))
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						A2(
-						_elm_lang$html$Html$span,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$class('icon icon-list-add icon-text')
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[])),
-						_elm_lang$html$Html$text('Insert row'),
-						A2(
-						_elm_lang$html$Html$span,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$class('tooltiptext')
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('Insert row')
 							]))
 					])),
 				A2(
@@ -16181,6 +16151,9 @@ var _user$project$DataWindow$view = function (model) {
 						_user$project$DataWindow$formView(model)
 					]))
 			]));
+};
+var _user$project$DataWindow$ChangeMode = function (a) {
+	return {ctor: 'ChangeMode', _0: a};
 };
 var _user$project$DataWindow$RefreshRecords = F2(
 	function (a, b) {
@@ -16591,12 +16564,19 @@ var _user$project$DataWindow$update = F2(
 							A2(
 								_user$project$DataWindow$updateMainTab,
 								A2(
-									_user$project$Tab$UpdateRowDao,
+									_user$project$Tab$UpdateRow,
 									_p57.rowId,
-									_user$project$Row$getDao(_p57)),
-								_elm_lang$core$Native_Utils.update(
-									model,
-									{focusedRow: _elm_lang$core$Maybe$Nothing}))),
+									_user$project$Row$ChangeMode(_user$project$Mode$Read)),
+								_elm_lang$core$Basics$fst(
+									A2(
+										_user$project$DataWindow$updateMainTab,
+										A2(
+											_user$project$Tab$UpdateRowDao,
+											_p57.rowId,
+											_user$project$Row$getDao(_p57)),
+										_elm_lang$core$Native_Utils.update(
+											model,
+											{focusedRow: _elm_lang$core$Maybe$Nothing}))))),
 						_1: _elm_lang$core$Native_List.fromArray(
 							[])
 					};
