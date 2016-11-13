@@ -4575,6 +4575,454 @@ var _elm_lang$core$Date$Mar = {ctor: 'Mar'};
 var _elm_lang$core$Date$Feb = {ctor: 'Feb'};
 var _elm_lang$core$Date$Jan = {ctor: 'Jan'};
 
+var _Bogdanp$elm_datepicker$DatePicker_Date$unsafeDate = function (date) {
+	var _p0 = _elm_lang$core$Date$fromString(date);
+	if (_p0.ctor === 'Err') {
+		return _elm_lang$core$Native_Utils.crashCase(
+			'DatePicker.Date',
+			{
+				start: {line: 536, column: 5},
+				end: {line: 541, column: 17}
+			},
+			_p0)(
+			A2(_elm_lang$core$Basics_ops['++'], 'unsafeDate: failed to parse date:', _p0._0));
+	} else {
+		return _p0._0;
+	}
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$isLeapYear = function (year) {
+	return _elm_lang$core$Native_Utils.eq(
+		A2(_elm_lang$core$Basics$rem, year, 100),
+		0) ? _elm_lang$core$Native_Utils.eq(
+		A2(_elm_lang$core$Basics$rem, year, 400),
+		0) : _elm_lang$core$Native_Utils.eq(
+		A2(_elm_lang$core$Basics$rem, year, 4),
+		0);
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$daysInMonth = F2(
+	function (year, month) {
+		var _p2 = month;
+		switch (_p2.ctor) {
+			case 'Jan':
+				return 31;
+			case 'Feb':
+				return _Bogdanp$elm_datepicker$DatePicker_Date$isLeapYear(year) ? 29 : 28;
+			case 'Mar':
+				return 31;
+			case 'Apr':
+				return 30;
+			case 'May':
+				return 31;
+			case 'Jun':
+				return 30;
+			case 'Jul':
+				return 31;
+			case 'Aug':
+				return 31;
+			case 'Sep':
+				return 30;
+			case 'Oct':
+				return 31;
+			case 'Nov':
+				return 30;
+			default:
+				return 31;
+		}
+	});
+var _Bogdanp$elm_datepicker$DatePicker_Date$monthFromInt = function (month) {
+	var _p3 = month;
+	switch (_p3) {
+		case 1:
+			return _elm_lang$core$Date$Jan;
+		case 2:
+			return _elm_lang$core$Date$Feb;
+		case 3:
+			return _elm_lang$core$Date$Mar;
+		case 4:
+			return _elm_lang$core$Date$Apr;
+		case 5:
+			return _elm_lang$core$Date$May;
+		case 6:
+			return _elm_lang$core$Date$Jun;
+		case 7:
+			return _elm_lang$core$Date$Jul;
+		case 8:
+			return _elm_lang$core$Date$Aug;
+		case 9:
+			return _elm_lang$core$Date$Sep;
+		case 10:
+			return _elm_lang$core$Date$Oct;
+		case 11:
+			return _elm_lang$core$Date$Nov;
+		case 12:
+			return _elm_lang$core$Date$Dec;
+		default:
+			return _elm_lang$core$Native_Utils.crashCase(
+				'DatePicker.Date',
+				{
+					start: {line: 432, column: 5},
+					end: {line: 470, column: 72}
+				},
+				_p3)(
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					'monthFromInt: invalid month: ',
+					_elm_lang$core$Basics$toString(_p3)));
+	}
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$monthToInt = function (month) {
+	var _p5 = month;
+	switch (_p5.ctor) {
+		case 'Jan':
+			return 1;
+		case 'Feb':
+			return 2;
+		case 'Mar':
+			return 3;
+		case 'Apr':
+			return 4;
+		case 'May':
+			return 5;
+		case 'Jun':
+			return 6;
+		case 'Jul':
+			return 7;
+		case 'Aug':
+			return 8;
+		case 'Sep':
+			return 9;
+		case 'Oct':
+			return 10;
+		case 'Nov':
+			return 11;
+		default:
+			return 12;
+	}
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$succMonth = function (month) {
+	return _Bogdanp$elm_datepicker$DatePicker_Date$monthFromInt(
+		A2(
+			_elm_lang$core$Basics$rem,
+			_Bogdanp$elm_datepicker$DatePicker_Date$monthToInt(month),
+			12) + 1);
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$predMonth = function (month) {
+	var prev = A2(
+		_elm_lang$core$Basics$rem,
+		_Bogdanp$elm_datepicker$DatePicker_Date$monthToInt(month) - 1,
+		12);
+	return _elm_lang$core$Native_Utils.eq(prev, 0) ? _elm_lang$core$Date$Dec : _Bogdanp$elm_datepicker$DatePicker_Date$monthFromInt(prev);
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$monthToString = function (month) {
+	var $int = _Bogdanp$elm_datepicker$DatePicker_Date$monthToInt(month);
+	return (_elm_lang$core$Native_Utils.cmp($int, 10) < 0) ? A2(
+		_elm_lang$core$Basics_ops['++'],
+		'0',
+		_elm_lang$core$Basics$toString($int)) : _elm_lang$core$Basics$toString($int);
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$dayFromInt = function (day) {
+	var _p6 = day;
+	switch (_p6) {
+		case 1:
+			return _elm_lang$core$Date$Mon;
+		case 2:
+			return _elm_lang$core$Date$Tue;
+		case 3:
+			return _elm_lang$core$Date$Wed;
+		case 4:
+			return _elm_lang$core$Date$Thu;
+		case 5:
+			return _elm_lang$core$Date$Fri;
+		case 6:
+			return _elm_lang$core$Date$Sat;
+		case 7:
+			return _elm_lang$core$Date$Sun;
+		default:
+			return _elm_lang$core$Native_Utils.crashCase(
+				'DatePicker.Date',
+				{
+					start: {line: 335, column: 5},
+					end: {line: 358, column: 70}
+				},
+				_p6)(
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					'dayFromInt: invalid day: ',
+					_elm_lang$core$Basics$toString(day)));
+	}
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$dayToInt = function (day) {
+	var _p8 = day;
+	switch (_p8.ctor) {
+		case 'Mon':
+			return 1;
+		case 'Tue':
+			return 2;
+		case 'Wed':
+			return 3;
+		case 'Thu':
+			return 4;
+		case 'Fri':
+			return 5;
+		case 'Sat':
+			return 6;
+		default:
+			return 7;
+	}
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$dayToString = function (day) {
+	return (_elm_lang$core$Native_Utils.cmp(day, 10) < 0) ? A2(
+		_elm_lang$core$Basics_ops['++'],
+		'0',
+		_elm_lang$core$Basics$toString(day)) : _elm_lang$core$Basics$toString(day);
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$mkDate = F3(
+	function (year, month, day) {
+		return _Bogdanp$elm_datepicker$DatePicker_Date$unsafeDate(
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				_elm_lang$core$Basics$toString(year),
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					'/',
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						_Bogdanp$elm_datepicker$DatePicker_Date$monthToString(month),
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							'/',
+							_Bogdanp$elm_datepicker$DatePicker_Date$dayToString(day))))));
+	});
+var _Bogdanp$elm_datepicker$DatePicker_Date$predDow = function (day) {
+	var prev = A2(
+		_elm_lang$core$Basics$rem,
+		_Bogdanp$elm_datepicker$DatePicker_Date$dayToInt(day) - 1,
+		7);
+	return _elm_lang$core$Native_Utils.eq(prev, 0) ? _elm_lang$core$Date$Sun : _Bogdanp$elm_datepicker$DatePicker_Date$dayFromInt(prev);
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$succDow = function (day) {
+	return _Bogdanp$elm_datepicker$DatePicker_Date$dayFromInt(
+		A2(
+			_elm_lang$core$Basics$rem,
+			_Bogdanp$elm_datepicker$DatePicker_Date$dayToInt(day),
+			7) + 1);
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$subDay = function (date) {
+	var day = _elm_lang$core$Date$day(date) - 1;
+	var year = _elm_lang$core$Date$year(date);
+	var month = _elm_lang$core$Date$month(date);
+	var pred = _Bogdanp$elm_datepicker$DatePicker_Date$predMonth(month);
+	var predYear = _elm_lang$core$Native_Utils.eq(pred, _elm_lang$core$Date$Dec) ? (year - 1) : year;
+	return (_elm_lang$core$Native_Utils.cmp(day, 1) < 0) ? A3(
+		_Bogdanp$elm_datepicker$DatePicker_Date$mkDate,
+		predYear,
+		pred,
+		A2(_Bogdanp$elm_datepicker$DatePicker_Date$daysInMonth, predYear, pred)) : A3(_Bogdanp$elm_datepicker$DatePicker_Date$mkDate, year, month, day);
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$addDay = function (date) {
+	var day = _elm_lang$core$Date$day(date) + 1;
+	var year = _elm_lang$core$Date$year(date);
+	var month = _elm_lang$core$Date$month(date);
+	var dim = A2(_Bogdanp$elm_datepicker$DatePicker_Date$daysInMonth, year, month);
+	var succ = _Bogdanp$elm_datepicker$DatePicker_Date$succMonth(month);
+	var succYear = _elm_lang$core$Native_Utils.eq(succ, _elm_lang$core$Date$Jan) ? (year + 1) : year;
+	return (_elm_lang$core$Native_Utils.cmp(day, dim) > 0) ? A3(_Bogdanp$elm_datepicker$DatePicker_Date$mkDate, succYear, succ, 1) : A3(_Bogdanp$elm_datepicker$DatePicker_Date$mkDate, year, month, day);
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$prevMonth = function (date) {
+	var prevMonth = _Bogdanp$elm_datepicker$DatePicker_Date$predMonth(
+		_elm_lang$core$Date$month(date));
+	var prevYear = _elm_lang$core$Native_Utils.eq(prevMonth, _elm_lang$core$Date$Dec) ? (_elm_lang$core$Date$year(date) - 1) : _elm_lang$core$Date$year(date);
+	return A3(_Bogdanp$elm_datepicker$DatePicker_Date$mkDate, prevYear, prevMonth, 1);
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$nextMonth = function (date) {
+	var nextMonth = _Bogdanp$elm_datepicker$DatePicker_Date$succMonth(
+		_elm_lang$core$Date$month(date));
+	var nextYear = _elm_lang$core$Native_Utils.eq(nextMonth, _elm_lang$core$Date$Jan) ? (_elm_lang$core$Date$year(date) + 1) : _elm_lang$core$Date$year(date);
+	return A3(_Bogdanp$elm_datepicker$DatePicker_Date$mkDate, nextYear, nextMonth, 1);
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$firstOfMonth = function (date) {
+	return A3(
+		_Bogdanp$elm_datepicker$DatePicker_Date$mkDate,
+		_elm_lang$core$Date$year(date),
+		_elm_lang$core$Date$month(date),
+		1);
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$repeat = function (f) {
+	var go = F2(
+		function (n, x) {
+			go:
+			while (true) {
+				if (_elm_lang$core$Native_Utils.eq(n, 0)) {
+					return x;
+				} else {
+					var _v6 = n - 1,
+						_v7 = f(x);
+					n = _v6;
+					x = _v7;
+					continue go;
+				}
+			}
+		});
+	return go;
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$addDays = _Bogdanp$elm_datepicker$DatePicker_Date$repeat(_Bogdanp$elm_datepicker$DatePicker_Date$addDay);
+var _Bogdanp$elm_datepicker$DatePicker_Date$subDays = _Bogdanp$elm_datepicker$DatePicker_Date$repeat(_Bogdanp$elm_datepicker$DatePicker_Date$subDay);
+var _Bogdanp$elm_datepicker$DatePicker_Date$addDows = _Bogdanp$elm_datepicker$DatePicker_Date$repeat(_Bogdanp$elm_datepicker$DatePicker_Date$succDow);
+var _Bogdanp$elm_datepicker$DatePicker_Date$subDows = _Bogdanp$elm_datepicker$DatePicker_Date$repeat(_Bogdanp$elm_datepicker$DatePicker_Date$succDow);
+var _Bogdanp$elm_datepicker$DatePicker_Date$dateTuple = function (date) {
+	return {
+		ctor: '_Tuple3',
+		_0: _elm_lang$core$Date$year(date),
+		_1: _Bogdanp$elm_datepicker$DatePicker_Date$monthToInt(
+			_elm_lang$core$Date$month(date)),
+		_2: _elm_lang$core$Date$day(date)
+	};
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$trimDates = F2(
+	function (firstDay, dates) {
+		var dl = function (dates) {
+			dl:
+			while (true) {
+				var _p9 = dates;
+				if (_p9.ctor === '[]') {
+					return _elm_lang$core$Native_List.fromArray(
+						[]);
+				} else {
+					if (_elm_lang$core$Native_Utils.eq(
+						_elm_lang$core$Date$dayOfWeek(_p9._0),
+						firstDay)) {
+						return dates;
+					} else {
+						var _v9 = _p9._1;
+						dates = _v9;
+						continue dl;
+					}
+				}
+			}
+		};
+		var lastDay = _Bogdanp$elm_datepicker$DatePicker_Date$predDow(firstDay);
+		var dr = function (dates) {
+			dr:
+			while (true) {
+				var _p10 = dates;
+				if (_p10.ctor === '[]') {
+					return _elm_lang$core$Native_List.fromArray(
+						[]);
+				} else {
+					if (_elm_lang$core$Native_Utils.eq(
+						_elm_lang$core$Date$dayOfWeek(_p10._0),
+						lastDay)) {
+						return dates;
+					} else {
+						var _v11 = _p10._1;
+						dates = _v11;
+						continue dr;
+					}
+				}
+			}
+		};
+		return _elm_lang$core$List$reverse(
+			dr(
+				_elm_lang$core$List$reverse(
+					dl(dates))));
+	});
+var _Bogdanp$elm_datepicker$DatePicker_Date$datesInRange = F3(
+	function (firstDay, min, max) {
+		var go = F2(
+			function (x, acc) {
+				go:
+				while (true) {
+					var y = _Bogdanp$elm_datepicker$DatePicker_Date$subDay(x);
+					if (_elm_lang$core$Native_Utils.eq(
+						_Bogdanp$elm_datepicker$DatePicker_Date$dateTuple(y),
+						_Bogdanp$elm_datepicker$DatePicker_Date$dateTuple(min))) {
+						return A2(_elm_lang$core$List_ops['::'], y, acc);
+					} else {
+						var _v12 = y,
+							_v13 = A2(_elm_lang$core$List_ops['::'], y, acc);
+						x = _v12;
+						acc = _v13;
+						continue go;
+					}
+				}
+			});
+		return A2(
+			_Bogdanp$elm_datepicker$DatePicker_Date$trimDates,
+			firstDay,
+			A2(
+				go,
+				max,
+				_elm_lang$core$Native_List.fromArray(
+					[])));
+	});
+var _Bogdanp$elm_datepicker$DatePicker_Date$formatMonth = function (month) {
+	var _p11 = month;
+	switch (_p11.ctor) {
+		case 'Jan':
+			return 'January';
+		case 'Feb':
+			return 'February';
+		case 'Mar':
+			return 'March';
+		case 'Apr':
+			return 'April';
+		case 'May':
+			return 'May';
+		case 'Jun':
+			return 'June';
+		case 'Jul':
+			return 'July';
+		case 'Aug':
+			return 'August';
+		case 'Sep':
+			return 'September';
+		case 'Oct':
+			return 'October';
+		case 'Nov':
+			return 'November';
+		default:
+			return 'December';
+	}
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$formatDay = function (day) {
+	var _p12 = day;
+	switch (_p12.ctor) {
+		case 'Mon':
+			return 'Mo';
+		case 'Tue':
+			return 'Tu';
+		case 'Wed':
+			return 'We';
+		case 'Thu':
+			return 'Th';
+		case 'Fri':
+			return 'Fr';
+		case 'Sat':
+			return 'Sa';
+		default:
+			return 'Su';
+	}
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$formatDate = function (date) {
+	return A2(
+		_elm_lang$core$Basics_ops['++'],
+		_elm_lang$core$Basics$toString(
+			_elm_lang$core$Date$year(date)),
+		A2(
+			_elm_lang$core$Basics_ops['++'],
+			'/',
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				_Bogdanp$elm_datepicker$DatePicker_Date$monthToString(
+					_elm_lang$core$Date$month(date)),
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					'/',
+					_Bogdanp$elm_datepicker$DatePicker_Date$dayToString(
+						_elm_lang$core$Date$day(date))))));
+};
+var _Bogdanp$elm_datepicker$DatePicker_Date$initDate = A3(_Bogdanp$elm_datepicker$DatePicker_Date$mkDate, 1992, _elm_lang$core$Date$May, 29);
+
 //import Native.List //
 
 var _elm_lang$core$Native_Array = function() {
@@ -8374,6 +8822,614 @@ var _elm_lang$html$Html_Events$Options = F2(
 		return {stopPropagation: a, preventDefault: b};
 	});
 
+var _Bogdanp$elm_datepicker$DatePicker_ops = _Bogdanp$elm_datepicker$DatePicker_ops || {};
+_Bogdanp$elm_datepicker$DatePicker_ops['?>'] = _elm_lang$core$Basics$flip(_elm_lang$core$Maybe$withDefault);
+var _Bogdanp$elm_datepicker$DatePicker$classList$ = F2(
+	function (_p0, cs) {
+		var _p1 = _p0;
+		return _elm_lang$html$Html_Attributes$classList(
+			A2(
+				_elm_lang$core$List$map,
+				function (_p2) {
+					var _p3 = _p2;
+					return {
+						ctor: '_Tuple2',
+						_0: A2(_elm_lang$core$Basics_ops['++'], _p1.classNamespace, _p3._0),
+						_1: _p3._1
+					};
+				},
+				cs));
+	});
+var _Bogdanp$elm_datepicker$DatePicker$class$ = F2(
+	function (_p4, c) {
+		var _p5 = _p4;
+		return _elm_lang$html$Html_Attributes$class(
+			A2(_elm_lang$core$Basics_ops['++'], _p5.classNamespace, c));
+	});
+var _Bogdanp$elm_datepicker$DatePicker$groupDates = function (dates) {
+	var go = F4(
+		function (i, xs, racc, acc) {
+			go:
+			while (true) {
+				var _p6 = xs;
+				if (_p6.ctor === '[]') {
+					return _elm_lang$core$List$reverse(acc);
+				} else {
+					var _p8 = _p6._1;
+					var _p7 = _p6._0;
+					if (_elm_lang$core$Native_Utils.eq(i, 6)) {
+						var _v4 = 0,
+							_v5 = _p8,
+							_v6 = _elm_lang$core$Native_List.fromArray(
+							[]),
+							_v7 = A2(
+							_elm_lang$core$List_ops['::'],
+							_elm_lang$core$List$reverse(
+								A2(_elm_lang$core$List_ops['::'], _p7, racc)),
+							acc);
+						i = _v4;
+						xs = _v5;
+						racc = _v6;
+						acc = _v7;
+						continue go;
+					} else {
+						var _v8 = i + 1,
+							_v9 = _p8,
+							_v10 = A2(_elm_lang$core$List_ops['::'], _p7, racc),
+							_v11 = acc;
+						i = _v8;
+						xs = _v9;
+						racc = _v10;
+						acc = _v11;
+						continue go;
+					}
+				}
+			}
+		});
+	return A4(
+		go,
+		0,
+		dates,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[]));
+};
+var _Bogdanp$elm_datepicker$DatePicker$prepareDates = F2(
+	function (date, _p9) {
+		var _p10 = _p9;
+		var end = A2(
+			_Bogdanp$elm_datepicker$DatePicker_Date$addDays,
+			6,
+			_Bogdanp$elm_datepicker$DatePicker_Date$nextMonth(date));
+		var start = A2(
+			_Bogdanp$elm_datepicker$DatePicker_Date$subDays,
+			6,
+			_Bogdanp$elm_datepicker$DatePicker_Date$firstOfMonth(date));
+		return _elm_lang$core$Native_Utils.update(
+			_p10,
+			{
+				currentMonth: date,
+				currentDates: A3(_Bogdanp$elm_datepicker$DatePicker_Date$datesInRange, _p10.settings.firstDayOfWeek, start, end)
+			});
+	});
+var _Bogdanp$elm_datepicker$DatePicker$defaultSettings = {
+	placeholder: 'Please pick a date...',
+	classNamespace: 'elm-datepicker--',
+	inputClassList: _elm_lang$core$Native_List.fromArray(
+		[]),
+	inputName: _elm_lang$core$Maybe$Nothing,
+	isDisabled: _elm_lang$core$Basics$always(false),
+	dateFormatter: _Bogdanp$elm_datepicker$DatePicker_Date$formatDate,
+	dayFormatter: _Bogdanp$elm_datepicker$DatePicker_Date$formatDay,
+	monthFormatter: _Bogdanp$elm_datepicker$DatePicker_Date$formatMonth,
+	yearFormatter: _elm_lang$core$Basics$toString,
+	firstDayOfWeek: _elm_lang$core$Date$Sun,
+	pickedDate: _elm_lang$core$Maybe$Nothing
+};
+var _Bogdanp$elm_datepicker$DatePicker$Settings = function (a) {
+	return function (b) {
+		return function (c) {
+			return function (d) {
+				return function (e) {
+					return function (f) {
+						return function (g) {
+							return function (h) {
+								return function (i) {
+									return function (j) {
+										return function (k) {
+											return {placeholder: a, classNamespace: b, inputClassList: c, inputName: d, isDisabled: e, dateFormatter: f, dayFormatter: g, monthFormatter: h, yearFormatter: i, firstDayOfWeek: j, pickedDate: k};
+										};
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+	};
+};
+var _Bogdanp$elm_datepicker$DatePicker$Model = F7(
+	function (a, b, c, d, e, f, g) {
+		return {open: a, forceOpen: b, today: c, currentMonth: d, currentDates: e, pickedDate: f, settings: g};
+	});
+var _Bogdanp$elm_datepicker$DatePicker$MouseUp = {ctor: 'MouseUp'};
+var _Bogdanp$elm_datepicker$DatePicker$MouseDown = {ctor: 'MouseDown'};
+var _Bogdanp$elm_datepicker$DatePicker$Blur = {ctor: 'Blur'};
+var _Bogdanp$elm_datepicker$DatePicker$Focus = {ctor: 'Focus'};
+var _Bogdanp$elm_datepicker$DatePicker$Change = function (a) {
+	return {ctor: 'Change', _0: a};
+};
+var _Bogdanp$elm_datepicker$DatePicker$Pick = function (a) {
+	return {ctor: 'Pick', _0: a};
+};
+var _Bogdanp$elm_datepicker$DatePicker$PrevMonth = {ctor: 'PrevMonth'};
+var _Bogdanp$elm_datepicker$DatePicker$NextMonth = {ctor: 'NextMonth'};
+var _Bogdanp$elm_datepicker$DatePicker$datePicker = function (_p11) {
+	var _p12 = _p11;
+	var _p17 = _p12.today;
+	var _p16 = _p12.settings;
+	var _p15 = _p12.currentMonth;
+	var onPicker = function (ev) {
+		return function (_p13) {
+			return A3(
+				_elm_lang$html$Html_Events$onWithOptions,
+				ev,
+				{preventDefault: true, stopPropagation: true},
+				_elm_lang$core$Json_Decode$succeed(_p13));
+		};
+	};
+	var picked = function (d) {
+		var _p14 = _p12.pickedDate;
+		if (_p14.ctor === 'Nothing') {
+			return _elm_lang$core$Native_Utils.eq(
+				_Bogdanp$elm_datepicker$DatePicker_Date$dateTuple(d),
+				_Bogdanp$elm_datepicker$DatePicker_Date$dateTuple(_p17));
+		} else {
+			return _elm_lang$core$Native_Utils.eq(
+				_Bogdanp$elm_datepicker$DatePicker_Date$dateTuple(d),
+				_Bogdanp$elm_datepicker$DatePicker_Date$dateTuple(_p14._0));
+		}
+	};
+	var firstDay = _p16.firstDayOfWeek;
+	var classList = _Bogdanp$elm_datepicker$DatePicker$classList$(_p16);
+	var day = function (d) {
+		var disabled = _p16.isDisabled(d);
+		var props = _elm_lang$core$Basics$not(disabled) ? _elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Events$onClick(
+				_Bogdanp$elm_datepicker$DatePicker$Pick(d))
+			]) : _elm_lang$core$Native_List.fromArray(
+			[]);
+		return A2(
+			_elm_lang$html$Html$td,
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				_elm_lang$core$Native_List.fromArray(
+					[
+						classList(
+						_elm_lang$core$Native_List.fromArray(
+							[
+								{ctor: '_Tuple2', _0: 'day', _1: true},
+								{ctor: '_Tuple2', _0: 'disabled', _1: disabled},
+								{
+								ctor: '_Tuple2',
+								_0: 'picked',
+								_1: picked(d)
+							},
+								{
+								ctor: '_Tuple2',
+								_0: 'today',
+								_1: _elm_lang$core$Native_Utils.eq(
+									_Bogdanp$elm_datepicker$DatePicker_Date$dateTuple(d),
+									_Bogdanp$elm_datepicker$DatePicker_Date$dateTuple(_p17))
+							},
+								{
+								ctor: '_Tuple2',
+								_0: 'other-month',
+								_1: !_elm_lang$core$Native_Utils.eq(
+									_elm_lang$core$Date$month(_p15),
+									_elm_lang$core$Date$month(d))
+							}
+							]))
+					]),
+				props),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html$text(
+					_elm_lang$core$Basics$toString(
+						_elm_lang$core$Date$day(d)))
+				]));
+	};
+	var $class = _Bogdanp$elm_datepicker$DatePicker$class$(_p16);
+	var arrow = F2(
+		function (className, message) {
+			return A2(
+				_elm_lang$html$Html$a,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						$class(className),
+						_elm_lang$html$Html_Attributes$href('javascript:;'),
+						_elm_lang$html$Html_Events$onClick(message),
+						_elm_lang$html$Html_Attributes$tabindex(-1)
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[]));
+		});
+	var dow = function (d) {
+		return A2(
+			_elm_lang$html$Html$td,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					$class('dow')
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html$text(
+					_p16.dayFormatter(d))
+				]));
+	};
+	var row = function (days) {
+		return A2(
+			_elm_lang$html$Html$tr,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					$class('row')
+				]),
+			A2(_elm_lang$core$List$map, day, days));
+	};
+	var days = A2(
+		_elm_lang$core$List$map,
+		row,
+		_Bogdanp$elm_datepicker$DatePicker$groupDates(_p12.currentDates));
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				$class('picker'),
+				A2(onPicker, 'mousedown', _Bogdanp$elm_datepicker$DatePicker$MouseDown),
+				A2(onPicker, 'mouseup', _Bogdanp$elm_datepicker$DatePicker$MouseUp)
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						$class('picker-header')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$div,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								$class('prev-container')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								A2(arrow, 'prev', _Bogdanp$elm_datepicker$DatePicker$PrevMonth)
+							])),
+						A2(
+						_elm_lang$html$Html$div,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								$class('month-container')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								A2(
+								_elm_lang$html$Html$span,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										$class('month')
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html$text(
+										_p16.monthFormatter(
+											_elm_lang$core$Date$month(_p15)))
+									])),
+								A2(
+								_elm_lang$html$Html$span,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										$class('year')
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html$text(
+										_p16.yearFormatter(
+											_elm_lang$core$Date$year(_p15)))
+									]))
+							])),
+						A2(
+						_elm_lang$html$Html$div,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								$class('next-container')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								A2(arrow, 'next', _Bogdanp$elm_datepicker$DatePicker$NextMonth)
+							]))
+					])),
+				A2(
+				_elm_lang$html$Html$table,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						$class('table')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$thead,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								$class('weekdays')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								A2(
+								_elm_lang$html$Html$tr,
+								_elm_lang$core$Native_List.fromArray(
+									[]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										dow(firstDay),
+										dow(
+										A2(_Bogdanp$elm_datepicker$DatePicker_Date$addDows, 1, firstDay)),
+										dow(
+										A2(_Bogdanp$elm_datepicker$DatePicker_Date$addDows, 2, firstDay)),
+										dow(
+										A2(_Bogdanp$elm_datepicker$DatePicker_Date$addDows, 3, firstDay)),
+										dow(
+										A2(_Bogdanp$elm_datepicker$DatePicker_Date$addDows, 4, firstDay)),
+										dow(
+										A2(_Bogdanp$elm_datepicker$DatePicker_Date$addDows, 5, firstDay)),
+										dow(
+										A2(_Bogdanp$elm_datepicker$DatePicker_Date$addDows, 6, firstDay))
+									]))
+							])),
+						A2(
+						_elm_lang$html$Html$tbody,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								$class('days')
+							]),
+						days)
+					]))
+			]));
+};
+var _Bogdanp$elm_datepicker$DatePicker$view = function (_p18) {
+	var _p19 = _p18;
+	var _p21 = _p19._0.settings;
+	var inputClasses = A2(
+		_elm_lang$core$Basics_ops['++'],
+		_elm_lang$core$Native_List.fromArray(
+			[
+				{
+				ctor: '_Tuple2',
+				_0: A2(_elm_lang$core$Basics_ops['++'], _p21.classNamespace, 'input'),
+				_1: true
+			}
+			]),
+		_p21.inputClassList);
+	var inputCommon = function (xs) {
+		return A2(
+			_elm_lang$html$Html$input,
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$classList(inputClasses),
+						_elm_lang$html$Html_Attributes$name(
+						A2(_Bogdanp$elm_datepicker$DatePicker_ops['?>'], _p21.inputName, '')),
+						_elm_lang$html$Html_Attributes$type$('text'),
+						A2(
+						_elm_lang$html$Html_Events$on,
+						'change',
+						A2(_elm_lang$core$Json_Decode$map, _Bogdanp$elm_datepicker$DatePicker$Change, _elm_lang$html$Html_Events$targetValue)),
+						_elm_lang$html$Html_Events$onBlur(_Bogdanp$elm_datepicker$DatePicker$Blur),
+						_elm_lang$html$Html_Events$onClick(_Bogdanp$elm_datepicker$DatePicker$Focus),
+						_elm_lang$html$Html_Events$onFocus(_Bogdanp$elm_datepicker$DatePicker$Focus)
+					]),
+				xs),
+			_elm_lang$core$Native_List.fromArray(
+				[]));
+	};
+	var dateInput = function () {
+		var _p20 = _p19._0.pickedDate;
+		if (_p20.ctor === 'Nothing') {
+			return inputCommon(
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$placeholder(_p21.placeholder)
+					]));
+		} else {
+			return inputCommon(
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$value(
+						_p21.dateFormatter(_p20._0))
+					]));
+		}
+	}();
+	var $class = _Bogdanp$elm_datepicker$DatePicker$class$(_p21);
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				$class('container')
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				dateInput,
+				_p19._0.open ? _Bogdanp$elm_datepicker$DatePicker$datePicker(_p19._0) : _elm_lang$html$Html$text('')
+			]));
+};
+var _Bogdanp$elm_datepicker$DatePicker$CurrentDate = function (a) {
+	return {ctor: 'CurrentDate', _0: a};
+};
+var _Bogdanp$elm_datepicker$DatePicker$DatePicker = function (a) {
+	return {ctor: 'DatePicker', _0: a};
+};
+var _Bogdanp$elm_datepicker$DatePicker$init = function (settings) {
+	var date = A2(_Bogdanp$elm_datepicker$DatePicker_ops['?>'], settings.pickedDate, _Bogdanp$elm_datepicker$DatePicker_Date$initDate);
+	return {
+		ctor: '_Tuple2',
+		_0: _Bogdanp$elm_datepicker$DatePicker$DatePicker(
+			A2(
+				_Bogdanp$elm_datepicker$DatePicker$prepareDates,
+				date,
+				{
+					open: false,
+					forceOpen: false,
+					today: _Bogdanp$elm_datepicker$DatePicker_Date$initDate,
+					currentMonth: _Bogdanp$elm_datepicker$DatePicker_Date$initDate,
+					currentDates: _elm_lang$core$Native_List.fromArray(
+						[]),
+					pickedDate: settings.pickedDate,
+					settings: settings
+				})),
+		_1: A3(
+			_elm_lang$core$Task$perform,
+			_elm_lang$core$Basics$always(
+				_Bogdanp$elm_datepicker$DatePicker$CurrentDate(_Bogdanp$elm_datepicker$DatePicker_Date$initDate)),
+			_Bogdanp$elm_datepicker$DatePicker$CurrentDate,
+			_elm_lang$core$Date$now)
+	};
+};
+var _Bogdanp$elm_datepicker$DatePicker_ops = _Bogdanp$elm_datepicker$DatePicker_ops || {};
+_Bogdanp$elm_datepicker$DatePicker_ops['!'] = F2(
+	function (m, cs) {
+		return {
+			ctor: '_Tuple3',
+			_0: _Bogdanp$elm_datepicker$DatePicker$DatePicker(m),
+			_1: _elm_lang$core$Platform_Cmd$batch(cs),
+			_2: _elm_lang$core$Maybe$Nothing
+		};
+	});
+var _Bogdanp$elm_datepicker$DatePicker$update = F2(
+	function (msg, _p22) {
+		var _p23 = _p22;
+		var _p32 = _p23._0.pickedDate;
+		var _p31 = _p23._0;
+		var _p30 = _p23._0.currentMonth;
+		var _p24 = msg;
+		switch (_p24.ctor) {
+			case 'CurrentDate':
+				var _p25 = _p24._0;
+				return A2(
+					_Bogdanp$elm_datepicker$DatePicker_ops['!'],
+					A2(
+						_Bogdanp$elm_datepicker$DatePicker$prepareDates,
+						A2(_Bogdanp$elm_datepicker$DatePicker_ops['?>'], _p32, _p25),
+						_elm_lang$core$Native_Utils.update(
+							_p31,
+							{today: _p25})),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			case 'NextMonth':
+				return A2(
+					_Bogdanp$elm_datepicker$DatePicker_ops['!'],
+					A2(
+						_Bogdanp$elm_datepicker$DatePicker$prepareDates,
+						_Bogdanp$elm_datepicker$DatePicker_Date$nextMonth(_p30),
+						_p31),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			case 'PrevMonth':
+				return A2(
+					_Bogdanp$elm_datepicker$DatePicker_ops['!'],
+					A2(
+						_Bogdanp$elm_datepicker$DatePicker$prepareDates,
+						_Bogdanp$elm_datepicker$DatePicker_Date$prevMonth(_p30),
+						_p31),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			case 'Pick':
+				var _p26 = _p24._0;
+				return {
+					ctor: '_Tuple3',
+					_0: _Bogdanp$elm_datepicker$DatePicker$DatePicker(
+						A2(
+							_Bogdanp$elm_datepicker$DatePicker$prepareDates,
+							_p26,
+							_elm_lang$core$Native_Utils.update(
+								_p31,
+								{
+									pickedDate: _elm_lang$core$Maybe$Just(_p26),
+									open: false
+								}))),
+					_1: _elm_lang$core$Platform_Cmd$none,
+					_2: _elm_lang$core$Maybe$Just(_p26)
+				};
+			case 'Change':
+				var _p27 = function () {
+					var _p28 = _elm_lang$core$Date$fromString(_p24._0);
+					if (_p28.ctor === 'Err') {
+						return {ctor: '_Tuple2', _0: false, _1: _p32};
+					} else {
+						var _p29 = _p28._0;
+						return _p23._0.settings.isDisabled(_p29) ? {ctor: '_Tuple2', _0: false, _1: _p32} : {
+							ctor: '_Tuple2',
+							_0: true,
+							_1: _elm_lang$core$Maybe$Just(_p29)
+						};
+					}
+				}();
+				var valid = _p27._0;
+				var pickedDate = _p27._1;
+				var month = A2(_Bogdanp$elm_datepicker$DatePicker_ops['?>'], pickedDate, _p30);
+				return {
+					ctor: '_Tuple3',
+					_0: _Bogdanp$elm_datepicker$DatePicker$DatePicker(
+						A2(
+							_Bogdanp$elm_datepicker$DatePicker$prepareDates,
+							month,
+							_elm_lang$core$Native_Utils.update(
+								_p31,
+								{pickedDate: pickedDate}))),
+					_1: _elm_lang$core$Platform_Cmd$none,
+					_2: valid ? pickedDate : _elm_lang$core$Maybe$Nothing
+				};
+			case 'Focus':
+				return A2(
+					_Bogdanp$elm_datepicker$DatePicker_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						_p31,
+						{open: true, forceOpen: false}),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			case 'Blur':
+				return A2(
+					_Bogdanp$elm_datepicker$DatePicker_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						_p31,
+						{open: _p23._0.forceOpen}),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			case 'MouseDown':
+				return A2(
+					_Bogdanp$elm_datepicker$DatePicker_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						_p31,
+						{forceOpen: true}),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			default:
+				return A2(
+					_Bogdanp$elm_datepicker$DatePicker_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						_p31,
+						{forceOpen: false}),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+		}
+	});
+
 var _elm_lang$core$Process$kill = _elm_lang$core$Native_Scheduler.kill;
 var _elm_lang$core$Process$sleep = _elm_lang$core$Native_Scheduler.sleep;
 var _elm_lang$core$Process$spawn = _elm_lang$core$Native_Scheduler.spawn;
@@ -8449,15 +9505,33 @@ var _ccapndave$elm_update_extra$Update_Extra$identity = function (model) {
 		_elm_lang$core$Native_List.fromArray(
 			[]));
 };
-var _ccapndave$elm_update_extra$Update_Extra$addCmd = F2(
-	function (cmd$, _p0) {
+var _ccapndave$elm_update_extra$Update_Extra$mapCmd = F2(
+	function (tagger, _p0) {
 		var _p1 = _p0;
 		return {
 			ctor: '_Tuple2',
 			_0: _p1._0,
+			_1: A2(_elm_lang$core$Platform_Cmd$map, tagger, _p1._1)
+		};
+	});
+var _ccapndave$elm_update_extra$Update_Extra$addCmd = F2(
+	function (cmd$, _p2) {
+		var _p3 = _p2;
+		return {
+			ctor: '_Tuple2',
+			_0: _p3._0,
 			_1: _elm_lang$core$Platform_Cmd$batch(
 				_elm_lang$core$Native_List.fromArray(
-					[_p1._1, cmd$]))
+					[_p3._1, cmd$]))
+		};
+	});
+var _ccapndave$elm_update_extra$Update_Extra$updateModel = F2(
+	function (f, _p4) {
+		var _p5 = _p4;
+		return {
+			ctor: '_Tuple2',
+			_0: f(_p5._0),
+			_1: _p5._1
 		};
 	});
 var _ccapndave$elm_update_extra$Update_Extra$filter = F2(
@@ -8465,17 +9539,17 @@ var _ccapndave$elm_update_extra$Update_Extra$filter = F2(
 		return pred ? f : _elm_lang$core$Basics$identity;
 	});
 var _ccapndave$elm_update_extra$Update_Extra$andThen = F3(
-	function (update, msg, _p2) {
-		var _p3 = _p2;
-		var _p4 = A2(update, msg, _p3._0);
-		var model$ = _p4._0;
-		var cmd$ = _p4._1;
+	function (update, msg, _p6) {
+		var _p7 = _p6;
+		var _p8 = A2(update, msg, _p7._0);
+		var model$ = _p8._0;
+		var cmd$ = _p8._1;
 		return {
 			ctor: '_Tuple2',
 			_0: model$,
 			_1: _elm_lang$core$Platform_Cmd$batch(
 				_elm_lang$core$Native_List.fromArray(
-					[_p3._1, cmd$]))
+					[_p7._1, cmd$]))
 		};
 	});
 var _ccapndave$elm_update_extra$Update_Extra$sequence = F3(
@@ -8711,6 +9785,1069 @@ var _elm_community$elm_json_extra$Json_Decode_Extra$apply = _elm_lang$core$Json_
 		}));
 var _elm_community$elm_json_extra$Json_Decode_Extra_ops = _elm_community$elm_json_extra$Json_Decode_Extra_ops || {};
 _elm_community$elm_json_extra$Json_Decode_Extra_ops['|:'] = _elm_community$elm_json_extra$Json_Decode_Extra$apply;
+
+var _elm_community$list_extra$List_Extra$greedyGroupsOfWithStep = F3(
+	function (size, step, xs) {
+		var okayXs = _elm_lang$core$Native_Utils.cmp(
+			_elm_lang$core$List$length(xs),
+			0) > 0;
+		var okayArgs = (_elm_lang$core$Native_Utils.cmp(size, 0) > 0) && (_elm_lang$core$Native_Utils.cmp(step, 0) > 0);
+		var xs$ = A2(_elm_lang$core$List$drop, step, xs);
+		var group = A2(_elm_lang$core$List$take, size, xs);
+		return (okayArgs && okayXs) ? A2(
+			_elm_lang$core$List_ops['::'],
+			group,
+			A3(_elm_community$list_extra$List_Extra$greedyGroupsOfWithStep, size, step, xs$)) : _elm_lang$core$Native_List.fromArray(
+			[]);
+	});
+var _elm_community$list_extra$List_Extra$greedyGroupsOf = F2(
+	function (size, xs) {
+		return A3(_elm_community$list_extra$List_Extra$greedyGroupsOfWithStep, size, size, xs);
+	});
+var _elm_community$list_extra$List_Extra$groupsOfWithStep = F3(
+	function (size, step, xs) {
+		var okayArgs = (_elm_lang$core$Native_Utils.cmp(size, 0) > 0) && (_elm_lang$core$Native_Utils.cmp(step, 0) > 0);
+		var xs$ = A2(_elm_lang$core$List$drop, step, xs);
+		var group = A2(_elm_lang$core$List$take, size, xs);
+		var okayLength = _elm_lang$core$Native_Utils.eq(
+			size,
+			_elm_lang$core$List$length(group));
+		return (okayArgs && okayLength) ? A2(
+			_elm_lang$core$List_ops['::'],
+			group,
+			A3(_elm_community$list_extra$List_Extra$groupsOfWithStep, size, step, xs$)) : _elm_lang$core$Native_List.fromArray(
+			[]);
+	});
+var _elm_community$list_extra$List_Extra$groupsOf = F2(
+	function (size, xs) {
+		return A3(_elm_community$list_extra$List_Extra$groupsOfWithStep, size, size, xs);
+	});
+var _elm_community$list_extra$List_Extra$zip5 = _elm_lang$core$List$map5(
+	F5(
+		function (v0, v1, v2, v3, v4) {
+			return {ctor: '_Tuple5', _0: v0, _1: v1, _2: v2, _3: v3, _4: v4};
+		}));
+var _elm_community$list_extra$List_Extra$zip4 = _elm_lang$core$List$map4(
+	F4(
+		function (v0, v1, v2, v3) {
+			return {ctor: '_Tuple4', _0: v0, _1: v1, _2: v2, _3: v3};
+		}));
+var _elm_community$list_extra$List_Extra$zip3 = _elm_lang$core$List$map3(
+	F3(
+		function (v0, v1, v2) {
+			return {ctor: '_Tuple3', _0: v0, _1: v1, _2: v2};
+		}));
+var _elm_community$list_extra$List_Extra$zip = _elm_lang$core$List$map2(
+	F2(
+		function (v0, v1) {
+			return {ctor: '_Tuple2', _0: v0, _1: v1};
+		}));
+var _elm_community$list_extra$List_Extra$isPrefixOf = function (prefix) {
+	return function (_p0) {
+		return A2(
+			_elm_lang$core$List$all,
+			_elm_lang$core$Basics$identity,
+			A3(
+				_elm_lang$core$List$map2,
+				F2(
+					function (x, y) {
+						return _elm_lang$core$Native_Utils.eq(x, y);
+					}),
+				prefix,
+				_p0));
+	};
+};
+var _elm_community$list_extra$List_Extra$isSuffixOf = F2(
+	function (suffix, xs) {
+		return A2(
+			_elm_community$list_extra$List_Extra$isPrefixOf,
+			_elm_lang$core$List$reverse(suffix),
+			_elm_lang$core$List$reverse(xs));
+	});
+var _elm_community$list_extra$List_Extra$selectSplit = function (xs) {
+	var _p1 = xs;
+	if (_p1.ctor === '[]') {
+		return _elm_lang$core$Native_List.fromArray(
+			[]);
+	} else {
+		var _p5 = _p1._1;
+		var _p4 = _p1._0;
+		return A2(
+			_elm_lang$core$List_ops['::'],
+			{
+				ctor: '_Tuple3',
+				_0: _elm_lang$core$Native_List.fromArray(
+					[]),
+				_1: _p4,
+				_2: _p5
+			},
+			A2(
+				_elm_lang$core$List$map,
+				function (_p2) {
+					var _p3 = _p2;
+					return {
+						ctor: '_Tuple3',
+						_0: A2(_elm_lang$core$List_ops['::'], _p4, _p3._0),
+						_1: _p3._1,
+						_2: _p3._2
+					};
+				},
+				_elm_community$list_extra$List_Extra$selectSplit(_p5)));
+	}
+};
+var _elm_community$list_extra$List_Extra$select = function (xs) {
+	var _p6 = xs;
+	if (_p6.ctor === '[]') {
+		return _elm_lang$core$Native_List.fromArray(
+			[]);
+	} else {
+		var _p10 = _p6._1;
+		var _p9 = _p6._0;
+		return A2(
+			_elm_lang$core$List_ops['::'],
+			{ctor: '_Tuple2', _0: _p9, _1: _p10},
+			A2(
+				_elm_lang$core$List$map,
+				function (_p7) {
+					var _p8 = _p7;
+					return {
+						ctor: '_Tuple2',
+						_0: _p8._0,
+						_1: A2(_elm_lang$core$List_ops['::'], _p9, _p8._1)
+					};
+				},
+				_elm_community$list_extra$List_Extra$select(_p10)));
+	}
+};
+var _elm_community$list_extra$List_Extra$tailsHelp = F2(
+	function (e, list) {
+		var _p11 = list;
+		if (_p11.ctor === '::') {
+			var _p12 = _p11._0;
+			return A2(
+				_elm_lang$core$List_ops['::'],
+				A2(_elm_lang$core$List_ops['::'], e, _p12),
+				A2(_elm_lang$core$List_ops['::'], _p12, _p11._1));
+		} else {
+			return _elm_lang$core$Native_List.fromArray(
+				[]);
+		}
+	});
+var _elm_community$list_extra$List_Extra$tails = A2(
+	_elm_lang$core$List$foldr,
+	_elm_community$list_extra$List_Extra$tailsHelp,
+	_elm_lang$core$Native_List.fromArray(
+		[
+			_elm_lang$core$Native_List.fromArray(
+			[])
+		]));
+var _elm_community$list_extra$List_Extra$isInfixOf = F2(
+	function (infix, xs) {
+		return A2(
+			_elm_lang$core$List$any,
+			_elm_community$list_extra$List_Extra$isPrefixOf(infix),
+			_elm_community$list_extra$List_Extra$tails(xs));
+	});
+var _elm_community$list_extra$List_Extra$inits = A2(
+	_elm_lang$core$List$foldr,
+	F2(
+		function (e, acc) {
+			return A2(
+				_elm_lang$core$List_ops['::'],
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				A2(
+					_elm_lang$core$List$map,
+					F2(
+						function (x, y) {
+							return A2(_elm_lang$core$List_ops['::'], x, y);
+						})(e),
+					acc));
+		}),
+	_elm_lang$core$Native_List.fromArray(
+		[
+			_elm_lang$core$Native_List.fromArray(
+			[])
+		]));
+var _elm_community$list_extra$List_Extra$groupWhileTransitively = F2(
+	function (cmp, xs$) {
+		var _p13 = xs$;
+		if (_p13.ctor === '[]') {
+			return _elm_lang$core$Native_List.fromArray(
+				[]);
+		} else {
+			if (_p13._1.ctor === '[]') {
+				return _elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$core$Native_List.fromArray(
+						[_p13._0])
+					]);
+			} else {
+				var _p15 = _p13._0;
+				var _p14 = A2(_elm_community$list_extra$List_Extra$groupWhileTransitively, cmp, _p13._1);
+				if (_p14.ctor === '::') {
+					return A2(cmp, _p15, _p13._1._0) ? A2(
+						_elm_lang$core$List_ops['::'],
+						A2(_elm_lang$core$List_ops['::'], _p15, _p14._0),
+						_p14._1) : A2(
+						_elm_lang$core$List_ops['::'],
+						_elm_lang$core$Native_List.fromArray(
+							[_p15]),
+						_p14);
+				} else {
+					return _elm_lang$core$Native_List.fromArray(
+						[]);
+				}
+			}
+		}
+	});
+var _elm_community$list_extra$List_Extra$stripPrefix = F2(
+	function (prefix, xs) {
+		var step = F2(
+			function (e, m) {
+				var _p16 = m;
+				if (_p16.ctor === 'Nothing') {
+					return _elm_lang$core$Maybe$Nothing;
+				} else {
+					if (_p16._0.ctor === '[]') {
+						return _elm_lang$core$Maybe$Nothing;
+					} else {
+						return _elm_lang$core$Native_Utils.eq(e, _p16._0._0) ? _elm_lang$core$Maybe$Just(_p16._0._1) : _elm_lang$core$Maybe$Nothing;
+					}
+				}
+			});
+		return A3(
+			_elm_lang$core$List$foldl,
+			step,
+			_elm_lang$core$Maybe$Just(xs),
+			prefix);
+	});
+var _elm_community$list_extra$List_Extra$dropWhileRight = function (p) {
+	return A2(
+		_elm_lang$core$List$foldr,
+		F2(
+			function (x, xs) {
+				return (p(x) && _elm_lang$core$List$isEmpty(xs)) ? _elm_lang$core$Native_List.fromArray(
+					[]) : A2(_elm_lang$core$List_ops['::'], x, xs);
+			}),
+		_elm_lang$core$Native_List.fromArray(
+			[]));
+};
+var _elm_community$list_extra$List_Extra$takeWhileRight = function (p) {
+	var step = F2(
+		function (x, _p17) {
+			var _p18 = _p17;
+			var _p19 = _p18._0;
+			return (p(x) && _p18._1) ? {
+				ctor: '_Tuple2',
+				_0: A2(_elm_lang$core$List_ops['::'], x, _p19),
+				_1: true
+			} : {ctor: '_Tuple2', _0: _p19, _1: false};
+		});
+	return function (_p20) {
+		return _elm_lang$core$Basics$fst(
+			A3(
+				_elm_lang$core$List$foldr,
+				step,
+				{
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_List.fromArray(
+						[]),
+					_1: true
+				},
+				_p20));
+	};
+};
+var _elm_community$list_extra$List_Extra$splitAt = F2(
+	function (n, xs) {
+		return {
+			ctor: '_Tuple2',
+			_0: A2(_elm_lang$core$List$take, n, xs),
+			_1: A2(_elm_lang$core$List$drop, n, xs)
+		};
+	});
+var _elm_community$list_extra$List_Extra$unfoldr = F2(
+	function (f, seed) {
+		var _p21 = f(seed);
+		if (_p21.ctor === 'Nothing') {
+			return _elm_lang$core$Native_List.fromArray(
+				[]);
+		} else {
+			return A2(
+				_elm_lang$core$List_ops['::'],
+				_p21._0._0,
+				A2(_elm_community$list_extra$List_Extra$unfoldr, f, _p21._0._1));
+		}
+	});
+var _elm_community$list_extra$List_Extra$scanr1 = F2(
+	function (f, xs$) {
+		var _p22 = xs$;
+		if (_p22.ctor === '[]') {
+			return _elm_lang$core$Native_List.fromArray(
+				[]);
+		} else {
+			if (_p22._1.ctor === '[]') {
+				return _elm_lang$core$Native_List.fromArray(
+					[_p22._0]);
+			} else {
+				var _p23 = A2(_elm_community$list_extra$List_Extra$scanr1, f, _p22._1);
+				if (_p23.ctor === '::') {
+					return A2(
+						_elm_lang$core$List_ops['::'],
+						A2(f, _p22._0, _p23._0),
+						_p23);
+				} else {
+					return _elm_lang$core$Native_List.fromArray(
+						[]);
+				}
+			}
+		}
+	});
+var _elm_community$list_extra$List_Extra$scanr = F3(
+	function (f, acc, xs$) {
+		var _p24 = xs$;
+		if (_p24.ctor === '[]') {
+			return _elm_lang$core$Native_List.fromArray(
+				[acc]);
+		} else {
+			var _p25 = A3(_elm_community$list_extra$List_Extra$scanr, f, acc, _p24._1);
+			if (_p25.ctor === '::') {
+				return A2(
+					_elm_lang$core$List_ops['::'],
+					A2(f, _p24._0, _p25._0),
+					_p25);
+			} else {
+				return _elm_lang$core$Native_List.fromArray(
+					[]);
+			}
+		}
+	});
+var _elm_community$list_extra$List_Extra$scanl1 = F2(
+	function (f, xs$) {
+		var _p26 = xs$;
+		if (_p26.ctor === '[]') {
+			return _elm_lang$core$Native_List.fromArray(
+				[]);
+		} else {
+			return A3(_elm_lang$core$List$scanl, f, _p26._0, _p26._1);
+		}
+	});
+var _elm_community$list_extra$List_Extra$indexedFoldr = F3(
+	function (func, acc, list) {
+		var step = F2(
+			function (x, _p27) {
+				var _p28 = _p27;
+				var _p29 = _p28._0;
+				return {
+					ctor: '_Tuple2',
+					_0: _p29 - 1,
+					_1: A3(func, _p29, x, _p28._1)
+				};
+			});
+		return _elm_lang$core$Basics$snd(
+			A3(
+				_elm_lang$core$List$foldr,
+				step,
+				{
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$List$length(list) - 1,
+					_1: acc
+				},
+				list));
+	});
+var _elm_community$list_extra$List_Extra$indexedFoldl = F3(
+	function (func, acc, list) {
+		var step = F2(
+			function (x, _p30) {
+				var _p31 = _p30;
+				var _p32 = _p31._0;
+				return {
+					ctor: '_Tuple2',
+					_0: _p32 + 1,
+					_1: A3(func, _p32, x, _p31._1)
+				};
+			});
+		return _elm_lang$core$Basics$snd(
+			A3(
+				_elm_lang$core$List$foldl,
+				step,
+				{ctor: '_Tuple2', _0: 0, _1: acc},
+				list));
+	});
+var _elm_community$list_extra$List_Extra$foldr1 = F2(
+	function (f, xs) {
+		var mf = F2(
+			function (x, m) {
+				return _elm_lang$core$Maybe$Just(
+					function () {
+						var _p33 = m;
+						if (_p33.ctor === 'Nothing') {
+							return x;
+						} else {
+							return A2(f, x, _p33._0);
+						}
+					}());
+			});
+		return A3(_elm_lang$core$List$foldr, mf, _elm_lang$core$Maybe$Nothing, xs);
+	});
+var _elm_community$list_extra$List_Extra$foldl1 = F2(
+	function (f, xs) {
+		var mf = F2(
+			function (x, m) {
+				return _elm_lang$core$Maybe$Just(
+					function () {
+						var _p34 = m;
+						if (_p34.ctor === 'Nothing') {
+							return x;
+						} else {
+							return A2(f, _p34._0, x);
+						}
+					}());
+			});
+		return A3(_elm_lang$core$List$foldl, mf, _elm_lang$core$Maybe$Nothing, xs);
+	});
+var _elm_community$list_extra$List_Extra$interweaveHelp = F3(
+	function (l1, l2, acc) {
+		interweaveHelp:
+		while (true) {
+			var _p35 = {ctor: '_Tuple2', _0: l1, _1: l2};
+			_v19_1:
+			do {
+				if (_p35._0.ctor === '::') {
+					if (_p35._1.ctor === '::') {
+						var _v20 = _p35._0._1,
+							_v21 = _p35._1._1,
+							_v22 = A2(
+							_elm_lang$core$Basics_ops['++'],
+							acc,
+							_elm_lang$core$Native_List.fromArray(
+								[_p35._0._0, _p35._1._0]));
+						l1 = _v20;
+						l2 = _v21;
+						acc = _v22;
+						continue interweaveHelp;
+					} else {
+						break _v19_1;
+					}
+				} else {
+					if (_p35._1.ctor === '[]') {
+						break _v19_1;
+					} else {
+						return A2(_elm_lang$core$Basics_ops['++'], acc, _p35._1);
+					}
+				}
+			} while(false);
+			return A2(_elm_lang$core$Basics_ops['++'], acc, _p35._0);
+		}
+	});
+var _elm_community$list_extra$List_Extra$interweave = F2(
+	function (l1, l2) {
+		return A3(
+			_elm_community$list_extra$List_Extra$interweaveHelp,
+			l1,
+			l2,
+			_elm_lang$core$Native_List.fromArray(
+				[]));
+	});
+var _elm_community$list_extra$List_Extra$permutations = function (xs$) {
+	var _p36 = xs$;
+	if (_p36.ctor === '[]') {
+		return _elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$core$Native_List.fromArray(
+				[])
+			]);
+	} else {
+		var f = function (_p37) {
+			var _p38 = _p37;
+			return A2(
+				_elm_lang$core$List$map,
+				F2(
+					function (x, y) {
+						return A2(_elm_lang$core$List_ops['::'], x, y);
+					})(_p38._0),
+				_elm_community$list_extra$List_Extra$permutations(_p38._1));
+		};
+		return A2(
+			_elm_lang$core$List$concatMap,
+			f,
+			_elm_community$list_extra$List_Extra$select(_p36));
+	}
+};
+var _elm_community$list_extra$List_Extra$isPermutationOf = F2(
+	function (permut, xs) {
+		return A2(
+			_elm_lang$core$List$member,
+			permut,
+			_elm_community$list_extra$List_Extra$permutations(xs));
+	});
+var _elm_community$list_extra$List_Extra$subsequencesNonEmpty = function (xs) {
+	var _p39 = xs;
+	if (_p39.ctor === '[]') {
+		return _elm_lang$core$Native_List.fromArray(
+			[]);
+	} else {
+		var _p40 = _p39._0;
+		var f = F2(
+			function (ys, r) {
+				return A2(
+					_elm_lang$core$List_ops['::'],
+					ys,
+					A2(
+						_elm_lang$core$List_ops['::'],
+						A2(_elm_lang$core$List_ops['::'], _p40, ys),
+						r));
+			});
+		return A2(
+			_elm_lang$core$List_ops['::'],
+			_elm_lang$core$Native_List.fromArray(
+				[_p40]),
+			A3(
+				_elm_lang$core$List$foldr,
+				f,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_community$list_extra$List_Extra$subsequencesNonEmpty(_p39._1)));
+	}
+};
+var _elm_community$list_extra$List_Extra$subsequences = function (xs) {
+	return A2(
+		_elm_lang$core$List_ops['::'],
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_community$list_extra$List_Extra$subsequencesNonEmpty(xs));
+};
+var _elm_community$list_extra$List_Extra$isSubsequenceOf = F2(
+	function (subseq, xs) {
+		return A2(
+			_elm_lang$core$List$member,
+			subseq,
+			_elm_community$list_extra$List_Extra$subsequences(xs));
+	});
+var _elm_community$list_extra$List_Extra$transpose = function (ll) {
+	transpose:
+	while (true) {
+		var _p41 = ll;
+		if (_p41.ctor === '[]') {
+			return _elm_lang$core$Native_List.fromArray(
+				[]);
+		} else {
+			if (_p41._0.ctor === '[]') {
+				var _v27 = _p41._1;
+				ll = _v27;
+				continue transpose;
+			} else {
+				var _p42 = _p41._1;
+				var tails = A2(_elm_lang$core$List$filterMap, _elm_lang$core$List$tail, _p42);
+				var heads = A2(_elm_lang$core$List$filterMap, _elm_lang$core$List$head, _p42);
+				return A2(
+					_elm_lang$core$List_ops['::'],
+					A2(_elm_lang$core$List_ops['::'], _p41._0._0, heads),
+					_elm_community$list_extra$List_Extra$transpose(
+						A2(_elm_lang$core$List_ops['::'], _p41._0._1, tails)));
+			}
+		}
+	}
+};
+var _elm_community$list_extra$List_Extra$intercalate = function (xs) {
+	return function (_p43) {
+		return _elm_lang$core$List$concat(
+			A2(_elm_lang$core$List$intersperse, xs, _p43));
+	};
+};
+var _elm_community$list_extra$List_Extra$filterNot = F2(
+	function (pred, list) {
+		return A2(
+			_elm_lang$core$List$filter,
+			function (_p44) {
+				return _elm_lang$core$Basics$not(
+					pred(_p44));
+			},
+			list);
+	});
+var _elm_community$list_extra$List_Extra$removeAt = F2(
+	function (index, l) {
+		if (_elm_lang$core$Native_Utils.cmp(index, 0) < 0) {
+			return l;
+		} else {
+			var tail = _elm_lang$core$List$tail(
+				A2(_elm_lang$core$List$drop, index, l));
+			var head = A2(_elm_lang$core$List$take, index, l);
+			var _p45 = tail;
+			if (_p45.ctor === 'Nothing') {
+				return l;
+			} else {
+				return A2(_elm_lang$core$List$append, head, _p45._0);
+			}
+		}
+	});
+var _elm_community$list_extra$List_Extra$singleton = function (x) {
+	return _elm_lang$core$Native_List.fromArray(
+		[x]);
+};
+var _elm_community$list_extra$List_Extra$setAt = F3(
+	function (index, value, l) {
+		if (_elm_lang$core$Native_Utils.cmp(index, 0) < 0) {
+			return _elm_lang$core$Maybe$Nothing;
+		} else {
+			var tail = _elm_lang$core$List$tail(
+				A2(_elm_lang$core$List$drop, index, l));
+			var head = A2(_elm_lang$core$List$take, index, l);
+			var _p46 = tail;
+			if (_p46.ctor === 'Nothing') {
+				return _elm_lang$core$Maybe$Nothing;
+			} else {
+				return _elm_lang$core$Maybe$Just(
+					A2(
+						_elm_lang$core$List$append,
+						head,
+						A2(_elm_lang$core$List_ops['::'], value, _p46._0)));
+			}
+		}
+	});
+var _elm_community$list_extra$List_Extra$remove = F2(
+	function (x, xs) {
+		var _p47 = xs;
+		if (_p47.ctor === '[]') {
+			return _elm_lang$core$Native_List.fromArray(
+				[]);
+		} else {
+			var _p49 = _p47._1;
+			var _p48 = _p47._0;
+			return _elm_lang$core$Native_Utils.eq(x, _p48) ? _p49 : A2(
+				_elm_lang$core$List_ops['::'],
+				_p48,
+				A2(_elm_community$list_extra$List_Extra$remove, x, _p49));
+		}
+	});
+var _elm_community$list_extra$List_Extra$updateIfIndex = F3(
+	function (predicate, update, list) {
+		return A2(
+			_elm_lang$core$List$indexedMap,
+			F2(
+				function (i, x) {
+					return predicate(i) ? update(x) : x;
+				}),
+			list);
+	});
+var _elm_community$list_extra$List_Extra$updateAt = F3(
+	function (index, update, list) {
+		return ((_elm_lang$core$Native_Utils.cmp(index, 0) < 0) || (_elm_lang$core$Native_Utils.cmp(
+			index,
+			_elm_lang$core$List$length(list)) > -1)) ? _elm_lang$core$Maybe$Nothing : _elm_lang$core$Maybe$Just(
+			A3(
+				_elm_community$list_extra$List_Extra$updateIfIndex,
+				F2(
+					function (x, y) {
+						return _elm_lang$core$Native_Utils.eq(x, y);
+					})(index),
+				update,
+				list));
+	});
+var _elm_community$list_extra$List_Extra$updateIf = F3(
+	function (predicate, update, list) {
+		return A2(
+			_elm_lang$core$List$map,
+			function (item) {
+				return predicate(item) ? update(item) : item;
+			},
+			list);
+	});
+var _elm_community$list_extra$List_Extra$replaceIf = F3(
+	function (predicate, replacement, list) {
+		return A3(
+			_elm_community$list_extra$List_Extra$updateIf,
+			predicate,
+			_elm_lang$core$Basics$always(replacement),
+			list);
+	});
+var _elm_community$list_extra$List_Extra$findIndices = function (p) {
+	return function (_p50) {
+		return A2(
+			_elm_lang$core$List$map,
+			_elm_lang$core$Basics$fst,
+			A2(
+				_elm_lang$core$List$filter,
+				function (_p51) {
+					var _p52 = _p51;
+					return p(_p52._1);
+				},
+				A2(
+					_elm_lang$core$List$indexedMap,
+					F2(
+						function (v0, v1) {
+							return {ctor: '_Tuple2', _0: v0, _1: v1};
+						}),
+					_p50)));
+	};
+};
+var _elm_community$list_extra$List_Extra$findIndex = function (p) {
+	return function (_p53) {
+		return _elm_lang$core$List$head(
+			A2(_elm_community$list_extra$List_Extra$findIndices, p, _p53));
+	};
+};
+var _elm_community$list_extra$List_Extra$elemIndices = function (x) {
+	return _elm_community$list_extra$List_Extra$findIndices(
+		F2(
+			function (x, y) {
+				return _elm_lang$core$Native_Utils.eq(x, y);
+			})(x));
+};
+var _elm_community$list_extra$List_Extra$elemIndex = function (x) {
+	return _elm_community$list_extra$List_Extra$findIndex(
+		F2(
+			function (x, y) {
+				return _elm_lang$core$Native_Utils.eq(x, y);
+			})(x));
+};
+var _elm_community$list_extra$List_Extra$find = F2(
+	function (predicate, list) {
+		find:
+		while (true) {
+			var _p54 = list;
+			if (_p54.ctor === '[]') {
+				return _elm_lang$core$Maybe$Nothing;
+			} else {
+				var _p55 = _p54._0;
+				if (predicate(_p55)) {
+					return _elm_lang$core$Maybe$Just(_p55);
+				} else {
+					var _v33 = predicate,
+						_v34 = _p54._1;
+					predicate = _v33;
+					list = _v34;
+					continue find;
+				}
+			}
+		}
+	});
+var _elm_community$list_extra$List_Extra$notMember = function (x) {
+	return function (_p56) {
+		return _elm_lang$core$Basics$not(
+			A2(_elm_lang$core$List$member, x, _p56));
+	};
+};
+var _elm_community$list_extra$List_Extra$andThen = _elm_lang$core$Basics$flip(_elm_lang$core$List$concatMap);
+var _elm_community$list_extra$List_Extra$lift2 = F3(
+	function (f, la, lb) {
+		return A2(
+			_elm_community$list_extra$List_Extra$andThen,
+			la,
+			function (a) {
+				return A2(
+					_elm_community$list_extra$List_Extra$andThen,
+					lb,
+					function (b) {
+						return _elm_lang$core$Native_List.fromArray(
+							[
+								A2(f, a, b)
+							]);
+					});
+			});
+	});
+var _elm_community$list_extra$List_Extra$lift3 = F4(
+	function (f, la, lb, lc) {
+		return A2(
+			_elm_community$list_extra$List_Extra$andThen,
+			la,
+			function (a) {
+				return A2(
+					_elm_community$list_extra$List_Extra$andThen,
+					lb,
+					function (b) {
+						return A2(
+							_elm_community$list_extra$List_Extra$andThen,
+							lc,
+							function (c) {
+								return _elm_lang$core$Native_List.fromArray(
+									[
+										A3(f, a, b, c)
+									]);
+							});
+					});
+			});
+	});
+var _elm_community$list_extra$List_Extra$lift4 = F5(
+	function (f, la, lb, lc, ld) {
+		return A2(
+			_elm_community$list_extra$List_Extra$andThen,
+			la,
+			function (a) {
+				return A2(
+					_elm_community$list_extra$List_Extra$andThen,
+					lb,
+					function (b) {
+						return A2(
+							_elm_community$list_extra$List_Extra$andThen,
+							lc,
+							function (c) {
+								return A2(
+									_elm_community$list_extra$List_Extra$andThen,
+									ld,
+									function (d) {
+										return _elm_lang$core$Native_List.fromArray(
+											[
+												A4(f, a, b, c, d)
+											]);
+									});
+							});
+					});
+			});
+	});
+var _elm_community$list_extra$List_Extra$andMap = F2(
+	function (fl, l) {
+		return A3(
+			_elm_lang$core$List$map2,
+			F2(
+				function (x, y) {
+					return x(y);
+				}),
+			fl,
+			l);
+	});
+var _elm_community$list_extra$List_Extra$uniqueHelp = F3(
+	function (f, existing, remaining) {
+		uniqueHelp:
+		while (true) {
+			var _p57 = remaining;
+			if (_p57.ctor === '[]') {
+				return _elm_lang$core$Native_List.fromArray(
+					[]);
+			} else {
+				var _p59 = _p57._1;
+				var _p58 = _p57._0;
+				var computedFirst = f(_p58);
+				if (A2(_elm_lang$core$Set$member, computedFirst, existing)) {
+					var _v36 = f,
+						_v37 = existing,
+						_v38 = _p59;
+					f = _v36;
+					existing = _v37;
+					remaining = _v38;
+					continue uniqueHelp;
+				} else {
+					return A2(
+						_elm_lang$core$List_ops['::'],
+						_p58,
+						A3(
+							_elm_community$list_extra$List_Extra$uniqueHelp,
+							f,
+							A2(_elm_lang$core$Set$insert, computedFirst, existing),
+							_p59));
+				}
+			}
+		}
+	});
+var _elm_community$list_extra$List_Extra$uniqueBy = F2(
+	function (f, list) {
+		return A3(_elm_community$list_extra$List_Extra$uniqueHelp, f, _elm_lang$core$Set$empty, list);
+	});
+var _elm_community$list_extra$List_Extra$unique = function (list) {
+	return A3(_elm_community$list_extra$List_Extra$uniqueHelp, _elm_lang$core$Basics$identity, _elm_lang$core$Set$empty, list);
+};
+var _elm_community$list_extra$List_Extra$dropWhile = F2(
+	function (predicate, list) {
+		dropWhile:
+		while (true) {
+			var _p60 = list;
+			if (_p60.ctor === '[]') {
+				return _elm_lang$core$Native_List.fromArray(
+					[]);
+			} else {
+				if (predicate(_p60._0)) {
+					var _v40 = predicate,
+						_v41 = _p60._1;
+					predicate = _v40;
+					list = _v41;
+					continue dropWhile;
+				} else {
+					return list;
+				}
+			}
+		}
+	});
+var _elm_community$list_extra$List_Extra$takeWhile = F2(
+	function (predicate, list) {
+		var _p61 = list;
+		if (_p61.ctor === '[]') {
+			return _elm_lang$core$Native_List.fromArray(
+				[]);
+		} else {
+			var _p62 = _p61._0;
+			return predicate(_p62) ? A2(
+				_elm_lang$core$List_ops['::'],
+				_p62,
+				A2(_elm_community$list_extra$List_Extra$takeWhile, predicate, _p61._1)) : _elm_lang$core$Native_List.fromArray(
+				[]);
+		}
+	});
+var _elm_community$list_extra$List_Extra$span = F2(
+	function (p, xs) {
+		return {
+			ctor: '_Tuple2',
+			_0: A2(_elm_community$list_extra$List_Extra$takeWhile, p, xs),
+			_1: A2(_elm_community$list_extra$List_Extra$dropWhile, p, xs)
+		};
+	});
+var _elm_community$list_extra$List_Extra$break = function (p) {
+	return _elm_community$list_extra$List_Extra$span(
+		function (_p63) {
+			return _elm_lang$core$Basics$not(
+				p(_p63));
+		});
+};
+var _elm_community$list_extra$List_Extra$groupWhile = F2(
+	function (eq, xs$) {
+		var _p64 = xs$;
+		if (_p64.ctor === '[]') {
+			return _elm_lang$core$Native_List.fromArray(
+				[]);
+		} else {
+			var _p66 = _p64._0;
+			var _p65 = A2(
+				_elm_community$list_extra$List_Extra$span,
+				eq(_p66),
+				_p64._1);
+			var ys = _p65._0;
+			var zs = _p65._1;
+			return A2(
+				_elm_lang$core$List_ops['::'],
+				A2(_elm_lang$core$List_ops['::'], _p66, ys),
+				A2(_elm_community$list_extra$List_Extra$groupWhile, eq, zs));
+		}
+	});
+var _elm_community$list_extra$List_Extra$group = _elm_community$list_extra$List_Extra$groupWhile(
+	F2(
+		function (x, y) {
+			return _elm_lang$core$Native_Utils.eq(x, y);
+		}));
+var _elm_community$list_extra$List_Extra$minimumBy = F2(
+	function (f, ls) {
+		var minBy = F2(
+			function (x, _p67) {
+				var _p68 = _p67;
+				var _p69 = _p68._1;
+				var fx = f(x);
+				return (_elm_lang$core$Native_Utils.cmp(fx, _p69) < 0) ? {ctor: '_Tuple2', _0: x, _1: fx} : {ctor: '_Tuple2', _0: _p68._0, _1: _p69};
+			});
+		var _p70 = ls;
+		if (_p70.ctor === '::') {
+			if (_p70._1.ctor === '[]') {
+				return _elm_lang$core$Maybe$Just(_p70._0);
+			} else {
+				var _p71 = _p70._0;
+				return _elm_lang$core$Maybe$Just(
+					_elm_lang$core$Basics$fst(
+						A3(
+							_elm_lang$core$List$foldl,
+							minBy,
+							{
+								ctor: '_Tuple2',
+								_0: _p71,
+								_1: f(_p71)
+							},
+							_p70._1)));
+			}
+		} else {
+			return _elm_lang$core$Maybe$Nothing;
+		}
+	});
+var _elm_community$list_extra$List_Extra$maximumBy = F2(
+	function (f, ls) {
+		var maxBy = F2(
+			function (x, _p72) {
+				var _p73 = _p72;
+				var _p74 = _p73._1;
+				var fx = f(x);
+				return (_elm_lang$core$Native_Utils.cmp(fx, _p74) > 0) ? {ctor: '_Tuple2', _0: x, _1: fx} : {ctor: '_Tuple2', _0: _p73._0, _1: _p74};
+			});
+		var _p75 = ls;
+		if (_p75.ctor === '::') {
+			if (_p75._1.ctor === '[]') {
+				return _elm_lang$core$Maybe$Just(_p75._0);
+			} else {
+				var _p76 = _p75._0;
+				return _elm_lang$core$Maybe$Just(
+					_elm_lang$core$Basics$fst(
+						A3(
+							_elm_lang$core$List$foldl,
+							maxBy,
+							{
+								ctor: '_Tuple2',
+								_0: _p76,
+								_1: f(_p76)
+							},
+							_p75._1)));
+			}
+		} else {
+			return _elm_lang$core$Maybe$Nothing;
+		}
+	});
+var _elm_community$list_extra$List_Extra$uncons = function (xs) {
+	var _p77 = xs;
+	if (_p77.ctor === '[]') {
+		return _elm_lang$core$Maybe$Nothing;
+	} else {
+		return _elm_lang$core$Maybe$Just(
+			{ctor: '_Tuple2', _0: _p77._0, _1: _p77._1});
+	}
+};
+var _elm_community$list_extra$List_Extra$iterate = F2(
+	function (f, x) {
+		var _p78 = f(x);
+		if (_p78.ctor === 'Just') {
+			return A2(
+				_elm_lang$core$List_ops['::'],
+				x,
+				A2(_elm_community$list_extra$List_Extra$iterate, f, _p78._0));
+		} else {
+			return _elm_lang$core$Native_List.fromArray(
+				[x]);
+		}
+	});
+var _elm_community$list_extra$List_Extra$getAt = F2(
+	function (idx, xs) {
+		return (_elm_lang$core$Native_Utils.cmp(idx, 0) < 0) ? _elm_lang$core$Maybe$Nothing : _elm_lang$core$List$head(
+			A2(_elm_lang$core$List$drop, idx, xs));
+	});
+var _elm_community$list_extra$List_Extra_ops = _elm_community$list_extra$List_Extra_ops || {};
+_elm_community$list_extra$List_Extra_ops['!!'] = _elm_lang$core$Basics$flip(_elm_community$list_extra$List_Extra$getAt);
+var _elm_community$list_extra$List_Extra$init = function () {
+	var maybe = F2(
+		function (d, f) {
+			return function (_p79) {
+				return A2(
+					_elm_lang$core$Maybe$withDefault,
+					d,
+					A2(_elm_lang$core$Maybe$map, f, _p79));
+			};
+		});
+	return A2(
+		_elm_lang$core$List$foldr,
+		function (_p80) {
+			return A2(
+				F2(
+					function (x, y) {
+						return function (_p81) {
+							return x(
+								y(_p81));
+						};
+					}),
+				_elm_lang$core$Maybe$Just,
+				A2(
+					maybe,
+					_elm_lang$core$Native_List.fromArray(
+						[]),
+					F2(
+						function (x, y) {
+							return A2(_elm_lang$core$List_ops['::'], x, y);
+						})(_p80)));
+		},
+		_elm_lang$core$Maybe$Nothing);
+}();
+var _elm_community$list_extra$List_Extra$last = _elm_community$list_extra$List_Extra$foldl1(
+	_elm_lang$core$Basics$flip(_elm_lang$core$Basics$always));
 
 //import Maybe, Native.List //
 
@@ -10731,6 +12868,12 @@ var _mgold$elm_date_format$Date_Format$formatToken = F2(
 			case 'Y':
 				return _elm_lang$core$Basics$toString(
 					_elm_lang$core$Date$year(d));
+			case 'y':
+				return A2(
+					_elm_lang$core$String$right,
+					2,
+					_elm_lang$core$Basics$toString(
+						_elm_lang$core$Date$year(d)));
 			case 'm':
 				return A3(
 					_elm_lang$core$String$padLeft,
@@ -10788,11 +12931,11 @@ var _mgold$elm_date_format$Date_Format$formatToken = F2(
 			case 'p':
 				return (_elm_lang$core$Native_Utils.cmp(
 					_elm_lang$core$Date$hour(d),
-					13) < 0) ? 'AM' : 'PM';
+					12) < 0) ? 'AM' : 'PM';
 			case 'P':
 				return (_elm_lang$core$Native_Utils.cmp(
 					_elm_lang$core$Date$hour(d),
-					13) < 0) ? 'am' : 'pm';
+					12) < 0) ? 'am' : 'pm';
 			case 'M':
 				return A2(
 					_mgold$elm_date_format$Date_Format$padWith,
@@ -10807,7 +12950,7 @@ var _mgold$elm_date_format$Date_Format$formatToken = F2(
 				return '';
 		}
 	});
-var _mgold$elm_date_format$Date_Format$re = _elm_lang$core$Regex$regex('%(%|Y|m|B|b|d|e|a|A|H|k|I|l|p|P|M|S)');
+var _mgold$elm_date_format$Date_Format$re = _elm_lang$core$Regex$regex('%(%|Y|y|m|B|b|d|e|a|A|H|k|I|l|p|P|M|S)');
 var _mgold$elm_date_format$Date_Format$format = F2(
 	function (s, d) {
 		return A4(
@@ -13513,6 +15656,254 @@ var _user$project$Row$update = F2(
 		}
 	});
 
+var _user$project$SearchBox$create = function (field) {
+	return {
+		field: field,
+		operatorValue: _elm_lang$core$Native_List.fromArray(
+			[]),
+		fromDate: _elm_lang$core$Basics$fst(
+			_Bogdanp$elm_datepicker$DatePicker$init(
+				_elm_lang$core$Native_Utils.update(
+					_Bogdanp$elm_datepicker$DatePicker$defaultSettings,
+					{placeholder: 'from'}))),
+		toDate: _elm_lang$core$Maybe$Nothing
+	};
+};
+var _user$project$SearchBox$operatorToQuery = function (op) {
+	var _p0 = op;
+	switch (_p0.ctor) {
+		case 'StartsWith':
+			return 'starts_with';
+		case 'Equal':
+			return 'eq';
+		case 'Like':
+			return 'like';
+		case 'GT':
+			return 'gt';
+		case 'GTE':
+			return 'gte';
+		case 'LT':
+			return 'lt';
+		default:
+			return 'lte';
+	}
+};
+var _user$project$SearchBox$searchBoxToQuery = function (model) {
+	var conditions = A3(
+		_elm_lang$core$List$foldl,
+		F2(
+			function (_p1, conditions) {
+				var _p2 = _p1;
+				var sv = _user$project$Dao$stringValue(_p2._1);
+				var ops = _user$project$SearchBox$operatorToQuery(_p2._0);
+				var cond = A2(
+					_elm_lang$core$Basics_ops['++'],
+					model.field.column,
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						'=',
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							ops,
+							A2(_elm_lang$core$Basics_ops['++'], '.', sv))));
+				var conditions = A2(
+					_elm_lang$core$Basics_ops['++'],
+					conditions,
+					_elm_lang$core$Native_List.fromArray(
+						[cond]));
+				return conditions;
+			}),
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		model.operatorValue);
+	return A2(_elm_lang$core$String$join, '&', conditions);
+};
+var _user$project$SearchBox$Model = F4(
+	function (a, b, c, d) {
+		return {field: a, operatorValue: b, fromDate: c, toDate: d};
+	});
+var _user$project$SearchBox$Clear = {ctor: 'Clear'};
+var _user$project$SearchBox$ToDatePicker = function (a) {
+	return {ctor: 'ToDatePicker', _0: a};
+};
+var _user$project$SearchBox$ChangeValueBool = function (a) {
+	return {ctor: 'ChangeValueBool', _0: a};
+};
+var _user$project$SearchBox$ChangeValue = function (a) {
+	return {ctor: 'ChangeValue', _0: a};
+};
+var _user$project$SearchBox$view = function (model) {
+	var firstValue = function () {
+		var _p3 = _elm_lang$core$List$head(model.operatorValue);
+		if (_p3.ctor === 'Just') {
+			return _p3._0._1;
+		} else {
+			return _user$project$Dao$String('');
+		}
+	}();
+	var field = model.field;
+	var _p4 = A2(_user$project$Field$computeSizeFromField, field, _user$project$Field$Table);
+	var width = _p4._0;
+	var height = _p4._1;
+	var search_width = width - 18;
+	var _p5 = field.dataType;
+	switch (_p5) {
+		case 'Bool':
+			return A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$input,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$type$('checkbox'),
+								_elm_lang$html$Html_Events$onCheck(_user$project$SearchBox$ChangeValueBool),
+								_elm_lang$html$Html_Attributes$checked(
+								function () {
+									var _p6 = firstValue;
+									if (_p6.ctor === 'Bool') {
+										return _p6._0;
+									} else {
+										return false;
+									}
+								}())
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[]))
+					]));
+		case 'DateTime':
+			return A2(
+				_elm_lang$html$Html_App$map,
+				_user$project$SearchBox$ToDatePicker,
+				_Bogdanp$elm_datepicker$DatePicker$view(model.fromDate));
+		default:
+			return A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$input,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$style(
+								_elm_lang$core$Native_List.fromArray(
+									[
+										{
+										ctor: '_Tuple2',
+										_0: 'width',
+										_1: _user$project$Utils$px(search_width)
+									},
+										{ctor: '_Tuple2', _0: 'border-radius', _1: '6px'},
+										{ctor: '_Tuple2', _0: 'border', _1: '1px  solid #ccc'},
+										{ctor: '_Tuple2', _0: 'padding-right', _1: '18px'}
+									])),
+								_elm_lang$html$Html_Attributes$type$('text'),
+								_elm_lang$html$Html_Attributes$name('search'),
+								_elm_lang$html$Html_Attributes$value(
+								_user$project$Dao$stringValue(firstValue)),
+								_elm_lang$html$Html_Events$onInput(_user$project$SearchBox$ChangeValue)
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[])),
+						A2(
+						_elm_lang$html$Html$i,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('fa fa-search'),
+								_elm_lang$html$Html_Attributes$style(
+								_elm_lang$core$Native_List.fromArray(
+									[
+										{ctor: '_Tuple2', _0: 'left', _1: '-15px'},
+										{ctor: '_Tuple2', _0: 'position', _1: 'relative'},
+										{ctor: '_Tuple2', _0: 'color', _1: '#ddd'}
+									]))
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[]))
+					]));
+	}
+};
+var _user$project$SearchBox$None = {ctor: 'None'};
+var _user$project$SearchBox$LTE = {ctor: 'LTE'};
+var _user$project$SearchBox$LT = {ctor: 'LT'};
+var _user$project$SearchBox$GTE = {ctor: 'GTE'};
+var _user$project$SearchBox$GT = {ctor: 'GT'};
+var _user$project$SearchBox$Like = {ctor: 'Like'};
+var _user$project$SearchBox$Equal = {ctor: 'Equal'};
+var _user$project$SearchBox$StartsWith = {ctor: 'StartsWith'};
+var _user$project$SearchBox$update = F2(
+	function (msg, model) {
+		var _p7 = msg;
+		switch (_p7.ctor) {
+			case 'Clear':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							operatorValue: _elm_lang$core$Native_List.fromArray(
+								[])
+						}),
+					_1: _elm_lang$core$Native_List.fromArray(
+						[])
+				};
+			case 'ChangeValue':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							operatorValue: _elm_lang$core$Native_List.fromArray(
+								[
+									{
+									ctor: '_Tuple2',
+									_0: _user$project$SearchBox$StartsWith,
+									_1: _user$project$Dao$String(_p7._0)
+								}
+								])
+						}),
+					_1: _elm_lang$core$Native_List.fromArray(
+						[])
+				};
+			case 'ChangeValueBool':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							operatorValue: _elm_lang$core$Native_List.fromArray(
+								[
+									{
+									ctor: '_Tuple2',
+									_0: _user$project$SearchBox$Equal,
+									_1: _user$project$Dao$Bool(_p7._0)
+								}
+								])
+						}),
+					_1: _elm_lang$core$Native_List.fromArray(
+						[])
+				};
+			default:
+				var _p8 = A2(_Bogdanp$elm_datepicker$DatePicker$update, _p7._0, model.fromDate);
+				var datePicker = _p8._0;
+				var datePickerFx = _p8._1;
+				var mDate = _p8._2;
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{fromDate: datePicker}),
+					_1: _elm_lang$core$Native_List.fromArray(
+						[])
+				};
+		}
+	});
+
 var _user$project$Tab$getRow = F2(
 	function (model, rowId) {
 		return _elm_lang$core$List$head(
@@ -13732,6 +16123,21 @@ var _user$project$Tab$updateRow = F3(
 			_1: _elm_lang$core$List$concat(outmsgs)
 		};
 	});
+var _user$project$Tab$getSearchBoxQuery = function (model) {
+	var queries = A2(
+		_elm_lang$core$List$filter,
+		function (ss) {
+			return _elm_lang$core$Basics$not(
+				_elm_lang$core$String$isEmpty(ss));
+		},
+		A2(
+			_elm_lang$core$List$map,
+			function (sb) {
+				return _user$project$SearchBox$searchBoxToQuery(sb);
+			},
+			model.searchBoxes));
+	return A2(_elm_lang$core$String$join, '&', queries);
+};
 var _user$project$Tab$updateSelectionAllRecords = F2(
 	function (model, checked) {
 		var rows = A2(
@@ -13813,77 +16219,14 @@ var _user$project$Tab$updateRows = F2(
 					model.rows)
 			});
 	});
-var _user$project$Tab$tabFilters = F2(
-	function (model, filteredFields) {
+var _user$project$Tab$getSearchBox = F2(
+	function (field, model) {
 		return A2(
-			_elm_lang$html$Html$tr,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html_Attributes$class('tab_filters'),
-					_elm_lang$html$Html_Attributes$style(
-					_elm_lang$core$Native_List.fromArray(
-						[
-							{ctor: '_Tuple2', _0: 'height', _1: '38px'}
-						]))
-				]),
-			A2(
-				_elm_lang$core$List$map,
-				function (f) {
-					var _p15 = A2(_user$project$Field$computeSizeFromField, f, _user$project$Field$Table);
-					var width = _p15._0;
-					var height = _p15._1;
-					var search_width = width - 18;
-					return A2(
-						_elm_lang$html$Html$th,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$style(
-								_elm_lang$core$Native_List.fromArray(
-									[
-										{ctor: '_Tuple2', _0: 'border-right', _1: '1px solid #ddd'}
-									]))
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								A2(
-								_elm_lang$html$Html$input,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$style(
-										_elm_lang$core$Native_List.fromArray(
-											[
-												{
-												ctor: '_Tuple2',
-												_0: 'width',
-												_1: _user$project$Utils$px(search_width)
-											},
-												{ctor: '_Tuple2', _0: 'border-radius', _1: '6px'},
-												{ctor: '_Tuple2', _0: 'border', _1: '1px  solid #ccc'},
-												{ctor: '_Tuple2', _0: 'padding-right', _1: '18px'}
-											])),
-										_elm_lang$html$Html_Attributes$type$('text'),
-										_elm_lang$html$Html_Attributes$name('search')
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[])),
-								A2(
-								_elm_lang$html$Html$i,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$class('fa fa-search'),
-										_elm_lang$html$Html_Attributes$style(
-										_elm_lang$core$Native_List.fromArray(
-											[
-												{ctor: '_Tuple2', _0: 'left', _1: '-15px'},
-												{ctor: '_Tuple2', _0: 'position', _1: 'relative'},
-												{ctor: '_Tuple2', _0: 'color', _1: '#ddd'}
-											]))
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[]))
-							]));
-				},
-				filteredFields));
+			_elm_community$list_extra$List_Extra$find,
+			function (sb) {
+				return _elm_lang$core$Native_Utils.eq(field, sb.field);
+			},
+			model.searchBoxes);
 	});
 var _user$project$Tab$insertedRows = function (model) {
 	return A2(
@@ -13926,88 +16269,9 @@ var _user$project$Tab$modifiedRowCount = function (model) {
 	return _elm_lang$core$List$length(
 		_user$project$Tab$modifiedRows(model));
 };
-var _user$project$Tab$theadView = function (model) {
-	var filteredFields = _user$project$Row$excludeKeyfields(
-		A2(_user$project$Row$filterFieldsWithDensity, model.tab.fields, model.density));
-	return A2(
-		_elm_lang$html$Html$thead,
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_elm_lang$html$Html_Attributes$style(
-				_elm_lang$core$Native_List.fromArray(
-					[
-						{ctor: '_Tuple2', _0: 'height', _1: '66px'}
-					]))
-			]),
-		_elm_lang$core$Native_List.fromArray(
-			[
-				model.tab.isExtension ? A2(
-				_elm_lang$html$Html$span,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text('no filter for extension tabs')
-					])) : A2(_user$project$Tab$tabFilters, model, filteredFields),
-				A2(
-				_elm_lang$html$Html$tr,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$style(
-						_elm_lang$core$Native_List.fromArray(
-							[
-								{ctor: '_Tuple2', _0: 'height', _1: '30px'}
-							]))
-					]),
-				A2(
-					_elm_lang$core$List$map,
-					function (f) {
-						var _p16 = A2(_user$project$Field$computeSizeFromField, f, _user$project$Field$Table);
-						var width = _p16._0;
-						var height = _p16._1;
-						return A2(
-							_elm_lang$html$Html$th,
-							_elm_lang$core$Native_List.fromArray(
-								[
-									_elm_lang$html$Html_Attributes$style(
-									_elm_lang$core$Native_List.fromArray(
-										[
-											{ctor: '_Tuple2', _0: 'text-align', _1: 'center'}
-										]))
-								]),
-							_elm_lang$core$Native_List.fromArray(
-								[
-									A2(
-									_elm_lang$html$Html$div,
-									_elm_lang$core$Native_List.fromArray(
-										[
-											_elm_lang$html$Html_Attributes$style(
-											_elm_lang$core$Native_List.fromArray(
-												[
-													{
-													ctor: '_Tuple2',
-													_0: 'width',
-													_1: A2(
-														_elm_lang$core$Basics_ops['++'],
-														_elm_lang$core$Basics$toString(width),
-														'px')
-												}
-												])),
-											_elm_lang$html$Html_Attributes$title(
-											A2(_elm_lang$core$Maybe$withDefault, '', f.description))
-										]),
-									_elm_lang$core$Native_List.fromArray(
-										[
-											_elm_lang$html$Html$text(f.name)
-										]))
-								]));
-					},
-					filteredFields))
-			]));
-};
 var _user$project$Tab$onTableScroll = function (msg) {
-	var _p17 = A2(_elm_lang$core$Debug$log, 'targetValue', _elm_lang$html$Html_Events$targetValue);
-	var _p18 = A2(_elm_lang$core$Debug$log, 'scrolling...', msg);
+	var _p15 = A2(_elm_lang$core$Debug$log, 'targetValue', _elm_lang$html$Html_Events$targetValue);
+	var _p16 = A2(_elm_lang$core$Debug$log, 'scrolling...', msg);
 	return A2(
 		_elm_lang$html$Html_Events$on,
 		'scroll',
@@ -14019,6 +16283,14 @@ var _user$project$Tab$calcMainTableWidth = function (model) {
 	return model.browserDimension.width - (widthDeductions + _user$project$Tab$rowShadowWidth);
 };
 var _user$project$Tab$defaultBrowserDimension = {width: 0, height: 0, scrollBarWidth: 13};
+var _user$project$Tab$createSearchBox = function (tab) {
+	return A2(
+		_elm_lang$core$List$map,
+		function (field) {
+			return _user$project$SearchBox$create(field);
+		},
+		tab.fields);
+};
 var _user$project$Tab$create = F4(
 	function (tab, tabId, height, presentation) {
 		return {
@@ -14037,7 +16309,8 @@ var _user$project$Tab$create = F4(
 			tabId: tabId,
 			allocatedHeight: height,
 			browserDimension: _user$project$Tab$defaultBrowserDimension,
-			loadingPage: false
+			loadingPage: false,
+			searchBoxes: _user$project$Tab$createSearchBox(tab)
 		};
 	});
 var _user$project$Tab$Model = function (a) {
@@ -14055,7 +16328,9 @@ var _user$project$Tab$Model = function (a) {
 												return function (m) {
 													return function (n) {
 														return function (o) {
-															return {tab: a, rows: b, mode: c, presentation: d, density: e, isOpen: f, page: g, pageSize: h, totalRecords: i, totalPage: j, uid: k, tabId: l, allocatedHeight: m, browserDimension: n, loadingPage: o};
+															return function (p) {
+																return {tab: a, rows: b, mode: c, presentation: d, density: e, isOpen: f, page: g, pageSize: h, totalRecords: i, totalPage: j, uid: k, tabId: l, allocatedHeight: m, browserDimension: n, loadingPage: o, searchBoxes: p};
+															};
 														};
 													};
 												};
@@ -14170,6 +16445,132 @@ var _user$project$Tab$tabDecoder = A2(
 		A2(_elm_lang$core$Json_Decode_ops[':='], 'estimated_row_count', _elm_lang$core$Json_Decode$int)));
 var _user$project$Tab$Grid = {ctor: 'Grid'};
 var _user$project$Tab$Table = {ctor: 'Table'};
+var _user$project$Tab$ClearFilters = {ctor: 'ClearFilters'};
+var _user$project$Tab$UpdateSearchBox = F2(
+	function (a, b) {
+		return {ctor: 'UpdateSearchBox', _0: a, _1: b};
+	});
+var _user$project$Tab$tabFilters = F2(
+	function (model, filteredFields) {
+		return A2(
+			_elm_lang$html$Html$tr,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Attributes$class('tab_filters'),
+					_elm_lang$html$Html_Attributes$style(
+					_elm_lang$core$Native_List.fromArray(
+						[
+							{ctor: '_Tuple2', _0: 'height', _1: '38px'}
+						]))
+				]),
+			A2(
+				_elm_lang$core$List$map,
+				function (f) {
+					var sb = A2(_user$project$Tab$getSearchBox, f, model);
+					var _p17 = sb;
+					if (_p17.ctor === 'Just') {
+						return A2(
+							_elm_lang$html$Html$th,
+							_elm_lang$core$Native_List.fromArray(
+								[
+									_elm_lang$html$Html_Attributes$style(
+									_elm_lang$core$Native_List.fromArray(
+										[
+											{ctor: '_Tuple2', _0: 'border-right', _1: '1px solid #ddd'}
+										]))
+								]),
+							_elm_lang$core$Native_List.fromArray(
+								[
+									A2(
+									_elm_lang$html$Html_App$map,
+									_user$project$Tab$UpdateSearchBox(f.column),
+									_user$project$SearchBox$view(_p17._0))
+								]));
+					} else {
+						return _elm_lang$html$Html$text('');
+					}
+				},
+				filteredFields));
+	});
+var _user$project$Tab$theadView = function (model) {
+	var filteredFields = _user$project$Row$excludeKeyfields(
+		A2(_user$project$Row$filterFieldsWithDensity, model.tab.fields, model.density));
+	return A2(
+		_elm_lang$html$Html$thead,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$style(
+				_elm_lang$core$Native_List.fromArray(
+					[
+						{ctor: '_Tuple2', _0: 'height', _1: '66px'}
+					]))
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				model.tab.isExtension ? A2(
+				_elm_lang$html$Html$span,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('no filter for extension tabs')
+					])) : A2(_user$project$Tab$tabFilters, model, filteredFields),
+				A2(
+				_elm_lang$html$Html$tr,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$style(
+						_elm_lang$core$Native_List.fromArray(
+							[
+								{ctor: '_Tuple2', _0: 'height', _1: '30px'}
+							]))
+					]),
+				A2(
+					_elm_lang$core$List$map,
+					function (f) {
+						var _p18 = A2(_user$project$Field$computeSizeFromField, f, _user$project$Field$Table);
+						var width = _p18._0;
+						var height = _p18._1;
+						return A2(
+							_elm_lang$html$Html$th,
+							_elm_lang$core$Native_List.fromArray(
+								[
+									_elm_lang$html$Html_Attributes$style(
+									_elm_lang$core$Native_List.fromArray(
+										[
+											{ctor: '_Tuple2', _0: 'text-align', _1: 'center'}
+										]))
+								]),
+							_elm_lang$core$Native_List.fromArray(
+								[
+									A2(
+									_elm_lang$html$Html$div,
+									_elm_lang$core$Native_List.fromArray(
+										[
+											_elm_lang$html$Html_Attributes$style(
+											_elm_lang$core$Native_List.fromArray(
+												[
+													{
+													ctor: '_Tuple2',
+													_0: 'width',
+													_1: A2(
+														_elm_lang$core$Basics_ops['++'],
+														_elm_lang$core$Basics$toString(width),
+														'px')
+												}
+												])),
+											_elm_lang$html$Html_Attributes$title(
+											A2(_elm_lang$core$Maybe$withDefault, '', f.description))
+										]),
+									_elm_lang$core$Native_List.fromArray(
+										[
+											_elm_lang$html$Html$text(f.name)
+										]))
+								]));
+					},
+					filteredFields))
+			]));
+};
 var _user$project$Tab$AddRowDao = function (a) {
 	return {ctor: 'AddRowDao', _0: a};
 };
@@ -14317,7 +16718,8 @@ var _user$project$Tab$frozenControlHead = function (model) {
 										_elm_lang$core$Native_List.fromArray(
 											[
 												_elm_lang$html$Html_Attributes$class('btn btn-mini btn-default'),
-												_elm_lang$html$Html_Attributes$title('Click to clear filter')
+												_elm_lang$html$Html_Attributes$title('Click to clear filter'),
+												_elm_lang$html$Html_Events$onClick(_user$project$Tab$ClearFilters)
 											]),
 										_elm_lang$core$Native_List.fromArray(
 											[
@@ -14902,7 +17304,7 @@ var _user$project$Tab$update = F2(
 					_user$project$Row$UpdateDao(_p31._1),
 					_p31._0,
 					model);
-			default:
+			case 'AddRowDao':
 				var newRow = _elm_lang$core$Basics$fst(
 					A2(
 						_user$project$Row$update,
@@ -14926,6 +17328,45 @@ var _user$project$Tab$update = F2(
 								model.rows,
 								_elm_lang$core$Native_List.fromArray(
 									[newRow]))
+						}),
+					_1: _elm_lang$core$Native_List.fromArray(
+						[])
+				};
+			case 'UpdateSearchBox':
+				var _p35 = A2(
+					_elm_lang$core$Debug$log,
+					'searchQueries: ',
+					_user$project$Tab$getSearchBoxQuery(model));
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							searchBoxes: A2(
+								_elm_lang$core$List$map,
+								function (sb) {
+									return _elm_lang$core$Native_Utils.eq(_p31._0, sb.field.column) ? _elm_lang$core$Basics$fst(
+										A2(_user$project$SearchBox$update, _p31._1, sb)) : sb;
+								},
+								model.searchBoxes)
+						}),
+					_1: _elm_lang$core$Native_List.fromArray(
+						[])
+				};
+			default:
+				var _p36 = A2(_elm_lang$core$Debug$log, 'Tab clear filters', '');
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							searchBoxes: A2(
+								_elm_lang$core$List$map,
+								function (sb) {
+									return _elm_lang$core$Basics$fst(
+										A2(_user$project$SearchBox$update, _user$project$SearchBox$Clear, sb));
+								},
+								model.searchBoxes)
 						}),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
@@ -15471,6 +17912,7 @@ var _user$project$DataWindow$RecordsUpdated = function (a) {
 var _user$project$DataWindow$SetAlert = function (a) {
 	return {ctor: 'SetAlert', _0: a};
 };
+var _user$project$DataWindow$ClickedClearFilters = {ctor: 'ClickedClearFilters'};
 var _user$project$DataWindow$ClickedCloseAlert = {ctor: 'ClickedCloseAlert'};
 var _user$project$DataWindow$ClickedSaveChanges = {ctor: 'ClickedSaveChanges'};
 var _user$project$DataWindow$ClickedRefreshRecords = {ctor: 'ClickedRefreshRecords'};
@@ -16018,7 +18460,8 @@ var _user$project$DataWindow$toolbar = function (model) {
 				_elm_lang$html$Html$button,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip')
+						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
+						_elm_lang$html$Html_Events$onClick(_user$project$DataWindow$ClickedClearFilters)
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -16228,30 +18671,37 @@ var _user$project$DataWindow$handleTabOutMsg = F2(
 			},
 			outmsgs);
 	});
+var _user$project$DataWindow$updateMainTabThenHandleOutMsg = F2(
+	function (tabMsg, model) {
+		var _p28 = A2(_user$project$DataWindow$updateMainTab, tabMsg, model);
+		var model$ = _p28._0;
+		var outmsg = _p28._1;
+		return A2(_user$project$DataWindow$handleTabOutMsg, model$, outmsg);
+	});
 var _user$project$DataWindow$update = F2(
 	function (msg, model) {
-		var _p28 = msg;
-		switch (_p28.ctor) {
+		var _p29 = msg;
+		switch (_p29.ctor) {
 			case 'UpdateTab':
-				var _p29 = A2(_user$project$DataWindow$updateMainTab, _p28._0, model);
-				var model$ = _p29._0;
-				var outmsg = _p29._1;
-				var _p30 = A2(_elm_lang$core$Debug$log, 'Tab outmsg', outmsg);
+				var _p30 = A2(_user$project$DataWindow$updateMainTab, _p29._0, model);
+				var model$ = _p30._0;
+				var outmsg = _p30._1;
+				var _p31 = A2(_elm_lang$core$Debug$log, 'Tab outmsg', outmsg);
 				return A2(_user$project$DataWindow$handleTabOutMsg, model$, outmsg);
 			case 'UpdateFocusedRow':
-				var _p33 = _p28._0;
-				var _p31 = A2(_elm_lang$core$Debug$log, 'Updating row', _p33);
+				var _p34 = _p29._0;
+				var _p32 = A2(_elm_lang$core$Debug$log, 'Updating row', _p34);
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
 							focusedRow: function () {
-								var _p32 = model.focusedRow;
-								if (_p32.ctor === 'Just') {
+								var _p33 = model.focusedRow;
+								if (_p33.ctor === 'Just') {
 									return _elm_lang$core$Maybe$Just(
 										_elm_lang$core$Basics$fst(
-											A2(_user$project$Row$update, _p33, _p32._0)));
+											A2(_user$project$Row$update, _p34, _p33._0)));
 								} else {
 									return _elm_lang$core$Maybe$Nothing;
 								}
@@ -16270,19 +18720,19 @@ var _user$project$DataWindow$update = F2(
 			case 'WindowDetailReceived':
 				return {
 					ctor: '_Tuple2',
-					_0: A2(_user$project$DataWindow$updateWindow, _p28._0, model),
+					_0: A2(_user$project$DataWindow$updateWindow, _p29._0, model),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
 				};
 			case 'WindowDataReceived':
-				var _p34 = _elm_lang$core$List$head(_p28._0);
-				if (_p34.ctor === 'Just') {
-					var _p35 = A2(
+				var _p35 = _elm_lang$core$List$head(_p29._0);
+				if (_p35.ctor === 'Just') {
+					var _p36 = A2(
 						_user$project$DataWindow$updateMainTab,
-						_user$project$Tab$TabDataReceived(_p34._0),
+						_user$project$Tab$TabDataReceived(_p35._0),
 						model);
-					var model$ = _p35._0;
-					var outmsg = _p35._1;
+					var model$ = _p36._0;
+					var outmsg = _p36._1;
 					return {
 						ctor: '_Tuple2',
 						_0: model$,
@@ -16302,7 +18752,7 @@ var _user$project$DataWindow$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{mode: _p28._0}),
+						{mode: _p29._0}),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
 				};
@@ -16312,7 +18762,7 @@ var _user$project$DataWindow$update = F2(
 					_0: _user$project$DataWindow$updateAllocatedHeight(
 						_elm_lang$core$Native_Utils.update(
 							model,
-							{presentation: _p28._0})),
+							{presentation: _p29._0})),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
 				};
@@ -16321,7 +18771,7 @@ var _user$project$DataWindow$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{isActive: true, openSequence: _p28._0}),
+						{isActive: true, openSequence: _p29._0}),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
 				};
@@ -16340,53 +18790,53 @@ var _user$project$DataWindow$update = F2(
 					_0: A3(
 						_user$project$DataWindow$updateHasManyMergedTab,
 						_user$project$Tab$Open,
-						_p28._0,
+						_p29._0,
 						A2(_user$project$DataWindow$updateAllMergedTab, _user$project$Tab$Close, model)),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
 				};
 			case 'FocusedRecordDataReceived':
-				var _p36 = _p28._1;
+				var _p37 = _p29._1;
 				return {
 					ctor: '_Tuple2',
 					_0: _user$project$DataWindow$openFirstMergedTab(
 						A2(
 							_user$project$DataWindow$hydrateAllMergedTab,
-							_p36,
-							A2(_user$project$DataWindow$hydrateExtensionTab, _p36, model))),
+							_p37,
+							A2(_user$project$DataWindow$hydrateExtensionTab, _p37, model))),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
 				};
 			case 'BrowserDimensionChanged':
-				var _p37 = _p28._0;
+				var _p38 = _p29._0;
 				return {
 					ctor: '_Tuple2',
 					_0: _user$project$DataWindow$updateAllocatedHeight(
 						A2(
 							_user$project$DataWindow$updateAllTabs,
-							_user$project$Tab$BrowserDimensionChanged(_p37),
+							_user$project$Tab$BrowserDimensionChanged(_p38),
 							_elm_lang$core$Native_Utils.update(
 								model,
-								{browserDimension: _p37}))),
+								{browserDimension: _p38}))),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
 				};
 			case 'ToggleExtTab':
 				return {
 					ctor: '_Tuple2',
-					_0: A3(_user$project$DataWindow$updateExtTab, _user$project$Tab$Toggle, _p28._0, model),
+					_0: A3(_user$project$DataWindow$updateExtTab, _user$project$Tab$Toggle, _p29._0, model),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
 				};
 			case 'WindowDataNextPageReceived':
-				var _p38 = _elm_lang$core$List$head(_p28._0);
-				if (_p38.ctor === 'Just') {
-					var _p39 = A2(
+				var _p39 = _elm_lang$core$List$head(_p29._0);
+				if (_p39.ctor === 'Just') {
+					var _p40 = A2(
 						_user$project$DataWindow$updateMainTab,
-						_user$project$Tab$TabDataNextPageReceived(_p38._0),
+						_user$project$Tab$TabDataNextPageReceived(_p39._0),
 						model);
-					var model$ = _p39._0;
-					var outmsg = _p39._1;
+					var model$ = _p40._0;
+					var outmsg = _p40._1;
 					return {
 						ctor: '_Tuple2',
 						_0: model$,
@@ -16402,13 +18852,13 @@ var _user$project$DataWindow$update = F2(
 					};
 				}
 			case 'ReceivedScrollBottomEvent':
-				var _p40 = A2(_user$project$DataWindow$updateMainTab, _user$project$Tab$ReceivedScrollBottomEvent, model);
-				var model$ = _p40._0;
-				var outmsg = _p40._1;
-				var _p41 = A2(_elm_lang$core$Debug$log, 'ReceivedScroll Tab outmsg', outmsg);
+				var _p41 = A2(_user$project$DataWindow$updateMainTab, _user$project$Tab$ReceivedScrollBottomEvent, model);
+				var model$ = _p41._0;
+				var outmsg = _p41._1;
+				var _p42 = A2(_elm_lang$core$Debug$log, 'ReceivedScroll Tab outmsg', outmsg);
 				return A2(_user$project$DataWindow$handleTabOutMsg, model$, outmsg);
 			case 'ResizeStart':
-				var _p42 = A2(_elm_lang$core$Debug$log, 'Starting resize..', _p28._0);
+				var _p43 = A2(_elm_lang$core$Debug$log, 'Starting resize..', _p29._0);
 				return {
 					ctor: '_Tuple2',
 					_0: model,
@@ -16423,8 +18873,8 @@ var _user$project$DataWindow$update = F2(
 					_elm_lang$core$Json_Encode$encode,
 					0,
 					_user$project$Dao$changeSetListEncoder(changeset));
-				var _p43 = A2(_elm_lang$core$Debug$log, 'selected rows', encoded);
-				var _p44 = A2(_elm_lang$core$Debug$log, 'Deleting records', '');
+				var _p44 = A2(_elm_lang$core$Debug$log, 'selected rows', encoded);
+				var _p45 = A2(_elm_lang$core$Debug$log, 'Deleting records', '');
 				return {
 					ctor: '_Tuple2',
 					_0: model,
@@ -16434,7 +18884,7 @@ var _user$project$DataWindow$update = F2(
 						])
 				};
 			case 'ClickedRefreshRecords':
-				var _p45 = A2(_elm_lang$core$Debug$log, 'Refreshing records', '');
+				var _p46 = A2(_elm_lang$core$Debug$log, 'Refreshing records', '');
 				return {
 					ctor: '_Tuple2',
 					_0: model,
@@ -16452,8 +18902,8 @@ var _user$project$DataWindow$update = F2(
 					_elm_lang$core$Json_Encode$encode,
 					0,
 					_user$project$Dao$changeSetListEncoder(changeset));
-				var _p46 = A2(_elm_lang$core$Debug$log, 'For save', encoded);
-				var _p47 = A2(_elm_lang$core$Debug$log, 'Saving changes', '');
+				var _p47 = A2(_elm_lang$core$Debug$log, 'For save', encoded);
+				var _p48 = A2(_elm_lang$core$Debug$log, 'Saving changes', '');
 				return {
 					ctor: '_Tuple2',
 					_0: model,
@@ -16472,24 +18922,27 @@ var _user$project$DataWindow$update = F2(
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
 				};
+			case 'ClickedClearFilters':
+				var _p49 = A2(_elm_lang$core$Debug$log, 'clearing filters', '');
+				return A2(_user$project$DataWindow$updateMainTabThenHandleOutMsg, _user$project$Tab$ClearFilters, model);
 			case 'SetAlert':
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							alert: _elm_lang$core$Maybe$Just(_p28._0)
+							alert: _elm_lang$core$Maybe$Just(_p29._0)
 						}),
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
 				};
 			case 'RecordsUpdated':
-				var _p53 = _p28._0;
+				var _p55 = _p29._0;
 				var mainResponse = _elm_lang$core$List$head(
 					A2(
 						_elm_lang$core$List$filter,
 						function (ur) {
-							var _p48 = A2(
+							var _p50 = A2(
 								_elm_lang$core$Debug$log,
 								A2(_elm_lang$core$Basics_ops['++'], 'update: ', ur.table),
 								model.mainTab.tab);
@@ -16497,22 +18950,22 @@ var _user$project$DataWindow$update = F2(
 								_user$project$Tab$completeTableName(model.mainTab.tab),
 								ur.table);
 						},
-						_p53));
-				var _p49 = A2(_elm_lang$core$Debug$log, 'records updated', _p53);
-				var _p50 = mainResponse;
-				if (_p50.ctor === 'Just') {
-					var _p52 = _p50._0;
-					var error = _user$project$DataWindow$getError(_p52);
+						_p55));
+				var _p51 = A2(_elm_lang$core$Debug$log, 'records updated', _p55);
+				var _p52 = mainResponse;
+				if (_p52.ctor === 'Just') {
+					var _p54 = _p52._0;
+					var error = _user$project$DataWindow$getError(_p54);
 					var model$ = _user$project$DataWindow$updateAllocatedHeight(
 						_elm_lang$core$Native_Utils.update(
 							model,
 							{alert: error}));
-					var _p51 = A2(
+					var _p53 = A2(
 						_user$project$DataWindow$updateMainTab,
-						_user$project$Tab$RecordsUpdated(_p52),
+						_user$project$Tab$RecordsUpdated(_p54),
 						model$);
-					var model$$ = _p51._0;
-					var outmsg = _p51._1;
+					var model$$ = _p53._0;
+					var outmsg = _p53._1;
 					return A2(_user$project$DataWindow$handleTabOutMsg, model$$, outmsg);
 				} else {
 					return {
@@ -16523,18 +18976,18 @@ var _user$project$DataWindow$update = F2(
 					};
 				}
 			case 'SetFocusRow':
-				var _p55 = _p28._0;
+				var _p57 = _p29._0;
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{focusedRow: _p55}),
+						{focusedRow: _p57}),
 					_1: function () {
-						var _p54 = _p55;
-						if (_p54.ctor === 'Just') {
+						var _p56 = _p57;
+						if (_p56.ctor === 'Just') {
 							return _elm_lang$core$Native_List.fromArray(
 								[
-									_user$project$DataWindow$FocusedRow(_p54._0)
+									_user$project$DataWindow$FocusedRow(_p56._0)
 								]);
 						} else {
 							return _elm_lang$core$Native_List.fromArray(
@@ -16543,16 +18996,16 @@ var _user$project$DataWindow$update = F2(
 					}()
 				};
 			case 'CloseFocusedRow':
-				var _p56 = model.focusedRow;
-				if (_p56.ctor === 'Just') {
-					var _p57 = _p56._0;
-					return _user$project$Row$isNew(_p57) ? {
+				var _p58 = model.focusedRow;
+				if (_p58.ctor === 'Just') {
+					var _p59 = _p58._0;
+					return _user$project$Row$isNew(_p59) ? {
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Basics$fst(
 							A2(
 								_user$project$DataWindow$updateMainTab,
 								_user$project$Tab$AddRowDao(
-									_user$project$Row$getDao(_p57)),
+									_user$project$Row$getDao(_p59)),
 								_elm_lang$core$Native_Utils.update(
 									model,
 									{focusedRow: _elm_lang$core$Maybe$Nothing}))),
@@ -16565,15 +19018,15 @@ var _user$project$DataWindow$update = F2(
 								_user$project$DataWindow$updateMainTab,
 								A2(
 									_user$project$Tab$UpdateRow,
-									_p57.rowId,
+									_p59.rowId,
 									_user$project$Row$ChangeMode(_user$project$Mode$Read)),
 								_elm_lang$core$Basics$fst(
 									A2(
 										_user$project$DataWindow$updateMainTab,
 										A2(
 											_user$project$Tab$UpdateRowDao,
-											_p57.rowId,
-											_user$project$Row$getDao(_p57)),
+											_p59.rowId,
+											_user$project$Row$getDao(_p59)),
 										_elm_lang$core$Native_Utils.update(
 											model,
 											{focusedRow: _elm_lang$core$Maybe$Nothing}))))),

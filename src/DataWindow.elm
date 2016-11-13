@@ -90,6 +90,7 @@ type Msg
     | ClickedRefreshRecords
     | ClickedSaveChanges
     | ClickedCloseAlert
+    | ClickedClearFilters
     | SetAlert String
     | RecordsUpdated (List Dao.UpdateResponse)
     | UpdateFocusedRow Row.Msg
@@ -400,7 +401,9 @@ toolbar model=
                 ,text "Refresh"
                 ,span [class "tooltiptext"] [text "Refresh the current data from the database"]
                 ]
-            ,button [class "btn btn-large btn-default tooltip"]
+            ,button [class "btn btn-large btn-default tooltip"
+                    ,onClick ClickedClearFilters
+                    ]
                 [span [class "icon icon-trophy icon-text"] []
                 ,text "Clear Filter"
                 ,span [class "tooltiptext"] [text "Remove the filters"]
@@ -566,6 +569,10 @@ update msg model =
                 |> updateAllocatedHeight
             , []
             )
+        ClickedClearFilters ->
+            let _ = Debug.log "clearing filters" ""
+            in
+            updateMainTabThenHandleOutMsg Tab.ClearFilters model
         
         SetAlert alert ->
             ({ model | alert = Just alert }
@@ -841,6 +848,10 @@ updateAllMergedTab tabMsg model =
         ) model.hasManyMergedTabs
     }
 
+updateMainTabThenHandleOutMsg: Tab.Msg -> Model -> (Model, List OutMsg)
+updateMainTabThenHandleOutMsg tabMsg model =
+    let (model', outmsg) = updateMainTab tabMsg model
+    in handleTabOutMsg model' outmsg
 
 
 updateMainTab: Tab.Msg -> Model -> (Model, List Tab.OutMsg)
