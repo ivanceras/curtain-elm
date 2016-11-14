@@ -98,6 +98,7 @@ type Msg
 type OutMsg
     = LoadNextPage
     | FocusRow (Maybe Row.Model)
+    | FilterChanges String
 
 
 tabDecoder: Decode.Decoder Tab
@@ -582,18 +583,21 @@ update msg model =
              } ,[])
        
         UpdateSearchBox column searchBoxMsg ->
-            let _ = Debug.log "searchQueries: " (getSearchBoxQuery model)
+            let model' = 
+                    {model | searchBoxes = 
+                        List.map ( \sb ->
+                            if column == sb.field.column then
+                                SearchBox.update searchBoxMsg sb
+                                |> fst
+                            else
+                                sb 
+                        ) model.searchBoxes
+                     }
+                filter = getSearchBoxQuery model'
+                _ = Debug.log "searchQueries: " filter
             in
-            ({model | searchBoxes = 
-                List.map ( \sb ->
-                    if column == sb.field.column then
-                        SearchBox.update searchBoxMsg sb
-                        |> fst
-                    else
-                        sb 
-                ) model.searchBoxes
-             }
-            , [])
+            (model'
+            , [FilterChanges filter])
          
         ClearFilters ->
             let _ = Debug.log "Tab clear filters" ""

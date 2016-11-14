@@ -17,6 +17,7 @@ import Window as BrowserWindow
 import Dao
 import Mouse
 import Utils
+import Navigation
 
 
 type alias Model =
@@ -213,8 +214,7 @@ update msg model =
             , Cmd.none)
 
         ActivateWindow windowId -> --set focus to the window
-             ( activateWindow windowId model
-             , Cmd.none)
+            activateWindowThenHandleWindowMsg windowId model
         
         UpdateWindowList msg ->
             let (window_list, outmsg) =
@@ -423,12 +423,19 @@ handleWindowOutMsg outmsgs model windowId =
                         (model, cmds ++ [fetchFocusedRecordDetail model windowId focusedRow.rowId])
                     DataWindow.RefreshRecords windowId table->
                         (model, cmds ++ [getWindowData model table windowId])
+                    DataWindow.ModifyUrl url ->
+                        let _ = Debug.log "Modify the URL to" url
+                        in
+                        (model, cmds++ [modifyUrl model url])
 
 
             ) (model, []) outmsgs
       in
        (model', Cmd.batch cmdlist)
 
+modifyUrl: Model -> String -> Cmd msg
+modifyUrl model url =
+    Navigation.modifyUrl url
 
 main = 
     App.program
@@ -561,6 +568,27 @@ nextOpenSequence model =
     (highestOpenSequence model )+ 1
 
 
+activateWindowThenHandleWindowMsg: Int -> Model ->  (Model, Cmd Msg)
+activateWindowThenHandleWindowMsg windowId model =
+    let (model',outmsg) = activateWindow1 windowId model
+    in
+    handleWindowOutMsg outmsg model' windowId
+
+activateWindow1: Int -> Model ->  (Model, List DataWindow.OutMsg)
+activateWindow1 windowId model =
+    let openedWindowsOutMsg =
+            List.map (
+                \ window ->
+                    if window.windowId == windowId then
+                        DataWindow.update (DataWindow.ActivateWindow (nextOpenSequence model)) window
+                    else
+                        DataWindow.update DataWindow.DeactivateWindow window
+            ) model.openedWindows
+        (openedWindows, outmsgs) = List.unzip openedWindowsOutMsg
+    in
+    ({ model | openedWindows = openedWindows
+    }, List.concat outmsgs)
+
 activateWindow: Int -> Model ->  Model
 activateWindow windowId model =
     { model | openedWindows =
@@ -574,7 +602,6 @@ activateWindow windowId model =
                         |> fst
         ) model.openedWindows
     }
-
 
 
 -- check to see if the windowId is in openedWindows

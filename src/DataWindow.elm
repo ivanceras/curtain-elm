@@ -18,6 +18,7 @@ import Mode exposing
 
 import Dao exposing (TableDao)
 import Mouse
+import String
 
 
 type alias Model =
@@ -43,6 +44,20 @@ type alias Model =
 -- enable/disable the hasMany Related Tables
 -- Disables, False at first release
 includeManyTab = False
+
+-- get the url of the data window including the filters and groupby
+getFullUrl: Model -> String
+getFullUrl model = 
+    let table = model.mainTab.tab.table
+        filter = Tab.getSearchBoxQuery model.mainTab
+        filterUrl  = 
+            if not (String.isEmpty filter) then
+                "?" ++ filter
+            else 
+                ""
+        url = "#" ++ table ++ filterUrl
+    in
+        url
 
 generateTabId: Window -> Int -> String
 generateTabId window windowId =
@@ -106,6 +121,7 @@ type OutMsg = LoadNextPage Tab.Model
     | UpdateRecords String String
     | FocusedRow Row.Model
     | RefreshRecords Int String
+    | ModifyUrl String
     
 type alias Window =
     { name: String
@@ -491,7 +507,7 @@ update msg model =
         ActivateWindow openSequence ->
             ({model | isActive = True
                 , openSequence = openSequence
-             }, [])
+             }, [ModifyUrl (getFullUrl model)])
 
         DeactivateWindow ->
             ({model | isActive = False}, [])
@@ -691,6 +707,8 @@ handleTabOutMsg model outmsgs =
                             )
                         Nothing -> 
                             ( model', newout)
+                Tab.FilterChanges filter ->
+                    (model, [ModifyUrl (getFullUrl model)])
 
         ) (model, []) outmsgs
 
