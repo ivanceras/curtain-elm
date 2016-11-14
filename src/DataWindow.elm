@@ -18,6 +18,7 @@ import Mode exposing
 
 import Dao exposing (TableDao)
 import Mouse
+import String
 
 
 type alias Model =
@@ -43,6 +44,25 @@ type alias Model =
 -- enable/disable the hasMany Related Tables
 -- Disables, False at first release
 includeManyTab = False
+
+
+getFilter: Model -> String
+getFilter model =
+    Tab.getSearchBoxQuery model.mainTab
+
+-- get the url of the data window including the filters and groupby
+getFullUrl: Model -> String
+getFullUrl model = 
+    let table = model.mainTab.tab.table
+        filter = getFilter model
+        filterUrl  = 
+            if not (String.isEmpty filter) then
+                "?" ++ filter
+            else 
+                ""
+        url = "#" ++ table ++ filterUrl
+    in
+        url
 
 generateTabId: Window -> Int -> String
 generateTabId window windowId =
@@ -90,6 +110,7 @@ type Msg
     | ClickedRefreshRecords
     | ClickedSaveChanges
     | ClickedCloseAlert
+    | ClickedClearFilters
     | SetAlert String
     | RecordsUpdated (List Dao.UpdateResponse)
     | UpdateFocusedRow Row.Msg
@@ -105,6 +126,7 @@ type OutMsg = LoadNextPage Tab.Model
     | UpdateRecords String String
     | FocusedRow Row.Model
     | RefreshRecords Int String
+    | ModifyUrl String
     
 type alias Window =
     { name: String
@@ -400,7 +422,9 @@ toolbar model=
                 ,text "Refresh"
                 ,span [class "tooltiptext"] [text "Refresh the current data from the database"]
                 ]
-            ,button [class "btn btn-large btn-default tooltip"]
+            ,button [class "btn btn-large btn-default tooltip"
+                    ,onClick ClickedClearFilters
+                    ]
                 [span [class "icon icon-trophy icon-text"] []
                 ,text "Clear Filter"
                 ,span [class "tooltiptext"] [text "Remove the filters"]
@@ -488,7 +512,7 @@ update msg model =
         ActivateWindow openSequence ->
             ({model | isActive = True
                 , openSequence = openSequence
-             }, [])
+             }, [ModifyUrl (getFullUrl model)])
 
         DeactivateWindow ->
             ({model | isActive = False}, [])
@@ -566,6 +590,10 @@ update msg model =
                 |> updateAllocatedHeight
             , []
             )
+        ClickedClearFilters ->
+            let _ = Debug.log "clearing filters" ""
+            in
+            updateMainTabThenHandleOutMsg Tab.ClearFilters model
         
         SetAlert alert ->
             ({ model | alert = Just alert }
@@ -594,7 +622,11 @@ update msg model =
                     in
                         handleTabOutMsg model'' outmsg
                 Nothing ->
-                    ( model, [])
+                    ( model,  
+                    --[FIXME] No need to refresh record when the insert, update, and delete 
+                    --updates their corresponding records well
+                    [RefreshRecords model.windowId model.mainTab.tab.table]
+                    )
          
         -- update the focused row in the main tab from here
         SetFocusRow row ->
@@ -684,6 +716,11 @@ handleTabOutMsg model outmsgs =
                             )
                         Nothing -> 
                             ( model', newout)
+                Tab.FilterChanges ->
+                    (model, 
+                    [ModifyUrl (getFullUrl model)
+                    ,RefreshRecords model.windowId model.mainTab.tab.table
+                    ])
 
         ) (model, []) outmsgs
 
@@ -841,6 +878,10 @@ updateAllMergedTab tabMsg model =
         ) model.hasManyMergedTabs
     }
 
+updateMainTabThenHandleOutMsg: Tab.Msg -> Model -> (Model, List OutMsg)
+updateMainTabThenHandleOutMsg tabMsg model =
+    let (model', outmsg) = updateMainTab tabMsg model
+    in handleTabOutMsg model' outmsg
 
 
 updateMainTab: Tab.Msg -> Model -> (Model, List Tab.OutMsg)

@@ -17,6 +17,8 @@ import Window as BrowserWindow
 import Dao
 import Mouse
 import Utils
+import Navigation
+import String
 
 
 type alias Model =
@@ -194,7 +196,9 @@ loadNextPage windowId model =
                         Nothing -> 0
             in
             if nextPage < totalPage then
-                getWindowDataPage table windowId nextPage pageSize model
+                let filter = DataWindow.getFilter window
+                in
+                getWindowDataPagedQuery table windowId nextPage pageSize filter model
             else
                 let _ = Debug.log "Has reached the last page"
                 in
@@ -213,8 +217,7 @@ update msg model =
             , Cmd.none)
 
         ActivateWindow windowId -> --set focus to the window
-             ( activateWindow windowId model
-             , Cmd.none)
+            activateWindowThenHandleWindowMsg windowId model
         
         UpdateWindowList msg ->
             let (window_list, outmsg) =
@@ -423,12 +426,19 @@ handleWindowOutMsg outmsgs model windowId =
                         (model, cmds ++ [fetchFocusedRecordDetail model windowId focusedRow.rowId])
                     DataWindow.RefreshRecords windowId table->
                         (model, cmds ++ [getWindowData model table windowId])
+                    DataWindow.ModifyUrl url ->
+                        let _ = Debug.log "Modify the URL to" url
+                        in
+                        (model, cmds++ [modifyUrl model url])
 
 
             ) (model, []) outmsgs
       in
        (model', Cmd.batch cmdlist)
 
+modifyUrl: Model -> String -> Cmd msg
+modifyUrl model url =
+    Navigation.modifyUrl url
 
 main = 
     App.program
@@ -561,6 +571,27 @@ nextOpenSequence model =
     (highestOpenSequence model )+ 1
 
 
+activateWindowThenHandleWindowMsg: Int -> Model ->  (Model, Cmd Msg)
+activateWindowThenHandleWindowMsg windowId model =
+    let (model',outmsg) = activateWindow1 windowId model
+    in
+    handleWindowOutMsg outmsg model' windowId
+
+activateWindow1: Int -> Model ->  (Model, List DataWindow.OutMsg)
+activateWindow1 windowId model =
+    let openedWindowsOutMsg =
+            List.map (
+                \ window ->
+                    if window.windowId == windowId then
+                        DataWindow.update (DataWindow.ActivateWindow (nextOpenSequence model)) window
+                    else
+                        DataWindow.update DataWindow.DeactivateWindow window
+            ) model.openedWindows
+        (openedWindows, outmsgs) = List.unzip openedWindowsOutMsg
+    in
+    ({ model | openedWindows = openedWindows
+    }, List.concat outmsgs)
+
 activateWindow: Int -> Model ->  Model
 activateWindow windowId model =
     { model | openedWindows =
@@ -574,7 +605,6 @@ activateWindow windowId model =
                         |> fst
         ) model.openedWindows
     }
-
 
 
 -- check to see if the windowId is in openedWindows
@@ -651,7 +681,22 @@ fetchWindowDetail model table =
 
 getWindowData: Model -> String -> Int -> Cmd Msg
 getWindowData model mainTable windowId =
-    httpGet model ("/app/" ++ mainTable ++ "?"++pageSizeQuery 0 model.defaultPageSize)
+    let 
+        filter =
+            case getWindow model windowId of
+                Just window ->
+                    DataWindow.getFilter window
+                Nothing ->
+                    ""
+        pageQuery = pageSizeQuery 0 model.defaultPageSize
+        query = 
+            if String.isEmpty filter then
+                pageQuery
+            else
+                filter ++ "&" ++ pageQuery
+        _ = Debug.log "Requesting resource" query
+    in
+    httpGet model ("/app/" ++ mainTable ++ "?"++query)
         |> Http.fromJson (Decode.list Dao.tableDaoDecoder)
         |> Task.perform FetchError (WindowDataReceived windowId)
 
@@ -665,6 +710,17 @@ getWindowDataPage: String -> Int -> Int -> Int -> Model -> Cmd Msg
 getWindowDataPage mainTable windowId page pageSize model =
     getWindowDataWithQuery model mainTable windowId (pageSizeQuery page pageSize)
 
+
+getWindowDataPagedQuery: String -> Int -> Int -> Int -> String -> Model -> Cmd Msg
+getWindowDataPagedQuery mainTable windowId page pageSize filter model =
+    let pageQuery = pageSizeQuery page pageSize
+        query = 
+            if String.isEmpty filter then
+                pageQuery
+            else
+                filter ++ "&" ++ pageQuery
+    in
+    getWindowDataWithQuery model mainTable windowId query
 
 
 page: Int -> String

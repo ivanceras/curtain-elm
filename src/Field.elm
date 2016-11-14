@@ -305,6 +305,8 @@ isMandatoryOk model =
      else
         True
 
+
+
 fieldEntry: Model -> Html Msg
 fieldEntry model =
     let focusedField = case model.focused of

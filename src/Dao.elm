@@ -312,7 +312,7 @@ valueVariant variant =
 stringValue: Value -> String
 stringValue value =
     case value of
-        Bool b -> toString b
+        Bool b -> if b then "true" else "false"
         I8 v -> toString v
         I16 v -> toString v
         I32 v -> toString v

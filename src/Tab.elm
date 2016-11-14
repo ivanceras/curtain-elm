@@ -13,6 +13,8 @@ import Mode exposing
     (Mode (Edit,Read)
     ,Density(Compact, Medium, Expanded))
 
+import List.Extra
+
 import Dao exposing 
     (Dao
     ,TableDao
@@ -22,6 +24,7 @@ import Utils exposing (px)
 import Update.Extra exposing (andThen)
 import Array
 import String
+import SearchBox
 
 type Presentation = Table | Grid
 
@@ -41,6 +44,7 @@ type alias Model =
     , allocatedHeight: Int
     , browserDimension: BrowserDimension
     , loadingPage: Bool
+    , searchBoxes: List SearchBox.Model
     }
 
 type alias BrowserDimension =
@@ -88,10 +92,13 @@ type Msg
     | RecordsUpdated Dao.UpdateResponse
     | UpdateRowDao Int Dao 
     | AddRowDao Dao
+    | UpdateSearchBox String SearchBox.Msg
+    | ClearFilters
 
 type OutMsg
     = LoadNextPage
     | FocusRow (Maybe Row.Model)
+    | FilterChanges
 
 
 tabDecoder: Decode.Decoder Tab
@@ -134,8 +141,16 @@ create tab tabId height presentation =
     , allocatedHeight = height
     , browserDimension = defaultBrowserDimension
     , loadingPage = False
+    , searchBoxes = createSearchBox tab
     }
 
+createSearchBox: Tab -> List SearchBox.Model
+createSearchBox tab =
+   List.map(
+        \ field ->
+            SearchBox.create field
+   ) tab.fields
+            
 
 defaultBrowserDimension =
     { width = 0
@@ -311,6 +326,11 @@ selectedRowCount model =
     selectedRows model |> List.length
 
 
+getSearchBox: Field.Field -> Model -> Maybe SearchBox.Model
+getSearchBox field model =
+    List.Extra.find(
+        \sb -> field == sb.field
+    ) model.searchBoxes
 
 tabFilters: Model ->List Field.Field -> Html Msg
 tabFilters model filteredFields =
@@ -320,29 +340,21 @@ tabFilters model filteredFields =
        ]
         (List.map (
             \f -> 
-                let (width, height) =
-                    Field.computeSizeFromField f Field.Table
-                    search_width = width - 18
+                let sb = getSearchBox f model
                 in
-                th [style [("border-right", "1px solid #ddd")]
-                   ] 
-                    [input [style [("width", px search_width)
-                                  ,("border-radius", "6px")
-                                  ,("border", "1px  solid #ccc")
-                                  ,("padding-right", "18px")
-                                  ]
-                            ,type' "text"
-                            ,name "search"
-                           ] []
-                      ,i [class "fa fa-search"
-                         ,style [("left", "-15px")
-                                ,("position", "relative")
-                                ,("color", "#ddd")
-                                ]
-                         ][]
-                    ]
+                case sb of
+                    Just msb ->
+                        th [style [("border-right", "1px solid #ddd")]
+                           ] 
+                           [App.map (UpdateSearchBox f.column) (SearchBox.view msb)
+                           ]
+                    Nothing ->
+                        text ""
+
             ) filteredFields
         )
+
+
 
 -- the upper right corner that won't move
 frozenControlHead model =
@@ -382,6 +394,7 @@ frozenControlHead model =
                     [
                     button [class "btn btn-mini btn-default"
                            ,title "Click to clear filter"
+                           ,onClick ClearFilters
                            ]
                         [i [class "fa fa-filter"] []]
                     ]
@@ -568,7 +581,51 @@ update msg model =
             in
             ({model | rows = model.rows ++ [newRow]
              } ,[])
+       
+        UpdateSearchBox column searchBoxMsg ->
+            let model' = 
+                    {model | searchBoxes = 
+                        List.map ( \sb ->
+                            if column == sb.field.column then
+                                SearchBox.update searchBoxMsg sb
+                                |> fst
+                            else
+                                sb 
+                        ) model.searchBoxes
+                     }
+                filter = getSearchBoxQuery model'
+                _ = Debug.log "searchQueries: " filter
+            in
+            (model'
+            , [FilterChanges])
+         
+        ClearFilters ->
+            let _ = Debug.log "Tab clear filters" ""
+            in
+            ({ model | searchBoxes =
+                List.map (
+                    \sb ->
+                       SearchBox.update SearchBox.Clear sb 
+                       |> fst
+                ) model.searchBoxes
+             }
+            , [FilterChanges])
 
+
+getSearchBoxQuery: Model -> String
+getSearchBoxQuery model =
+    let queries =
+        List.map(
+        \ sb ->
+            SearchBox.searchBoxToQuery sb 
+        ) model.searchBoxes
+        |> List.filter(
+            \ss ->
+               not (String.isEmpty ss)
+        )
+
+     in
+        String.join "&" queries
 
 updateRow: Row.Msg -> Int -> Model -> (Model, List Row.OutMsg)
 updateRow rowMsg rowId model =
