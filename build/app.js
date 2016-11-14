@@ -49,6 +49,8 @@ function sendSettingsDbUrl(){
     if (!dbUrl){
         if (window.location.hostname == "curtain-elm.herokuapp.com"){ // the heroku app demo 
             dbUrl = "postgres://atperknxxnjadk:jpasCIjuPd3MW48DUnb579-imU@ec2-23-21-140-156.compute-1.amazonaws.com:5432/dd2fbo2kj0q9l";
+        }else if (process && process.versions && process.versions.electron){
+            dbUrl = "postgres://user:pwd@localhost:5432/db" ;// in electron
         }else{
             dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/mock"; //self hosted demo
         }
@@ -66,6 +68,8 @@ function sendSettingsApiServer(){
     if (!apiServer){
         if (window.location.hostname == "curtain-elm.herokuapp.com"){ 
             apiServer = "https://iron-curtain.herokuapp.com"
+        }else if (process && process.versions && process.versions.electron){
+            apiServer = "http://localhost:3224" ;// in electron
         }else{
             apiServer = "http://45.55.7.231:3224";
         }
