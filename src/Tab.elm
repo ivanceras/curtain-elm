@@ -98,7 +98,7 @@ type Msg
 type OutMsg
     = LoadNextPage
     | FocusRow (Maybe Row.Model)
-    | FilterChanges String
+    | FilterChanges
 
 
 tabDecoder: Decode.Decoder Tab
@@ -597,7 +597,7 @@ update msg model =
                 _ = Debug.log "searchQueries: " filter
             in
             (model'
-            , [FilterChanges filter])
+            , [FilterChanges])
          
         ClearFilters ->
             let _ = Debug.log "Tab clear filters" ""
@@ -609,7 +609,7 @@ update msg model =
                        |> fst
                 ) model.searchBoxes
              }
-            , [])
+            , [FilterChanges])
 
 
 getSearchBoxQuery: Model -> String

@@ -35,9 +35,14 @@ searchBoxToQuery model =
             \(op, value) conditions ->
                 let ops =  operatorToQuery op
                     sv = Dao.stringValue value
-                    cond = model.field.column ++ "=" ++ ops ++ "." ++ sv
-                    conditions = conditions ++ [cond]
-                in conditions
+                in 
+                if String.isEmpty sv then
+                    conditions
+                else
+                    let
+                        cond = model.field.column ++ "=" ++ ops ++ "." ++ sv
+                    in
+                    conditions ++ [cond]
             ) 
             [] model.operatorValue
     in String.join "&" conditions
@@ -46,21 +51,21 @@ type Operator
     = StartsWith
     | Equal
     | Like
-    | GT
-    | GTE
-    | LT
-    | LTE
+    | GreaterThan
+    | GreaterThanEqual
+    | LessThan
+    | LessThanEqual
 
 operatorToQuery: Operator -> String
 operatorToQuery op =
     case op of
-        StartsWith -> "starts_with"
+        StartsWith -> "st"
         Equal -> "eq"
         Like -> "like"
-        GT -> "gt"
-        GTE -> "gte"
-        LT -> "lt"
-        LTE -> "lte"
+        GreaterThan -> "gt"
+        GreaterThanEqual -> "gte"
+        LessThan -> "lt"
+        LessThanEqual -> "lte"
 
 
 create: Field.Field -> Model

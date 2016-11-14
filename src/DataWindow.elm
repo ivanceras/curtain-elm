@@ -707,7 +707,7 @@ handleTabOutMsg model outmsgs =
                             )
                         Nothing -> 
                             ( model', newout)
-                Tab.FilterChanges filter ->
+                Tab.FilterChanges ->
                     (model, [ModifyUrl (getFullUrl model)])
 
         ) (model, []) outmsgs
