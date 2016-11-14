@@ -126,8 +126,9 @@ view model =
                     []
                 ]
         "DateTime" ->
-            DatePicker.view model.fromDate
-                |> App.map ToDatePicker
+            --DatePicker.view model.fromDate
+            --    |> App.map ToDatePicker
+            text "" --[FIXME] Date is a little bit complicated, fix this
 
         _ ->
             div []

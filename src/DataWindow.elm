@@ -45,11 +45,16 @@ type alias Model =
 -- Disables, False at first release
 includeManyTab = False
 
+
+getFilter: Model -> String
+getFilter model =
+    Tab.getSearchBoxQuery model.mainTab
+
 -- get the url of the data window including the filters and groupby
 getFullUrl: Model -> String
 getFullUrl model = 
     let table = model.mainTab.tab.table
-        filter = Tab.getSearchBoxQuery model.mainTab
+        filter = getFilter model
         filterUrl  = 
             if not (String.isEmpty filter) then
                 "?" ++ filter
@@ -617,7 +622,11 @@ update msg model =
                     in
                         handleTabOutMsg model'' outmsg
                 Nothing ->
-                    ( model, [])
+                    ( model,  
+                    --[FIXME] No need to refresh record when the insert, update, and delete 
+                    --updates their corresponding records well
+                    [RefreshRecords model.windowId model.mainTab.tab.table]
+                    )
          
         -- update the focused row in the main tab from here
         SetFocusRow row ->
@@ -708,7 +717,10 @@ handleTabOutMsg model outmsgs =
                         Nothing -> 
                             ( model', newout)
                 Tab.FilterChanges ->
-                    (model, [ModifyUrl (getFullUrl model)])
+                    (model, 
+                    [ModifyUrl (getFullUrl model)
+                    ,RefreshRecords model.windowId model.mainTab.tab.table
+                    ])
 
         ) (model, []) outmsgs
 

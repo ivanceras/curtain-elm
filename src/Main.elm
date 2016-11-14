@@ -18,6 +18,7 @@ import Dao
 import Mouse
 import Utils
 import Navigation
+import String
 
 
 type alias Model =
@@ -195,7 +196,9 @@ loadNextPage windowId model =
                         Nothing -> 0
             in
             if nextPage < totalPage then
-                getWindowDataPage table windowId nextPage pageSize model
+                let filter = DataWindow.getFilter window
+                in
+                getWindowDataPagedQuery table windowId nextPage pageSize filter model
             else
                 let _ = Debug.log "Has reached the last page"
                 in
@@ -678,7 +681,22 @@ fetchWindowDetail model table =
 
 getWindowData: Model -> String -> Int -> Cmd Msg
 getWindowData model mainTable windowId =
-    httpGet model ("/app/" ++ mainTable ++ "?"++pageSizeQuery 0 model.defaultPageSize)
+    let 
+        filter =
+            case getWindow model windowId of
+                Just window ->
+                    DataWindow.getFilter window
+                Nothing ->
+                    ""
+        pageQuery = pageSizeQuery 0 model.defaultPageSize
+        query = 
+            if String.isEmpty filter then
+                pageQuery
+            else
+                filter ++ "&" ++ pageQuery
+        _ = Debug.log "Requesting resource" query
+    in
+    httpGet model ("/app/" ++ mainTable ++ "?"++query)
         |> Http.fromJson (Decode.list Dao.tableDaoDecoder)
         |> Task.perform FetchError (WindowDataReceived windowId)
 
@@ -692,6 +710,17 @@ getWindowDataPage: String -> Int -> Int -> Int -> Model -> Cmd Msg
 getWindowDataPage mainTable windowId page pageSize model =
     getWindowDataWithQuery model mainTable windowId (pageSizeQuery page pageSize)
 
+
+getWindowDataPagedQuery: String -> Int -> Int -> Int -> String -> Model -> Cmd Msg
+getWindowDataPagedQuery mainTable windowId page pageSize filter model =
+    let pageQuery = pageSizeQuery page pageSize
+        query = 
+            if String.isEmpty filter then
+                pageQuery
+            else
+                filter ++ "&" ++ pageQuery
+    in
+    getWindowDataWithQuery model mainTable windowId query
 
 
 page: Int -> String
