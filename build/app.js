@@ -46,11 +46,12 @@ function alignScroll(event, table, column_shadow_id, row_shadow_id){
 
 function sendSettingsDbUrl(){
     var dbUrl = localStorage.getItem("db_url");
+    console.log("db url", dbUrl);
     if (!dbUrl){
         if (window.location.hostname == "curtain-elm.herokuapp.com"){ // the heroku app demo 
             dbUrl = "postgres://atperknxxnjadk:jpasCIjuPd3MW48DUnb579-imU@ec2-23-21-140-156.compute-1.amazonaws.com:5432/dd2fbo2kj0q9l";
-        }else if (process && process.versions && process.versions.electron){
-            dbUrl = "postgres://user:pwd@localhost:5432/db" ;// in electron
+        }else if(inElectron()){ 
+            dbUrl = "postgres://user:pwd@localhost:5432/db";// in electron stub
         }else{
             dbUrl = "postgres://postgres:p0stgr3s@localhost:5432/mock"; //self hosted demo
         }
@@ -63,15 +64,29 @@ function saveSettingsDbUrl(dbUrl){
    localStorage.setItem("db_url", dbUrl);
 }
 
+//http://stackoverflow.com/questions/4224606/how-to-check-whether-a-script-is-running-under-node-js
+function inElectron(){
+    if(typeof process === 'object' && process + '' === '[object process]'){
+       return true; 
+    }else{
+       return false;
+    }
+}
+
 function sendSettingsApiServer(){
     var apiServer = localStorage.getItem("api_server");
+    console.log("api server", apiServer);
     if (!apiServer){
         if (window.location.hostname == "curtain-elm.herokuapp.com"){ 
             apiServer = "https://iron-curtain.herokuapp.com"
-        }else if (process && process.versions && process.versions.electron){
-            apiServer = "http://localhost:3224" ;// in electron
+        }else if (inElectron()){
+            console.log("in electron");
+            apiServer = "http://localhost:3224";// in electron
         }else{
-            apiServer = "http://45.55.7.231:3224";
+            console.log("assembling the url");
+            var port = 3224;
+            var apiUrl = window.location.protocol+"//"+window.location.hostname+":"+port;
+            apiServer = apiUrl;//assemble the url and use the default port
         }
     }
     console.log("sending api_server", apiServer)
