@@ -17721,6 +17721,301 @@ var _user$project$Tab$update = F2(
 		}
 	});
 
+var _user$project$Settings$includeManyTab = true;
+var _user$project$Settings$init = F2(
+	function (dbUrl, apiServer) {
+		return {dbUrl: dbUrl, apiServer: apiServer, error: _elm_lang$core$Maybe$Nothing, processing: false};
+	});
+var _user$project$Settings$Model = F4(
+	function (a, b, c, d) {
+		return {dbUrl: a, apiServer: b, error: c, processing: d};
+	});
+var _user$project$Settings$NetworkError = {ctor: 'NetworkError'};
+var _user$project$Settings$DbConnectionTestError = {ctor: 'DbConnectionTestError'};
+var _user$project$Settings$DbConnectionTested = {ctor: 'DbConnectionTested'};
+var _user$project$Settings$ClickedCloseWindow = {ctor: 'ClickedCloseWindow'};
+var _user$project$Settings$ClickedConnect = {ctor: 'ClickedConnect'};
+var _user$project$Settings$ChangeApiServer = function (a) {
+	return {ctor: 'ChangeApiServer', _0: a};
+};
+var _user$project$Settings$ChangeDbUrl = function (a) {
+	return {ctor: 'ChangeDbUrl', _0: a};
+};
+var _user$project$Settings$view = function (model) {
+	var textStyle = _elm_lang$html$Html_Attributes$style(
+		_elm_lang$core$Native_List.fromArray(
+			[
+				{ctor: '_Tuple2', _0: 'width', _1: '350px'},
+				{ctor: '_Tuple2', _0: 'border', _1: '0'},
+				{ctor: '_Tuple2', _0: 'outline', _1: '0'},
+				{ctor: '_Tuple2', _0: 'border-bottom', _1: '1px solid #ccc'},
+				{ctor: '_Tuple2', _0: 'background-color', _1: '#fff'}
+			]));
+	var labelStyle = _elm_lang$html$Html_Attributes$style(
+		_elm_lang$core$Native_List.fromArray(
+			[
+				{ctor: '_Tuple2', _0: 'width', _1: '200px'},
+				{ctor: '_Tuple2', _0: 'text-align', _1: 'left'},
+				{ctor: '_Tuple2', _0: 'padding-top', _1: '5px'},
+				{ctor: '_Tuple2', _0: 'display', _1: 'block'},
+				{ctor: '_Tuple2', _0: 'margin-bottom', _1: '0px'},
+				{ctor: '_Tuple2', _0: 'font-size', _1: '0.8em'}
+			]));
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html_Attributes$class('pane')
+			]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$class('tab-group')
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$div,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Attributes$class('tab-item active')
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								A2(
+								_elm_lang$html$Html$span,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$class('icon icon-cancel icon-close-tab'),
+										_elm_lang$html$Html_Events$onClick(_user$project$Settings$ClickedCloseWindow)
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[])),
+								_elm_lang$html$Html$text('Settings')
+							]))
+					])),
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Attributes$style(
+						_elm_lang$core$Native_List.fromArray(
+							[
+								{ctor: '_Tuple2', _0: 'padding', _1: '50px'}
+							]))
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						A2(
+						_elm_lang$html$Html$div,
+						_elm_lang$core$Native_List.fromArray(
+							[]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								A2(
+								_elm_lang$html$Html$label,
+								_elm_lang$core$Native_List.fromArray(
+									[labelStyle]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html$text('DB Url')
+									])),
+								A2(
+								_elm_lang$html$Html$input,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$type$('text'),
+										textStyle,
+										_elm_lang$html$Html_Attributes$placeholder('db url'),
+										_elm_lang$html$Html_Events$onInput(_user$project$Settings$ChangeDbUrl),
+										_elm_lang$html$Html_Attributes$value(model.dbUrl)
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[]))
+							])),
+						A2(
+						_elm_lang$html$Html$div,
+						_elm_lang$core$Native_List.fromArray(
+							[]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								A2(
+								_elm_lang$html$Html$label,
+								_elm_lang$core$Native_List.fromArray(
+									[labelStyle]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html$text('API server')
+									])),
+								A2(
+								_elm_lang$html$Html$input,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$type$('text'),
+										_elm_lang$html$Html_Attributes$placeholder('api server'),
+										textStyle,
+										_elm_lang$html$Html_Attributes$value(model.apiServer),
+										_elm_lang$html$Html_Events$onInput(_user$project$Settings$ChangeApiServer)
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[]))
+							])),
+						A2(
+						_elm_lang$html$Html$button,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html_Events$onClick(_user$project$Settings$ClickedConnect),
+								_elm_lang$html$Html_Attributes$class('btn btn-default btn-large'),
+								_elm_lang$html$Html_Attributes$style(
+								_elm_lang$core$Native_List.fromArray(
+									[
+										{ctor: '_Tuple2', _0: 'margin-top', _1: '30px'}
+									]))
+							]),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_elm_lang$html$Html$text('Connect to Server')
+							])),
+						function () {
+						var _p0 = model.processing;
+						if (_p0 === true) {
+							return A2(
+								_elm_lang$html$Html$div,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$class('animated slideInLeft')
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html$text('Connecting...'),
+										A2(
+										_elm_lang$html$Html$i,
+										_elm_lang$core$Native_List.fromArray(
+											[
+												_elm_lang$html$Html_Attributes$class('fa fa-cog fa-spin fa-3x fa-fw')
+											]),
+										_elm_lang$core$Native_List.fromArray(
+											[]))
+									]));
+						} else {
+							return _elm_lang$html$Html$text('');
+						}
+					}(),
+						function () {
+						var _p1 = model.error;
+						if (_p1.ctor === 'Just') {
+							return A2(
+								_elm_lang$html$Html$div,
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html_Attributes$class('alert animated fadeIn'),
+										_elm_lang$html$Html_Attributes$style(
+										_elm_lang$core$Native_List.fromArray(
+											[
+												{ctor: '_Tuple2', _0: 'width', _1: '300px'},
+												{ctor: '_Tuple2', _0: 'margin-top', _1: '30px'}
+											]))
+									]),
+								_elm_lang$core$Native_List.fromArray(
+									[
+										_elm_lang$html$Html$text(_p1._0)
+									]));
+						} else {
+							return A2(
+								_elm_lang$html$Html$span,
+								_elm_lang$core$Native_List.fromArray(
+									[]),
+								_elm_lang$core$Native_List.fromArray(
+									[]));
+						}
+					}()
+					]))
+			]));
+};
+var _user$project$Settings$CloseWindow = {ctor: 'CloseWindow'};
+var _user$project$Settings$ApplySettings = function (a) {
+	return {ctor: 'ApplySettings', _0: a};
+};
+var _user$project$Settings$update = F2(
+	function (msg, model) {
+		var _p2 = A2(_elm_lang$core$Debug$log, 'In Settings.update', 'here...');
+		var _p3 = msg;
+		switch (_p3.ctor) {
+			case 'ChangeDbUrl':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{dbUrl: _p3._0}),
+					_1: _elm_lang$core$Native_List.fromArray(
+						[])
+				};
+			case 'ChangeApiServer':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{apiServer: _p3._0}),
+					_1: _elm_lang$core$Native_List.fromArray(
+						[])
+				};
+			case 'ClickedConnect':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{error: _elm_lang$core$Maybe$Nothing, processing: true}),
+					_1: _elm_lang$core$Native_List.fromArray(
+						[
+							_user$project$Settings$ApplySettings(model)
+						])
+				};
+			case 'ClickedCloseWindow':
+				return {
+					ctor: '_Tuple2',
+					_0: model,
+					_1: _elm_lang$core$Native_List.fromArray(
+						[_user$project$Settings$CloseWindow])
+				};
+			case 'DbConnectionTested':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{error: _elm_lang$core$Maybe$Nothing, processing: false}),
+					_1: _elm_lang$core$Native_List.fromArray(
+						[])
+				};
+			case 'DbConnectionTestError':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							error: _elm_lang$core$Maybe$Just('Error connecting to database'),
+							processing: false
+						}),
+					_1: _elm_lang$core$Native_List.fromArray(
+						[])
+				};
+			default:
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							error: _elm_lang$core$Maybe$Just('Unable to connect to api server'),
+							processing: false
+						}),
+					_1: _elm_lang$core$Native_List.fromArray(
+						[])
+				};
+		}
+	});
+
 var _user$project$DataWindow$subscriptions = function (model) {
 	return _elm_lang$core$Platform_Sub$batch(
 		_elm_lang$core$Native_List.fromArray(
@@ -18037,7 +18332,6 @@ var _user$project$DataWindow$getFullUrl = function (model) {
 		A2(_elm_lang$core$Basics_ops['++'], table, filterUrl));
 	return url;
 };
-var _user$project$DataWindow$includeManyTab = false;
 var _user$project$DataWindow$Model = function (a) {
 	return function (b) {
 		return function (c) {
@@ -18492,7 +18786,7 @@ var _user$project$DataWindow$formView = function (model) {
 			_user$project$Row$isNew(_p16));
 		var maxFormHeight = _user$project$DataWindow$calcMainTableHeight(model);
 		var mergeTabHeight = 28 + (maxFormHeight - model.formHeight);
-		var formHeight = _user$project$DataWindow$includeManyTab ? model.formHeight : (model.formHeight + mergeTabHeight);
+		var formHeight = _user$project$Settings$includeManyTab ? model.formHeight : (model.formHeight + mergeTabHeight);
 		var formMargin = model.formMargin;
 		var maxFormWidth = _user$project$DataWindow$calcMainTableWidth(model) - formMargin;
 		return A2(
@@ -18552,10 +18846,10 @@ var _user$project$DataWindow$formView = function (model) {
 							_elm_lang$html$Html_App$map,
 							_user$project$DataWindow$UpdateFocusedRow,
 							_user$project$Row$view(_p16)),
-							_user$project$DataWindow$includeManyTab ? _user$project$DataWindow$extensionRowView(model) : _elm_lang$html$Html$text('')
+							_user$project$Settings$includeManyTab ? _user$project$DataWindow$extensionRowView(model) : _elm_lang$html$Html$text('')
 						])),
-					_user$project$DataWindow$includeManyTab ? _user$project$DataWindow$separator : _elm_lang$html$Html$text(''),
-					_user$project$DataWindow$includeManyTab ? A2(
+					_user$project$Settings$includeManyTab ? _user$project$DataWindow$separator : _elm_lang$html$Html$text(''),
+					_user$project$Settings$includeManyTab ? A2(
 					_elm_lang$html$Html$div,
 					_elm_lang$core$Native_List.fromArray(
 						[
@@ -19607,300 +19901,6 @@ var _user$project$WindowList$update = F2(
 							activeWindow: _elm_lang$core$Maybe$Just(_p1._0)
 						}),
 					_1: _elm_lang$core$Maybe$Nothing
-				};
-		}
-	});
-
-var _user$project$Settings$init = F2(
-	function (dbUrl, apiServer) {
-		return {dbUrl: dbUrl, apiServer: apiServer, error: _elm_lang$core$Maybe$Nothing, processing: false};
-	});
-var _user$project$Settings$Model = F4(
-	function (a, b, c, d) {
-		return {dbUrl: a, apiServer: b, error: c, processing: d};
-	});
-var _user$project$Settings$NetworkError = {ctor: 'NetworkError'};
-var _user$project$Settings$DbConnectionTestError = {ctor: 'DbConnectionTestError'};
-var _user$project$Settings$DbConnectionTested = {ctor: 'DbConnectionTested'};
-var _user$project$Settings$ClickedCloseWindow = {ctor: 'ClickedCloseWindow'};
-var _user$project$Settings$ClickedConnect = {ctor: 'ClickedConnect'};
-var _user$project$Settings$ChangeApiServer = function (a) {
-	return {ctor: 'ChangeApiServer', _0: a};
-};
-var _user$project$Settings$ChangeDbUrl = function (a) {
-	return {ctor: 'ChangeDbUrl', _0: a};
-};
-var _user$project$Settings$view = function (model) {
-	var textStyle = _elm_lang$html$Html_Attributes$style(
-		_elm_lang$core$Native_List.fromArray(
-			[
-				{ctor: '_Tuple2', _0: 'width', _1: '350px'},
-				{ctor: '_Tuple2', _0: 'border', _1: '0'},
-				{ctor: '_Tuple2', _0: 'outline', _1: '0'},
-				{ctor: '_Tuple2', _0: 'border-bottom', _1: '1px solid #ccc'},
-				{ctor: '_Tuple2', _0: 'background-color', _1: '#fff'}
-			]));
-	var labelStyle = _elm_lang$html$Html_Attributes$style(
-		_elm_lang$core$Native_List.fromArray(
-			[
-				{ctor: '_Tuple2', _0: 'width', _1: '200px'},
-				{ctor: '_Tuple2', _0: 'text-align', _1: 'left'},
-				{ctor: '_Tuple2', _0: 'padding-top', _1: '5px'},
-				{ctor: '_Tuple2', _0: 'display', _1: 'block'},
-				{ctor: '_Tuple2', _0: 'margin-bottom', _1: '0px'},
-				{ctor: '_Tuple2', _0: 'font-size', _1: '0.8em'}
-			]));
-	return A2(
-		_elm_lang$html$Html$div,
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_elm_lang$html$Html_Attributes$class('pane')
-			]),
-		_elm_lang$core$Native_List.fromArray(
-			[
-				A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$class('tab-group')
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						A2(
-						_elm_lang$html$Html$div,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Attributes$class('tab-item active')
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								A2(
-								_elm_lang$html$Html$span,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$class('icon icon-cancel icon-close-tab'),
-										_elm_lang$html$Html_Events$onClick(_user$project$Settings$ClickedCloseWindow)
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[])),
-								_elm_lang$html$Html$text('Settings')
-							]))
-					])),
-				A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Attributes$style(
-						_elm_lang$core$Native_List.fromArray(
-							[
-								{ctor: '_Tuple2', _0: 'padding', _1: '50px'}
-							]))
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						A2(
-						_elm_lang$html$Html$div,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								A2(
-								_elm_lang$html$Html$label,
-								_elm_lang$core$Native_List.fromArray(
-									[labelStyle]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html$text('DB Url')
-									])),
-								A2(
-								_elm_lang$html$Html$input,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$type$('text'),
-										textStyle,
-										_elm_lang$html$Html_Attributes$placeholder('db url'),
-										_elm_lang$html$Html_Events$onInput(_user$project$Settings$ChangeDbUrl),
-										_elm_lang$html$Html_Attributes$value(model.dbUrl)
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[]))
-							])),
-						A2(
-						_elm_lang$html$Html$div,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								A2(
-								_elm_lang$html$Html$label,
-								_elm_lang$core$Native_List.fromArray(
-									[labelStyle]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html$text('API server')
-									])),
-								A2(
-								_elm_lang$html$Html$input,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$type$('text'),
-										_elm_lang$html$Html_Attributes$placeholder('api server'),
-										textStyle,
-										_elm_lang$html$Html_Attributes$value(model.apiServer),
-										_elm_lang$html$Html_Events$onInput(_user$project$Settings$ChangeApiServer)
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[]))
-							])),
-						A2(
-						_elm_lang$html$Html$button,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html_Events$onClick(_user$project$Settings$ClickedConnect),
-								_elm_lang$html$Html_Attributes$class('btn btn-default btn-large'),
-								_elm_lang$html$Html_Attributes$style(
-								_elm_lang$core$Native_List.fromArray(
-									[
-										{ctor: '_Tuple2', _0: 'margin-top', _1: '30px'}
-									]))
-							]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text('Connect to Server')
-							])),
-						function () {
-						var _p0 = model.processing;
-						if (_p0 === true) {
-							return A2(
-								_elm_lang$html$Html$div,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$class('animated slideInLeft')
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html$text('Connecting...'),
-										A2(
-										_elm_lang$html$Html$i,
-										_elm_lang$core$Native_List.fromArray(
-											[
-												_elm_lang$html$Html_Attributes$class('fa fa-cog fa-spin fa-3x fa-fw')
-											]),
-										_elm_lang$core$Native_List.fromArray(
-											[]))
-									]));
-						} else {
-							return _elm_lang$html$Html$text('');
-						}
-					}(),
-						function () {
-						var _p1 = model.error;
-						if (_p1.ctor === 'Just') {
-							return A2(
-								_elm_lang$html$Html$div,
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html_Attributes$class('alert animated fadeIn'),
-										_elm_lang$html$Html_Attributes$style(
-										_elm_lang$core$Native_List.fromArray(
-											[
-												{ctor: '_Tuple2', _0: 'width', _1: '300px'},
-												{ctor: '_Tuple2', _0: 'margin-top', _1: '30px'}
-											]))
-									]),
-								_elm_lang$core$Native_List.fromArray(
-									[
-										_elm_lang$html$Html$text(_p1._0)
-									]));
-						} else {
-							return A2(
-								_elm_lang$html$Html$span,
-								_elm_lang$core$Native_List.fromArray(
-									[]),
-								_elm_lang$core$Native_List.fromArray(
-									[]));
-						}
-					}()
-					]))
-			]));
-};
-var _user$project$Settings$CloseWindow = {ctor: 'CloseWindow'};
-var _user$project$Settings$ApplySettings = function (a) {
-	return {ctor: 'ApplySettings', _0: a};
-};
-var _user$project$Settings$update = F2(
-	function (msg, model) {
-		var _p2 = A2(_elm_lang$core$Debug$log, 'In Settings.update', 'here...');
-		var _p3 = msg;
-		switch (_p3.ctor) {
-			case 'ChangeDbUrl':
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{dbUrl: _p3._0}),
-					_1: _elm_lang$core$Native_List.fromArray(
-						[])
-				};
-			case 'ChangeApiServer':
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{apiServer: _p3._0}),
-					_1: _elm_lang$core$Native_List.fromArray(
-						[])
-				};
-			case 'ClickedConnect':
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{error: _elm_lang$core$Maybe$Nothing, processing: true}),
-					_1: _elm_lang$core$Native_List.fromArray(
-						[
-							_user$project$Settings$ApplySettings(model)
-						])
-				};
-			case 'ClickedCloseWindow':
-				return {
-					ctor: '_Tuple2',
-					_0: model,
-					_1: _elm_lang$core$Native_List.fromArray(
-						[_user$project$Settings$CloseWindow])
-				};
-			case 'DbConnectionTested':
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{error: _elm_lang$core$Maybe$Nothing, processing: false}),
-					_1: _elm_lang$core$Native_List.fromArray(
-						[])
-				};
-			case 'DbConnectionTestError':
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							error: _elm_lang$core$Maybe$Just('Error connecting to database'),
-							processing: false
-						}),
-					_1: _elm_lang$core$Native_List.fromArray(
-						[])
-				};
-			default:
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							error: _elm_lang$core$Maybe$Just('Unable to connect to api server'),
-							processing: false
-						}),
-					_1: _elm_lang$core$Native_List.fromArray(
-						[])
 				};
 		}
 	});
