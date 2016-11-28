@@ -21,6 +21,11 @@ init dbUrl apiServer =
     }
 
 
+-- enable/disable the hasMany Related Tables
+-- Disables, False at first release
+includeManyTab = True
+
+
 
 type Msg = ChangeDbUrl String
          | ChangeApiServer String

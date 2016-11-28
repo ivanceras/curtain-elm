@@ -19,6 +19,7 @@ import Mode exposing
 import Dao exposing (TableDao)
 import Mouse
 import String
+import Settings
 
 
 type alias Model =
@@ -41,9 +42,6 @@ type alias Model =
     , openSequence: Int -- the highest number determine which window last opened
     }
 
--- enable/disable the hasMany Related Tables
--- Disables, False at first release
-includeManyTab = False
 
 
 getFilter: Model -> String
@@ -196,7 +194,7 @@ formView model =
                 maxFormWidth = (calcMainTableWidth model) - formMargin
                 maxFormHeight = calcMainTableHeight model
                 mergeTabHeight = 28 + (maxFormHeight - model.formHeight)
-                formHeight = if includeManyTab then
+                formHeight = if Settings.includeManyTab then
                         model.formHeight
                     else
                         model.formHeight + mergeTabHeight
@@ -219,16 +217,16 @@ formView model =
                         ]
                     ]
                     [App.map UpdateFocusedRow (Row.view focusedRow)
-                    ,if includeManyTab then
+                    ,if Settings.includeManyTab then
                         extensionRowView model
                      else 
                         text ""
                     ]
-                 ,if includeManyTab then
+                 ,if Settings.includeManyTab then
                     separator 
                   else 
                     text ""
-                 ,if includeManyTab then
+                 ,if Settings.includeManyTab then
                     div [class "related-container"
                       ,style [("height", (toString mergeTabHeight)++"px")
                              ]
