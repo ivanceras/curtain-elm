@@ -222,12 +222,12 @@ update msg model =
         UpdateWindowList msg ->
             let (window_list, outmsg) =
                 WindowList.update msg model.windowList
-                model' = {model | windowList = window_list}
+                model1 = {model | windowList = window_list}
             in
             case outmsg of
-                Nothing -> (model', Cmd.none)
+                Nothing -> (model1, Cmd.none)
                 Just (WindowList.LoadWindow table) ->
-                    (model', fetchWindowDetail model' table)
+                    (model1, fetchWindowDetail model1 table)
         
         GetWindowList ->
             ( model, fetchWindowList model)
@@ -260,9 +260,9 @@ update msg model =
 
         UpdateSettings settingsMsg ->
             let (updatedSettings, outmsgs) = Settings.update settingsMsg model.settings
-                model' = {model | settings = updatedSettings}
+                model1 = {model | settings = updatedSettings}
             in
-              handleSettingsOutMsg model' outmsgs 
+              handleSettingsOutMsg model1 outmsgs 
 
         ToggleSettingsWindow ->
             ({model | isSettingsOpened = not model.isSettingsOpened}, Cmd.none)
@@ -383,37 +383,37 @@ update msg model =
 handleSettingsOutMsg: Model -> List Settings.OutMsg -> (Model, Cmd Msg)
 handleSettingsOutMsg model outmsgs =           
     let
-        (model'', newoutList) = 
+        (model2, newoutList) = 
             List.foldl
-                (\outmsg (model', newout) ->
+                (\outmsg (model1, newout) ->
                     case outmsg of
                         Settings.CloseWindow ->
-                            (closeSettingsWindow model'
+                            (closeSettingsWindow model1
                             , newout)
 
                         Settings.ApplySettings settings ->
                             let _ = Debug.log "Apllying the settings down...." ""
                             in
-                            ( model' 
+                            ( model1 
                             , newout ++
-                                [testDbConnection model'
-                                ,saveSettings model'
+                                [testDbConnection model1
+                                ,saveSettings model1
                                 ]
                              )
                   ) (model, []) outmsgs
     in
-        (model'', Cmd.batch newoutList)
+        (model2, Cmd.batch newoutList)
 
 
 updateThenHandleWindowMsg: Model -> DataWindow.Msg -> Int -> (Model, Cmd Msg)
 updateThenHandleWindowMsg model windowMsg windowId =
-    let (model', outmsg) = updateWindow model windowMsg windowId
+    let (model1, outmsg) = updateWindow model windowMsg windowId
     in 
-        handleWindowOutMsg outmsg model' windowId
+        handleWindowOutMsg outmsg model1 windowId
 
 handleWindowOutMsg: List DataWindow.OutMsg -> Model -> Int -> ( Model, Cmd Msg)
 handleWindowOutMsg outmsgs model windowId =
-    let (model', cmdlist) =
+    let (model1, cmdlist) =
         List.foldl
             (
             \ outmsg (model, cmds) ->
@@ -434,7 +434,7 @@ handleWindowOutMsg outmsgs model windowId =
 
             ) (model, []) outmsgs
       in
-       (model', Cmd.batch cmdlist)
+       (model1, Cmd.batch cmdlist)
 
 modifyUrl: Model -> String -> Cmd msg
 modifyUrl model url =
@@ -474,15 +474,15 @@ sizeToMsg size =
 
 addWindow: Model -> DataWindow.Window -> Model
 addWindow model window =
-    let window' = DataWindow.create window model.uid (nextOpenSequence model)
-        (window'', _) = DataWindow.update (DataWindow.WindowDetailReceived window) window' 
-        (window''', _) = DataWindow.update (DataWindow.BrowserDimensionChanged model.browserDimension) window''
-        allWindows = model.openedWindows ++ [window''']
+    let window1 = DataWindow.create window model.uid (nextOpenSequence model)
+        (window2, _) = DataWindow.update (DataWindow.WindowDetailReceived window) window1 
+        (window3, _) = DataWindow.update (DataWindow.BrowserDimensionChanged model.browserDimension) window2
+        allWindows = model.openedWindows ++ [window3]
     in
     { model | openedWindows = allWindows 
     , uid = model.uid + 1
     } 
-        |> activateWindow window'''.windowId
+        |> activateWindow window3.windowId
         
 
 displayWindowDetail: Model -> DataWindow.Window -> Model
@@ -526,10 +526,10 @@ updateWindow model windowMsg windowId =
         List.map(
             \w ->
                 if w.windowId == windowId then
-                    let (window', outmsg) = DataWindow.update windowMsg w
+                    let (window1, outmsg) = DataWindow.update windowMsg w
                         _ = Debug.log "Main outmsg" outmsg
                     in 
-                        (window', outmsg) 
+                        (window1, outmsg) 
                                     
                 else
                     (w, [])
@@ -573,9 +573,9 @@ nextOpenSequence model =
 
 activateWindowThenHandleWindowMsg: Int -> Model ->  (Model, Cmd Msg)
 activateWindowThenHandleWindowMsg windowId model =
-    let (model',outmsg) = activateWindow1 windowId model
+    let (model1,outmsg) = activateWindow1 windowId model
     in
-    handleWindowOutMsg outmsg model' windowId
+    handleWindowOutMsg outmsg model1 windowId
 
 activateWindow1: Int -> Model ->  (Model, List DataWindow.OutMsg)
 activateWindow1 windowId model =
@@ -745,7 +745,7 @@ fetchFocusedRecordDetail model windowId rowId =
                 Just window ->
                     case Tab.getRow window.mainTab rowId of
                         Just row ->
-                            let focusedParam =  "[" ++ Row.focusedRecordParam row ++ "]"
+                            let focusedParam =  Row.focusedRecordParam row
                             in
                             httpGet model ("/app/focus/" ++ mainTable ++ "?focused_record=" ++ focusedParam )
                                 |> Http.fromJson (Decode.list Dao.tableDaoDecoder)
