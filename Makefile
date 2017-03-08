@@ -5,7 +5,7 @@ WEB_FILES := $(wildcard web/*)
 
 
 curtain.js : $(ELM_FILES)
-	elm make src/Main.elm --yes --output build/curtain.js
+	/Users/lee/elm17/node_modules/elm/binwrappers/elm-make src/Main.elm --yes --output build/curtain.js
 
 build_web: $(WEB_FILES)
 	cp -r web/* build
