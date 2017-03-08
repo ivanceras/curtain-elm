@@ -464,10 +464,10 @@ update: Msg -> Model -> (Model, List OutMsg)
 update msg model =
     case msg of 
         UpdateTab tab_msg ->
-            let (model', outmsg) = updateMainTab tab_msg model
+            let (model1, outmsg) = updateMainTab tab_msg model
                 _ = Debug.log "Tab outmsg" outmsg
             in
-                handleTabOutMsg model' outmsg                 
+                handleTabOutMsg model1 outmsg                 
 
         UpdateFocusedRow rowMsg ->
             let _ = Debug.log "Updating row" rowMsg
@@ -494,8 +494,8 @@ update msg model =
         WindowDataReceived listTableDao ->
             case (List.head listTableDao) of --TODO: get the main tab
                     Just tableDao -> 
-                        let (model', outmsg) = updateMainTab (Tab.TabDataReceived tableDao) model
-                        in (model',[])
+                        let (model1, outmsg) = updateMainTab (Tab.TabDataReceived tableDao) model
+                        in (model1,[])
                     Nothing -> (model, [])
 
         ChangeMode mode ->
@@ -540,17 +540,17 @@ update msg model =
         WindowDataNextPageReceived listTableDao ->
             case (List.head listTableDao) of --TODO: get the main tab
                     Just tableDao -> 
-                        let (model', outmsg) = 
+                        let (model1, outmsg) = 
                             updateMainTab (Tab.TabDataNextPageReceived tableDao) model
-                        in (model', [])
+                        in (model1, [])
                     Nothing -> (model, []) 
         
         ReceivedScrollBottomEvent table ->
-           let (model', outmsg) =
+           let (model1, outmsg) =
                 updateMainTab Tab.ReceivedScrollBottomEvent model
                _ = Debug.log "ReceivedScroll Tab outmsg" outmsg
            in
-                handleTabOutMsg model' outmsg
+                handleTabOutMsg model1 outmsg
 
         ResizeStart xy ->
             let _ = Debug.log "Starting resize.." xy in
@@ -613,12 +613,12 @@ update msg model =
                 Just mainResponse ->
                     let
                         error = getError mainResponse
-                        model' = { model | alert = error } 
+                        model1 = { model | alert = error } 
                                     |> updateAllocatedHeight
-                        (model'', outmsg) =
-                            updateMainTab (Tab.RecordsUpdated mainResponse) model'
+                        (model2, outmsg) =
+                            updateMainTab (Tab.RecordsUpdated mainResponse) model1
                     in
-                        handleTabOutMsg model'' outmsg
+                        handleTabOutMsg model2 outmsg
                 Nothing ->
                     ( model,  
                     --[FIXME] No need to refresh record when the insert, update, and delete 
@@ -695,16 +695,16 @@ getError updateResponse =
 handleTabOutMsg: Model -> List Tab.OutMsg -> (Model, List OutMsg)
 handleTabOutMsg model outmsgs =
     List.foldl
-        (\outmsg (model', newout) ->
+        (\outmsg (model1, newout) ->
             case outmsg of
                 Tab.LoadNextPage ->
-                    ( model'
-                    , newout ++ [LoadNextPage model'.mainTab]
+                    ( model1
+                    , newout ++ [LoadNextPage model1.mainTab]
                     )
                 Tab.FocusRow focusedRow ->
                     case focusedRow of
                         Just focusedRow ->
-                            ({model' | focusedRow =
+                            ({model1 | focusedRow =
                                 Just (
                                         Row.update (Row.ChangePresentation Row.Form) focusedRow
                                             |> fst
@@ -713,7 +713,7 @@ handleTabOutMsg model outmsgs =
                             , newout ++ [FocusedRow focusedRow]
                             )
                         Nothing -> 
-                            ( model', newout)
+                            ( model1, newout)
                 Tab.FilterChanges ->
                     (model, 
                     [ModifyUrl (getFullUrl model)
@@ -878,16 +878,16 @@ updateAllMergedTab tabMsg model =
 
 updateMainTabThenHandleOutMsg: Tab.Msg -> Model -> (Model, List OutMsg)
 updateMainTabThenHandleOutMsg tabMsg model =
-    let (model', outmsg) = updateMainTab tabMsg model
-    in handleTabOutMsg model' outmsg
+    let (model1, outmsg) = updateMainTab tabMsg model
+    in handleTabOutMsg model1 outmsg
 
 
 updateMainTab: Tab.Msg -> Model -> (Model, List Tab.OutMsg)
 updateMainTab tabMsg model =
     let (updatedMainTab, outmsg) = Tab.update tabMsg model.mainTab
-        model' = {model | mainTab = updatedMainTab}
+        model1 = {model | mainTab = updatedMainTab}
     in
-       (model', outmsg)
+       (model1, outmsg)
 
 
 

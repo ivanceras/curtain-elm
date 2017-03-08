@@ -151,9 +151,9 @@ update msg model =
                         in
                         case value of
                             Just value ->
-                                let (field', outmsg') = Field.update (Field.SetValue value) f
+                                let (field1, outmsg1) = Field.update (Field.SetValue value) f
                                 in 
-                                    field'
+                                    field1
                             Nothing -> f
                 ) model.fieldModels
             in
@@ -170,9 +170,9 @@ update msg model =
                         in
                         case value of
                             Just value ->
-                                let (field', outmsg') = Field.update (Field.UpdateValue value) f
+                                let (field1, outmsg1) = Field.update (Field.UpdateValue value) f
                                 in 
-                                    field'
+                                    field1
                             Nothing -> f
                 ) model.fieldModels
             in

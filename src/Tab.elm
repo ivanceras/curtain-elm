@@ -562,14 +562,14 @@ update msg model =
                 (model, [])
 
         RecordsUpdated updateResponse ->
-            let model' = updateRecordFromResponse model updateResponse
+            let model1 = updateRecordFromResponse model updateResponse
             in
-            if shallAutoLoadNextPage model' then
-                ({ model' | loadingPage = True }
+            if shallAutoLoadNextPage model1 then
+                ({ model1 | loadingPage = True }
                 , [LoadNextPage]
                 )
              else
-                ( model', [])
+                ( model1, [])
         UpdateRowDao rowId dao ->
             updateThenHandleRowMsg (Row.UpdateDao dao) rowId model
 
@@ -583,7 +583,7 @@ update msg model =
              } ,[])
        
         UpdateSearchBox column searchBoxMsg ->
-            let model' = 
+            let model1 = 
                     {model | searchBoxes = 
                         List.map ( \sb ->
                             if column == sb.field.column then
@@ -593,10 +593,10 @@ update msg model =
                                 sb 
                         ) model.searchBoxes
                      }
-                filter = getSearchBoxQuery model'
+                filter = getSearchBoxQuery model1
                 _ = Debug.log "searchQueries: " filter
             in
-            (model'
+            (model1
             , [FilterChanges])
          
         ClearFilters ->
@@ -643,10 +643,10 @@ updateRow rowMsg rowId model =
 
 updateThenHandleRowMsg: Row.Msg -> Int -> Model -> (Model, List OutMsg)
 updateThenHandleRowMsg rowMsg rowId model =
-    let (model', rowOutMsgs) =
+    let (model1, rowOutMsgs) =
         updateRow rowMsg rowId model
      in
-        handleRowOutMsg rowOutMsgs rowId model'
+        handleRowOutMsg rowOutMsgs rowId model1
 
 handleRowOutMsg: List Row.OutMsg -> Int -> Model -> (Model, List OutMsg)
 handleRowOutMsg outmsgs rowId model =
