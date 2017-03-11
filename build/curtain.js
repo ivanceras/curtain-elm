@@ -16342,6 +16342,9 @@ var _user$project$Tab$addToRows = F2(
 			A2(_elm_lang$core$Basics_ops['++'], model.rows, rows),
 			tableDao);
 	});
+var _user$project$Tab$emptyFormRow = function (model) {
+	return A2(_user$project$Row$create, model.tab.fields, 0);
+};
 var _user$project$Tab$firstRow = function (model) {
 	return _elm_lang$core$List$head(model.rows);
 };
@@ -18687,7 +18690,11 @@ var _user$project$DataWindow$extensionRowView = function (model) {
 									_user$project$DataWindow$UpdateExtensionRow,
 									_user$project$Row$view(formedFirstRow));
 							} else {
-								return _elm_lang$html$Html$text('No first row..');
+								return A2(
+									_elm_lang$html$Html_App$map,
+									_user$project$DataWindow$UpdateExtensionRow,
+									_user$project$Row$view(
+										_user$project$Tab$newRowInForm(ext)));
 							}
 						}()
 						]));

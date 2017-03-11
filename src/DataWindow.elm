@@ -288,7 +288,7 @@ extensionRowView model =
                                 in
                                 App.map UpdateExtensionRow (Row.view formedFirstRow)
                             Nothing ->
-                                text "No first row.."
+                                App.map UpdateExtensionRow (Row.view <| Tab.newRowInForm ext)
                             
                         ]
             ) model.extTabs

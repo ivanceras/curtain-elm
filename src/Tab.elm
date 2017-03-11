@@ -761,6 +761,10 @@ firstRow: Model -> Maybe Row.Model
 firstRow model =
     List.head model.rows
 
+emptyFormRow: Model -> Row.Model
+emptyFormRow model =
+    Row.create model.tab.fields 0
+
 createRows: Model -> List Dao -> List Row.Model
 createRows model listDao =
     List.indexedMap (
