@@ -89,6 +89,12 @@ create window windowId openSequence =
 
 type Presentation = Table | Grid
 
+type ToolbarAction = ToolbarDeleteRecords
+    | ToolbarRefreshRecords
+    | ToolbarSaveChanges
+    | ToolbarCloseAlert
+    | ToolbarClearFilters
+
 type Msg
     = ChangeMode Mode
     | ChangePresentation Presentation
@@ -104,11 +110,14 @@ type Msg
     | WindowDataNextPageReceived (List TableDao)
     | ReceivedScrollBottomEvent String 
     | ResizeStart Mouse.Position
+    | ClickedToolbar ToolbarAction
+    {--
     | ClickedDeleteRecords
     | ClickedRefreshRecords
     | ClickedSaveChanges
     | ClickedCloseAlert
     | ClickedClearFilters
+    --}
     | SetAlert String
     | RecordsUpdated (List Dao.UpdateResponse)
     | UpdateFocusedRow Row.Msg
@@ -172,7 +181,7 @@ view model =
                             ,style [("height", "70px")]
                             ] 
                             [text alert
-                            , button [onClick ClickedCloseAlert] [text "Ok"]
+                            , button [onClick <| ClickedToolbar ToolbarCloseAlert] [text "Ok"]
                             ]
                     Nothing ->
                         span [] []
@@ -382,7 +391,7 @@ toolbar model=
                 ,span [class "tooltiptext"] [text "Create a new record in a form"]
                 ]
             ,button [class "btn btn-large btn-default tooltip"
-                    , onClick ClickedSaveChanges
+                    , onClick <| ClickedToolbar ToolbarSaveChanges
                     , disabled <| dirtyRecordCount == 0
                     ]
                 [if dirtyRecordCount > 0 then 
@@ -400,7 +409,7 @@ toolbar model=
                 ,span [class "tooltiptext"] [text "Cancel changes and return to the last saved state"]
                 ]
             ,button [class "btn btn-large btn-default tooltip"
-                    , onClick ClickedDeleteRecords
+                    , onClick <| ClickedToolbar ToolbarDeleteRecords
                     , disabled <| selectedRowCount == 0
                     ]
                 [if selectedRowCount > 0 then 
@@ -414,14 +423,14 @@ toolbar model=
                 ]
             ,button [
                 class "btn btn-large btn-default tooltip"
-                , onClick ClickedRefreshRecords
+                , onClick <| ClickedToolbar ToolbarRefreshRecords
                 ]
                 [span [class "icon icon-arrows-ccw icon-text"] []
                 ,text "Refresh"
                 ,span [class "tooltiptext"] [text "Refresh the current data from the database"]
                 ]
             ,button [class "btn btn-large btn-default tooltip"
-                    ,onClick ClickedClearFilters
+                    ,onClick <| ClickedToolbar ToolbarClearFilters
                     ]
                 [span [class "icon icon-trophy icon-text"] []
                 ,text "Clear Filter"
@@ -556,42 +565,44 @@ update msg model =
             let _ = Debug.log "Starting resize.." xy in
             (model, [])
 
-        ClickedDeleteRecords ->
-            let _ = Debug.log "Deleting records" ""
-                selectedDao = getSelectedOrigRecords model
-                table = model.mainTab.tab.table
-                changeset = Dao.deletedChangeset table selectedDao False
-                encoded = Encode.encode 0 (Dao.changeSetListEncoder changeset)
-                _ = Debug.log "selected rows" encoded
-            in 
-            (model, [UpdateRecords table encoded])
+        ClickedToolbar toolbarAction ->
+            case toolbarAction of
+                ToolbarDeleteRecords ->
+                    let _ = Debug.log "Deleting records" ""
+                        selectedDao = getSelectedOrigRecords model
+                        table = model.mainTab.tab.table
+                        changeset = Dao.deletedChangeset table selectedDao False
+                        encoded = Encode.encode 0 (Dao.changeSetListEncoder changeset)
+                        _ = Debug.log "selected rows" encoded
+                    in 
+                    (model, [UpdateRecords table encoded])
 
-        ClickedRefreshRecords ->
-            let _  = Debug.log "Refreshing records" ""
-            in
-            (model, [RefreshRecords model.windowId model.mainTab.tab.table])
+                ToolbarRefreshRecords ->
+                    let _  = Debug.log "Refreshing records" ""
+                    in
+                    (model, [RefreshRecords model.windowId model.mainTab.tab.table])
 
-         -- updated and inserted records
-        ClickedSaveChanges ->
-            let _ = Debug.log "Saving changes" ""
-                updatedDao = getUpdatedRecords model
-                insertedDao = getInsertedRecords model
-                table = model.mainTab.tab.table
-                changeset = Dao.forSaveChangeset table updatedDao insertedDao 
-                encoded = Encode.encode 0 (Dao.changeSetListEncoder changeset)
-                _ = Debug.log "For save" encoded
-             in 
-                (model, [UpdateRecords table encoded])
+                 -- updated and inserted records
+                ToolbarSaveChanges ->
+                    let _ = Debug.log "Saving changes" ""
+                        updatedDao = getUpdatedRecords model
+                        insertedDao = getInsertedRecords model
+                        table = model.mainTab.tab.table
+                        changeset = Dao.forSaveChangeset table updatedDao insertedDao 
+                        encoded = Encode.encode 0 (Dao.changeSetListEncoder changeset)
+                        _ = Debug.log "For save" encoded
+                     in 
+                        (model, [UpdateRecords table encoded])
 
-        ClickedCloseAlert ->
-            ( {model | alert = Nothing}
-                |> updateAllocatedHeight
-            , []
-            )
-        ClickedClearFilters ->
-            let _ = Debug.log "clearing filters" ""
-            in
-            updateMainTabThenHandleOutMsg Tab.ClearFilters model
+                ToolbarCloseAlert ->
+                    ( {model | alert = Nothing}
+                        |> updateAllocatedHeight
+                    , []
+                    )
+                ToolbarClearFilters ->
+                    let _ = Debug.log "clearing filters" ""
+                    in
+                    updateMainTabThenHandleOutMsg Tab.ClearFilters model
         
         SetAlert alert ->
             ({ model | alert = Just alert }
