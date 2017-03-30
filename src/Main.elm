@@ -424,7 +424,7 @@ handleWindowOutMsg outmsgs model windowId =
                         (model, cmds ++ [httpUpdateRecords model windowId mainTable body])
                     DataWindow.FocusedRow focusedRow ->
                         (model, cmds ++ [fetchFocusedRecordDetail model windowId focusedRow.rowId])
-                    DataWindow.RefreshRecords windowId table->
+                    DataWindow.DoRefreshRecords windowId table->
                         (model, cmds ++ [getWindowData model table windowId])
                     DataWindow.ModifyUrl url ->
                         let _ = Debug.log "Modify the URL to" url

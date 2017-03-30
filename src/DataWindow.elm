@@ -89,11 +89,13 @@ create window windowId openSequence =
 
 type Presentation = Table | Grid
 
-type ToolbarAction = ToolbarDeleteRecords
-    | ToolbarRefreshRecords
-    | ToolbarSaveChanges
-    | ToolbarCloseAlert
-    | ToolbarClearFilters
+{-|The actions in the toolbars, grouped in one type -}
+type ToolbarAction = DeleteRecords
+    | RefreshRecords
+    | SaveChanges
+    | CloseAlert
+    | ClearFilters
+
 
 type Msg
     = ChangeMode Mode
@@ -111,13 +113,6 @@ type Msg
     | ReceivedScrollBottomEvent String 
     | ResizeStart Mouse.Position
     | ClickedToolbar ToolbarAction
-    {--
-    | ClickedDeleteRecords
-    | ClickedRefreshRecords
-    | ClickedSaveChanges
-    | ClickedCloseAlert
-    | ClickedClearFilters
-    --}
     | SetAlert String
     | RecordsUpdated (List Dao.UpdateResponse)
     | UpdateFocusedRow Row.Msg
@@ -132,7 +127,7 @@ type Msg
 type OutMsg = LoadNextPage Tab.Model
     | UpdateRecords String String
     | FocusedRow Row.Model
-    | RefreshRecords Int String
+    | DoRefreshRecords Int String
     | ModifyUrl String
     
 type alias Window =
@@ -181,7 +176,7 @@ view model =
                             ,style [("height", "70px")]
                             ] 
                             [text alert
-                            , button [onClick <| ClickedToolbar ToolbarCloseAlert] [text "Ok"]
+                            , button [onClick <| ClickedToolbar CloseAlert] [text "Ok"]
                             ]
                     Nothing ->
                         span [] []
@@ -391,7 +386,7 @@ toolbar model=
                 ,span [class "tooltiptext"] [text "Create a new record in a form"]
                 ]
             ,button [class "btn btn-large btn-default tooltip"
-                    , onClick <| ClickedToolbar ToolbarSaveChanges
+                    , onClick <| ClickedToolbar SaveChanges
                     , disabled <| dirtyRecordCount == 0
                     ]
                 [if dirtyRecordCount > 0 then 
@@ -409,7 +404,7 @@ toolbar model=
                 ,span [class "tooltiptext"] [text "Cancel changes and return to the last saved state"]
                 ]
             ,button [class "btn btn-large btn-default tooltip"
-                    , onClick <| ClickedToolbar ToolbarDeleteRecords
+                    , onClick <| ClickedToolbar DeleteRecords
                     , disabled <| selectedRowCount == 0
                     ]
                 [if selectedRowCount > 0 then 
@@ -423,14 +418,14 @@ toolbar model=
                 ]
             ,button [
                 class "btn btn-large btn-default tooltip"
-                , onClick <| ClickedToolbar ToolbarRefreshRecords
+                , onClick <| ClickedToolbar RefreshRecords
                 ]
                 [span [class "icon icon-arrows-ccw icon-text"] []
                 ,text "Refresh"
                 ,span [class "tooltiptext"] [text "Refresh the current data from the database"]
                 ]
             ,button [class "btn btn-large btn-default tooltip"
-                    ,onClick <| ClickedToolbar ToolbarClearFilters
+                    ,onClick <| ClickedToolbar ClearFilters
                     ]
                 [span [class "icon icon-trophy icon-text"] []
                 ,text "Clear Filter"
@@ -567,7 +562,7 @@ update msg model =
 
         ClickedToolbar toolbarAction ->
             case toolbarAction of
-                ToolbarDeleteRecords ->
+                DeleteRecords ->
                     let _ = Debug.log "Deleting records" ""
                         selectedDao = getSelectedOrigRecords model
                         table = model.mainTab.tab.table
@@ -577,13 +572,13 @@ update msg model =
                     in 
                     (model, [UpdateRecords table encoded])
 
-                ToolbarRefreshRecords ->
+                RefreshRecords ->
                     let _  = Debug.log "Refreshing records" ""
                     in
-                    (model, [RefreshRecords model.windowId model.mainTab.tab.table])
+                    (model, [DoRefreshRecords model.windowId model.mainTab.tab.table])
 
                  -- updated and inserted records
-                ToolbarSaveChanges ->
+                SaveChanges ->
                     let _ = Debug.log "Saving changes" ""
                         updatedDao = getUpdatedRecords model
                         insertedDao = getInsertedRecords model
@@ -594,12 +589,12 @@ update msg model =
                      in 
                         (model, [UpdateRecords table encoded])
 
-                ToolbarCloseAlert ->
+                CloseAlert ->
                     ( {model | alert = Nothing}
                         |> updateAllocatedHeight
                     , []
                     )
-                ToolbarClearFilters ->
+                ClearFilters ->
                     let _ = Debug.log "clearing filters" ""
                     in
                     updateMainTabThenHandleOutMsg Tab.ClearFilters model
@@ -634,7 +629,7 @@ update msg model =
                     ( model,  
                     --[FIXME] No need to refresh record when the insert, update, and delete 
                     --updates their corresponding records well
-                    [RefreshRecords model.windowId model.mainTab.tab.table]
+                    [DoRefreshRecords model.windowId model.mainTab.tab.table]
                     )
          
         -- update the focused row in the main tab from here
@@ -728,7 +723,7 @@ handleTabOutMsg model outmsgs =
                 Tab.FilterChanges ->
                     (model, 
                     [ModifyUrl (getFullUrl model)
-                    ,RefreshRecords model.windowId model.mainTab.tab.table
+                    ,DoRefreshRecords model.windowId model.mainTab.tab.table
                     ])
 
         ) (model, []) outmsgs
