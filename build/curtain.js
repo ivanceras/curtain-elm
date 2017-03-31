@@ -18427,6 +18427,11 @@ var _user$project$DataWindow$create = F3(
 			openSequence: openSequence
 		};
 	});
+var _user$project$DataWindow$ClearFilters = {ctor: 'ClearFilters'};
+var _user$project$DataWindow$CloseAlert = {ctor: 'CloseAlert'};
+var _user$project$DataWindow$SaveChanges = {ctor: 'SaveChanges'};
+var _user$project$DataWindow$RefreshRecords = {ctor: 'RefreshRecords'};
+var _user$project$DataWindow$DeleteRecords = {ctor: 'DeleteRecords'};
 var _user$project$DataWindow$NewRecordInForm = {ctor: 'NewRecordInForm'};
 var _user$project$DataWindow$EditFocusedRow = {ctor: 'EditFocusedRow'};
 var _user$project$DataWindow$RestoreSize = {ctor: 'RestoreSize'};
@@ -18570,11 +18575,9 @@ var _user$project$DataWindow$RecordsUpdated = function (a) {
 var _user$project$DataWindow$SetAlert = function (a) {
 	return {ctor: 'SetAlert', _0: a};
 };
-var _user$project$DataWindow$ClickedClearFilters = {ctor: 'ClickedClearFilters'};
-var _user$project$DataWindow$ClickedCloseAlert = {ctor: 'ClickedCloseAlert'};
-var _user$project$DataWindow$ClickedSaveChanges = {ctor: 'ClickedSaveChanges'};
-var _user$project$DataWindow$ClickedRefreshRecords = {ctor: 'ClickedRefreshRecords'};
-var _user$project$DataWindow$ClickedDeleteRecords = {ctor: 'ClickedDeleteRecords'};
+var _user$project$DataWindow$ClickedToolbar = function (a) {
+	return {ctor: 'ClickedToolbar', _0: a};
+};
 var _user$project$DataWindow$ResizeStart = function (a) {
 	return {ctor: 'ResizeStart', _0: a};
 };
@@ -18980,7 +18983,8 @@ var _user$project$DataWindow$toolbar = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
-						_elm_lang$html$Html_Events$onClick(_user$project$DataWindow$ClickedSaveChanges),
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$DataWindow$ClickedToolbar(_user$project$DataWindow$SaveChanges)),
 						_elm_lang$html$Html_Attributes$disabled(
 						_elm_lang$core$Native_Utils.eq(dirtyRecordCount, 0))
 					]),
@@ -19052,7 +19056,8 @@ var _user$project$DataWindow$toolbar = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
-						_elm_lang$html$Html_Events$onClick(_user$project$DataWindow$ClickedDeleteRecords),
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$DataWindow$ClickedToolbar(_user$project$DataWindow$DeleteRecords)),
 						_elm_lang$html$Html_Attributes$disabled(
 						_elm_lang$core$Native_Utils.eq(selectedRowCount, 0))
 					]),
@@ -19094,7 +19099,8 @@ var _user$project$DataWindow$toolbar = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
-						_elm_lang$html$Html_Events$onClick(_user$project$DataWindow$ClickedRefreshRecords)
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$DataWindow$ClickedToolbar(_user$project$DataWindow$RefreshRecords))
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -19123,7 +19129,8 @@ var _user$project$DataWindow$toolbar = function (model) {
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html_Attributes$class('btn btn-large btn-default tooltip'),
-						_elm_lang$html$Html_Events$onClick(_user$project$DataWindow$ClickedClearFilters)
+						_elm_lang$html$Html_Events$onClick(
+						_user$project$DataWindow$ClickedToolbar(_user$project$DataWindow$ClearFilters))
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -19214,7 +19221,8 @@ var _user$project$DataWindow$view = function (model) {
 								_elm_lang$html$Html$button,
 								_elm_lang$core$Native_List.fromArray(
 									[
-										_elm_lang$html$Html_Events$onClick(_user$project$DataWindow$ClickedCloseAlert)
+										_elm_lang$html$Html_Events$onClick(
+										_user$project$DataWindow$ClickedToolbar(_user$project$DataWindow$CloseAlert))
 									]),
 								_elm_lang$core$Native_List.fromArray(
 									[
@@ -19263,9 +19271,9 @@ var _user$project$DataWindow$ChangeMode = function (a) {
 var _user$project$DataWindow$ModifyUrl = function (a) {
 	return {ctor: 'ModifyUrl', _0: a};
 };
-var _user$project$DataWindow$RefreshRecords = F2(
+var _user$project$DataWindow$DoRefreshRecords = F2(
 	function (a, b) {
-		return {ctor: 'RefreshRecords', _0: a, _1: b};
+		return {ctor: 'DoRefreshRecords', _0: a, _1: b};
 	});
 var _user$project$DataWindow$FocusedRow = function (a) {
 	return {ctor: 'FocusedRow', _0: a};
@@ -19335,7 +19343,7 @@ var _user$project$DataWindow$handleTabOutMsg = F2(
 									[
 										_user$project$DataWindow$ModifyUrl(
 										_user$project$DataWindow$getFullUrl(model)),
-										A2(_user$project$DataWindow$RefreshRecords, model.windowId, model.mainTab.tab.table)
+										A2(_user$project$DataWindow$DoRefreshRecords, model.windowId, model.mainTab.tab.table)
 									])
 							};
 					}
@@ -19545,66 +19553,70 @@ var _user$project$DataWindow$update = F2(
 					_1: _elm_lang$core$Native_List.fromArray(
 						[])
 				};
-			case 'ClickedDeleteRecords':
-				var table = model.mainTab.tab.table;
-				var selectedDao = _user$project$DataWindow$getSelectedOrigRecords(model);
-				var changeset = A3(_user$project$Dao$deletedChangeset, table, selectedDao, false);
-				var encoded = A2(
-					_elm_lang$core$Json_Encode$encode,
-					0,
-					_user$project$Dao$changeSetListEncoder(changeset));
-				var _p44 = A2(_elm_lang$core$Debug$log, 'selected rows', encoded);
-				var _p45 = A2(_elm_lang$core$Debug$log, 'Deleting records', '');
-				return {
-					ctor: '_Tuple2',
-					_0: model,
-					_1: _elm_lang$core$Native_List.fromArray(
-						[
-							A2(_user$project$DataWindow$UpdateRecords, table, encoded)
-						])
-				};
-			case 'ClickedRefreshRecords':
-				var _p46 = A2(_elm_lang$core$Debug$log, 'Refreshing records', '');
-				return {
-					ctor: '_Tuple2',
-					_0: model,
-					_1: _elm_lang$core$Native_List.fromArray(
-						[
-							A2(_user$project$DataWindow$RefreshRecords, model.windowId, model.mainTab.tab.table)
-						])
-				};
-			case 'ClickedSaveChanges':
-				var table = model.mainTab.tab.table;
-				var insertedDao = _user$project$DataWindow$getInsertedRecords(model);
-				var updatedDao = _user$project$DataWindow$getUpdatedRecords(model);
-				var changeset = A3(_user$project$Dao$forSaveChangeset, table, updatedDao, insertedDao);
-				var encoded = A2(
-					_elm_lang$core$Json_Encode$encode,
-					0,
-					_user$project$Dao$changeSetListEncoder(changeset));
-				var _p47 = A2(_elm_lang$core$Debug$log, 'For save', encoded);
-				var _p48 = A2(_elm_lang$core$Debug$log, 'Saving changes', '');
-				return {
-					ctor: '_Tuple2',
-					_0: model,
-					_1: _elm_lang$core$Native_List.fromArray(
-						[
-							A2(_user$project$DataWindow$UpdateRecords, table, encoded)
-						])
-				};
-			case 'ClickedCloseAlert':
-				return {
-					ctor: '_Tuple2',
-					_0: _user$project$DataWindow$updateAllocatedHeight(
-						_elm_lang$core$Native_Utils.update(
-							model,
-							{alert: _elm_lang$core$Maybe$Nothing})),
-					_1: _elm_lang$core$Native_List.fromArray(
-						[])
-				};
-			case 'ClickedClearFilters':
-				var _p49 = A2(_elm_lang$core$Debug$log, 'clearing filters', '');
-				return A2(_user$project$DataWindow$updateMainTabThenHandleOutMsg, _user$project$Tab$ClearFilters, model);
+			case 'ClickedToolbar':
+				var _p44 = _p29._0;
+				switch (_p44.ctor) {
+					case 'DeleteRecords':
+						var table = model.mainTab.tab.table;
+						var selectedDao = _user$project$DataWindow$getSelectedOrigRecords(model);
+						var changeset = A3(_user$project$Dao$deletedChangeset, table, selectedDao, false);
+						var encoded = A2(
+							_elm_lang$core$Json_Encode$encode,
+							0,
+							_user$project$Dao$changeSetListEncoder(changeset));
+						var _p45 = A2(_elm_lang$core$Debug$log, 'selected rows', encoded);
+						var _p46 = A2(_elm_lang$core$Debug$log, 'Deleting records', '');
+						return {
+							ctor: '_Tuple2',
+							_0: model,
+							_1: _elm_lang$core$Native_List.fromArray(
+								[
+									A2(_user$project$DataWindow$UpdateRecords, table, encoded)
+								])
+						};
+					case 'RefreshRecords':
+						var _p47 = A2(_elm_lang$core$Debug$log, 'Refreshing records', '');
+						return {
+							ctor: '_Tuple2',
+							_0: model,
+							_1: _elm_lang$core$Native_List.fromArray(
+								[
+									A2(_user$project$DataWindow$DoRefreshRecords, model.windowId, model.mainTab.tab.table)
+								])
+						};
+					case 'SaveChanges':
+						var table = model.mainTab.tab.table;
+						var insertedDao = _user$project$DataWindow$getInsertedRecords(model);
+						var updatedDao = _user$project$DataWindow$getUpdatedRecords(model);
+						var changeset = A3(_user$project$Dao$forSaveChangeset, table, updatedDao, insertedDao);
+						var encoded = A2(
+							_elm_lang$core$Json_Encode$encode,
+							0,
+							_user$project$Dao$changeSetListEncoder(changeset));
+						var _p48 = A2(_elm_lang$core$Debug$log, 'For save', encoded);
+						var _p49 = A2(_elm_lang$core$Debug$log, 'Saving changes', '');
+						return {
+							ctor: '_Tuple2',
+							_0: model,
+							_1: _elm_lang$core$Native_List.fromArray(
+								[
+									A2(_user$project$DataWindow$UpdateRecords, table, encoded)
+								])
+						};
+					case 'CloseAlert':
+						return {
+							ctor: '_Tuple2',
+							_0: _user$project$DataWindow$updateAllocatedHeight(
+								_elm_lang$core$Native_Utils.update(
+									model,
+									{alert: _elm_lang$core$Maybe$Nothing})),
+							_1: _elm_lang$core$Native_List.fromArray(
+								[])
+						};
+					default:
+						var _p50 = A2(_elm_lang$core$Debug$log, 'clearing filters', '');
+						return A2(_user$project$DataWindow$updateMainTabThenHandleOutMsg, _user$project$Tab$ClearFilters, model);
+				}
 			case 'SetAlert':
 				return {
 					ctor: '_Tuple2',
@@ -19617,12 +19629,12 @@ var _user$project$DataWindow$update = F2(
 						[])
 				};
 			case 'RecordsUpdated':
-				var _p55 = _p29._0;
+				var _p56 = _p29._0;
 				var mainResponse = _elm_lang$core$List$head(
 					A2(
 						_elm_lang$core$List$filter,
 						function (ur) {
-							var _p50 = A2(
+							var _p51 = A2(
 								_elm_lang$core$Debug$log,
 								A2(_elm_lang$core$Basics_ops['++'], 'update: ', ur.table),
 								model.mainTab.tab);
@@ -19630,22 +19642,22 @@ var _user$project$DataWindow$update = F2(
 								_user$project$Tab$completeTableName(model.mainTab.tab),
 								ur.table);
 						},
-						_p55));
-				var _p51 = A2(_elm_lang$core$Debug$log, 'records updated', _p55);
-				var _p52 = mainResponse;
-				if (_p52.ctor === 'Just') {
-					var _p54 = _p52._0;
-					var error = _user$project$DataWindow$getError(_p54);
+						_p56));
+				var _p52 = A2(_elm_lang$core$Debug$log, 'records updated', _p56);
+				var _p53 = mainResponse;
+				if (_p53.ctor === 'Just') {
+					var _p55 = _p53._0;
+					var error = _user$project$DataWindow$getError(_p55);
 					var model1 = _user$project$DataWindow$updateAllocatedHeight(
 						_elm_lang$core$Native_Utils.update(
 							model,
 							{alert: error}));
-					var _p53 = A2(
+					var _p54 = A2(
 						_user$project$DataWindow$updateMainTab,
-						_user$project$Tab$RecordsUpdated(_p54),
+						_user$project$Tab$RecordsUpdated(_p55),
 						model1);
-					var model2 = _p53._0;
-					var outmsg = _p53._1;
+					var model2 = _p54._0;
+					var outmsg = _p54._1;
 					return A2(_user$project$DataWindow$handleTabOutMsg, model2, outmsg);
 				} else {
 					return {
@@ -19653,23 +19665,23 @@ var _user$project$DataWindow$update = F2(
 						_0: model,
 						_1: _elm_lang$core$Native_List.fromArray(
 							[
-								A2(_user$project$DataWindow$RefreshRecords, model.windowId, model.mainTab.tab.table)
+								A2(_user$project$DataWindow$DoRefreshRecords, model.windowId, model.mainTab.tab.table)
 							])
 					};
 				}
 			case 'SetFocusRow':
-				var _p57 = _p29._0;
+				var _p58 = _p29._0;
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{focusedRow: _p57}),
+						{focusedRow: _p58}),
 					_1: function () {
-						var _p56 = _p57;
-						if (_p56.ctor === 'Just') {
+						var _p57 = _p58;
+						if (_p57.ctor === 'Just') {
 							return _elm_lang$core$Native_List.fromArray(
 								[
-									_user$project$DataWindow$FocusedRow(_p56._0)
+									_user$project$DataWindow$FocusedRow(_p57._0)
 								]);
 						} else {
 							return _elm_lang$core$Native_List.fromArray(
@@ -19678,16 +19690,16 @@ var _user$project$DataWindow$update = F2(
 					}()
 				};
 			case 'CloseFocusedRow':
-				var _p58 = model.focusedRow;
-				if (_p58.ctor === 'Just') {
-					var _p59 = _p58._0;
-					return _user$project$Row$isNew(_p59) ? {
+				var _p59 = model.focusedRow;
+				if (_p59.ctor === 'Just') {
+					var _p60 = _p59._0;
+					return _user$project$Row$isNew(_p60) ? {
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Basics$fst(
 							A2(
 								_user$project$DataWindow$updateMainTab,
 								_user$project$Tab$AddRowDao(
-									_user$project$Row$getDao(_p59)),
+									_user$project$Row$getDao(_p60)),
 								_elm_lang$core$Native_Utils.update(
 									model,
 									{focusedRow: _elm_lang$core$Maybe$Nothing}))),
@@ -19700,15 +19712,15 @@ var _user$project$DataWindow$update = F2(
 								_user$project$DataWindow$updateMainTab,
 								A2(
 									_user$project$Tab$UpdateRow,
-									_p59.rowId,
+									_p60.rowId,
 									_user$project$Row$ChangeMode(_user$project$Mode$Read)),
 								_elm_lang$core$Basics$fst(
 									A2(
 										_user$project$DataWindow$updateMainTab,
 										A2(
 											_user$project$Tab$UpdateRowDao,
-											_p59.rowId,
-											_user$project$Row$getDao(_p59)),
+											_p60.rowId,
+											_user$project$Row$getDao(_p60)),
 										_elm_lang$core$Native_Utils.update(
 											model,
 											{focusedRow: _elm_lang$core$Maybe$Nothing}))))),
@@ -20630,7 +20642,7 @@ var _user$project$Main$handleWindowOutMsg = F3(
 											A3(_user$project$Main$fetchFocusedRecordDetail, _p38, windowId, _p34._0.rowId)
 										]))
 							};
-						case 'RefreshRecords':
+						case 'DoRefreshRecords':
 							return {
 								ctor: '_Tuple2',
 								_0: _p38,
